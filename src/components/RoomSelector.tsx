@@ -37,10 +37,10 @@ export function RoomSelector() {
       <div className="w-full max-w-sm space-y-10">
         {/* Logo */}
         <div className="text-center">
-          <h1 className="font-display text-7xl text-foreground tracking-tight">
-            LIFE
+          <h1 className="font-display text-6xl text-foreground tracking-tight">
+            LifeLink
           </h1>
-          <p className="text-muted-foreground text-lg -mt-2">
+          <p className="text-muted-foreground text-lg -mt-1">
             Counter & OBS Overlay
           </p>
         </div>
