@@ -2,7 +2,7 @@ import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown, Shield, Sun, Moon, Dices, Save, FolderOpen, Plus, Cloud, Loader2 } from 'lucide-react';
 import { useCloudRoomState } from '@/hooks/useCloudRoomState';
-import { getControlUrl, getOverlayUrl, PLAYER_COLORS, formatTimestamp, HistoryEntry, DUNGEON_ROOMS, loadPresets, savePreset, deletePreset, createPresetFromRoom, GamePreset } from '@/lib/roomUtils';
+import { getControlUrl, getOverlayUrl, formatTimestamp, HistoryEntry, DUNGEON_ROOMS, loadPresets, savePreset, deletePreset, createPresetFromRoom, GamePreset } from '@/lib/roomUtils';
 import { FullScreenPlayerPanel } from './FullScreenPlayerPanel';
 import { DiceRoller } from './DiceRoller';
 import { cn } from '@/lib/utils';
@@ -52,12 +52,60 @@ export function RoomControl() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuTab, setMenuTab] = useState<'settings' | 'history' | 'dice' | 'presets'>('settings');
-  const [colorPickerPlayer, setColorPickerPlayer] = useState<number | null>(null);
   const [copiedUrl, setCopiedUrl] = useState<'control' | 'overlay' | null>(null);
   const [highlightedPlayer, setHighlightedPlayer] = useState<number | null>(null);
   const [presets, setPresets] = useState<GamePreset[]>(() => loadPresets());
   const [newPresetName, setNewPresetName] = useState('');
   const [showSavePreset, setShowSavePreset] = useState(false);
+
+  // Convert hex to HSL for color picker
+  const hexToHsl = (hex: string): string => {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h = 0, s = 0;
+    const l = (max + min) / 2;
+    if (max !== min) {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+        case g: h = ((b - r) / d + 2) / 6; break;
+        case b: h = ((r - g) / d + 4) / 6; break;
+      }
+    }
+    return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+  };
+
+  // Convert HSL to hex for color picker input
+  const hslToHex = (hsl: string): string => {
+    const parts = hsl.match(/(\d+)\s+(\d+)%\s+(\d+)%/);
+    if (!parts) return '#888888';
+    const h = parseInt(parts[1]) / 360;
+    const s = parseInt(parts[2]) / 100;
+    const l = parseInt(parts[3]) / 100;
+    const hue2rgb = (p: number, q: number, t: number) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1/6) return p + (q - p) * 6 * t;
+      if (t < 1/2) return q;
+      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      return p;
+    };
+    let r, g, b;
+    if (s === 0) {
+      r = g = b = l;
+    } else {
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      r = hue2rgb(p, q, h + 1/3);
+      g = hue2rgb(p, q, h);
+      b = hue2rgb(p, q, h - 1/3);
+    }
+    const toHex = (x: number) => Math.round(x * 255).toString(16).padStart(2, '0');
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  };
 
   if (loading) {
     return (
@@ -201,7 +249,7 @@ export function RoomControl() {
       {menuOpen && (
         <div 
           className="fixed inset-0 z-40 bg-background/98 backdrop-blur-sm flex items-center justify-center overflow-y-auto py-6"
-          onClick={() => { setMenuOpen(false); setColorPickerPlayer(null); }}
+          onClick={() => { setMenuOpen(false); }}
           role="dialog"
           aria-label="Settings menu"
         >
@@ -211,7 +259,7 @@ export function RoomControl() {
           >
             {/* Close button in top right of dialog */}
             <button
-              onClick={() => { setMenuOpen(false); setColorPickerPlayer(null); }}
+              onClick={() => { setMenuOpen(false); }}
               className="absolute top-3 right-3 p-2 rounded-full bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-colors"
               aria-label="Close menu"
             >
@@ -477,12 +525,19 @@ export function RoomControl() {
                   <div className="space-y-2">
                     {room.players.map((player) => (
                       <div key={player.id} className="flex gap-2 items-center">
-                        <button
-                          onClick={() => setColorPickerPlayer(colorPickerPlayer === player.id ? null : player.id)}
-                          className="w-8 h-8 rounded-lg border-2 border-border flex-shrink-0 transition-transform hover:scale-105"
-                          style={{ backgroundColor: `hsl(${player.color})` }}
-                          aria-label={`Change color for ${player.name}`}
-                        />
+                        <label className="relative w-8 h-8 rounded-lg border-2 border-border flex-shrink-0 overflow-hidden cursor-pointer transition-transform hover:scale-105">
+                          <input
+                            type="color"
+                            value={hslToHex(player.color)}
+                            onChange={(e) => setPlayerColor(player.id, hexToHsl(e.target.value))}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            aria-label={`Change color for ${player.name}`}
+                          />
+                          <div 
+                            className="w-full h-full"
+                            style={{ backgroundColor: `hsl(${player.color})` }}
+                          />
+                        </label>
                         <input
                           type="text"
                           value={player.name}
@@ -535,23 +590,6 @@ export function RoomControl() {
                           →
                         </button>
                       </div>
-                    </div>
-                  )}
-
-                  {colorPickerPlayer !== null && (
-                    <div className="grid grid-cols-4 gap-2 p-2 bg-secondary rounded-lg">
-                      {PLAYER_COLORS.map((color) => (
-                        <button
-                          key={color.value}
-                          onClick={() => {
-                            setPlayerColor(colorPickerPlayer, color.value);
-                            setColorPickerPlayer(null);
-                          }}
-                          className="w-full aspect-square rounded-lg border-2 transition-transform hover:scale-110 border-transparent"
-                          style={{ backgroundColor: `hsl(${color.value})` }}
-                          title={color.name}
-                        />
-                      ))}
                     </div>
                   )}
                 </div>
