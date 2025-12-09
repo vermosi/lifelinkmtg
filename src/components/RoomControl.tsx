@@ -1,9 +1,10 @@
 import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown, Shield, Sun, Moon } from 'lucide-react';
+import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown, Shield, Sun, Moon, Dices } from 'lucide-react';
 import { useRoomState } from '@/hooks/useRoomState';
 import { getControlUrl, getOverlayUrl, PLAYER_COLORS, formatTimestamp, HistoryEntry, DUNGEON_ROOMS } from '@/lib/roomUtils';
 import { FullScreenPlayerPanel } from './FullScreenPlayerPanel';
+import { DiceRoller } from './DiceRoller';
 import { cn } from '@/lib/utils';
 
 function HistoryIcon({ type }: { type: HistoryEntry['type'] }) {
@@ -48,7 +49,7 @@ export function RoomControl() {
   } = useRoomState(roomId);
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [menuTab, setMenuTab] = useState<'settings' | 'history'>('settings');
+  const [menuTab, setMenuTab] = useState<'settings' | 'history' | 'dice'>('settings');
   const [colorPickerPlayer, setColorPickerPlayer] = useState<number | null>(null);
   const [copiedUrl, setCopiedUrl] = useState<'control' | 'overlay' | null>(null);
   const [highlightedPlayer, setHighlightedPlayer] = useState<number | null>(null);
@@ -213,35 +214,49 @@ export function RoomControl() {
             </div>
 
             {/* Tab switcher */}
-            <div className="flex gap-2" role="tablist">
+            <div className="flex gap-1" role="tablist">
               <button
                 onClick={() => setMenuTab('settings')}
                 className={cn(
-                  'flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2',
+                  'flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5',
                   menuTab === 'settings' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground'
                 )}
                 role="tab"
                 aria-selected={menuTab === 'settings'}
               >
-                <Palette className="w-4 h-4" /> Settings
+                <Palette className="w-3.5 h-3.5" /> Settings
+              </button>
+              <button
+                onClick={() => setMenuTab('dice')}
+                className={cn(
+                  'flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5',
+                  menuTab === 'dice' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground'
+                )}
+                role="tab"
+                aria-selected={menuTab === 'dice'}
+              >
+                <Dices className="w-3.5 h-3.5" /> Dice
               </button>
               <button
                 onClick={() => setMenuTab('history')}
                 className={cn(
-                  'flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2',
+                  'flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5',
                   menuTab === 'history' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground'
                 )}
                 role="tab"
                 aria-selected={menuTab === 'history'}
               >
-                <History className="w-4 h-4" /> History
+                <History className="w-3.5 h-3.5" />
                 {room.history.length > 0 && (
-                  <span className="text-xs bg-primary/20 text-primary px-1.5 rounded">
+                  <span className="text-xs bg-primary/20 text-primary px-1 rounded">
                     {room.history.length}
                   </span>
                 )}
               </button>
             </div>
+
+            {/* Dice tab */}
+            {menuTab === 'dice' && <DiceRoller />}
 
             {menuTab === 'settings' && isAdmin && (
               <>
@@ -294,7 +309,7 @@ export function RoomControl() {
                 {/* Day/Night toggle */}
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
-                    {room.isDay ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />} Day/Night Cycle
+                    {room.isDay ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />} Day/Night
                   </label>
                   <button
                     onClick={toggleDayNight}
@@ -307,21 +322,20 @@ export function RoomControl() {
                   >
                     {room.isDay ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                     {room.isDay ? 'Day' : 'Night'}
-                    <span className="text-xs opacity-70">(click to toggle)</span>
                   </button>
                 </div>
 
                 {/* Player names & colors */}
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
-                    <Palette className="w-3 h-3" /> Players & Colors
+                    <Palette className="w-3 h-3" /> Players
                   </label>
                   <div className="space-y-2">
                     {room.players.map((player) => (
                       <div key={player.id} className="flex gap-2 items-center">
                         <button
                           onClick={() => setColorPickerPlayer(colorPickerPlayer === player.id ? null : player.id)}
-                          className="w-9 h-9 rounded-lg border-2 border-border flex-shrink-0 transition-transform hover:scale-105"
+                          className="w-8 h-8 rounded-lg border-2 border-border flex-shrink-0 transition-transform hover:scale-105"
                           style={{ backgroundColor: `hsl(${player.color})` }}
                           aria-label={`Change color for ${player.name}`}
                         />
@@ -329,34 +343,29 @@ export function RoomControl() {
                           type="text"
                           value={player.name}
                           onChange={(e) => setPlayerName(player.id, e.target.value)}
-                          className="flex-1 px-3 py-2 rounded-lg bg-secondary text-foreground text-sm border border-border focus:outline-none focus:ring-2 focus:ring-foreground/20"
-                          aria-label={`Name for player ${player.id}`}
+                          className="flex-1 px-2 py-1.5 rounded-lg bg-secondary text-foreground text-sm border border-border focus:outline-none focus:ring-2 focus:ring-foreground/20"
                         />
                         <button
                           onClick={() => setMonarch(room.monarchId === player.id ? null : player.id)}
                           className={cn(
-                            'p-2 rounded-lg transition-all',
+                            'p-1.5 rounded-lg transition-all',
                             room.monarchId === player.id 
                               ? 'bg-yellow-400/20 text-yellow-400' 
                               : 'bg-secondary text-muted-foreground hover:text-foreground'
                           )}
-                          title="Toggle Monarch"
-                          aria-label={`Toggle Monarch for ${player.name}`}
-                          aria-pressed={room.monarchId === player.id}
+                          title="Monarch"
                         >
                           <Crown className="w-4 h-4" fill={room.monarchId === player.id ? 'currentColor' : 'none'} />
                         </button>
                         <button
                           onClick={() => setInitiative(room.initiativeId === player.id ? null : player.id)}
                           className={cn(
-                            'p-2 rounded-lg transition-all',
+                            'p-1.5 rounded-lg transition-all',
                             room.initiativeId === player.id 
                               ? 'bg-purple-400/20 text-purple-400' 
                               : 'bg-secondary text-muted-foreground hover:text-foreground'
                           )}
-                          title="Toggle Initiative"
-                          aria-label={`Toggle Initiative for ${player.name}`}
-                          aria-pressed={room.initiativeId === player.id}
+                          title="Initiative"
                         >
                           <Shield className="w-4 h-4" fill={room.initiativeId === player.id ? 'currentColor' : 'none'} />
                         </button>
@@ -364,41 +373,29 @@ export function RoomControl() {
                     ))}
                   </div>
 
-                  {/* Initiative dungeon progress */}
                   {room.initiativeId && (
-                    <div className="mt-2 p-3 bg-purple-500/10 rounded-xl">
-                      <div className="text-xs text-purple-400 mb-2 flex items-center gap-2">
-                        <Shield className="w-3 h-3" /> Undercity Progress: {DUNGEON_ROOMS[room.dungeonProgress]}
-                      </div>
-                      <div className="flex gap-2 items-center">
-                        {DUNGEON_ROOMS.map((roomName, idx) => (
+                    <div className="p-2 bg-purple-500/10 rounded-lg">
+                      <div className="text-xs text-purple-400 mb-1">Dungeon: {DUNGEON_ROOMS[room.dungeonProgress]}</div>
+                      <div className="flex gap-1 items-center">
+                        {DUNGEON_ROOMS.map((_, idx) => (
                           <div
-                            key={roomName}
-                            className={cn(
-                              'flex-1 h-2 rounded-full transition-all',
-                              idx <= room.dungeonProgress ? 'bg-purple-500' : 'bg-purple-500/20'
-                            )}
-                            title={roomName}
+                            key={idx}
+                            className={cn('flex-1 h-1.5 rounded-full', idx <= room.dungeonProgress ? 'bg-purple-500' : 'bg-purple-500/20')}
                           />
                         ))}
                         <button
                           onClick={advanceDungeon}
                           disabled={room.dungeonProgress >= 3}
-                          className={cn(
-                            'text-xs px-2 py-1 rounded transition-all',
-                            room.dungeonProgress >= 3
-                              ? 'bg-secondary text-muted-foreground cursor-not-allowed'
-                              : 'bg-purple-500/30 text-purple-300 hover:bg-purple-500/50'
-                          )}
+                          className="text-xs px-2 py-0.5 ml-1 rounded bg-purple-500/30 text-purple-300 disabled:opacity-50"
                         >
-                          Advance
+                          →
                         </button>
                       </div>
                     </div>
                   )}
 
                   {colorPickerPlayer !== null && (
-                    <div className="grid grid-cols-4 gap-2 p-3 bg-secondary rounded-xl mt-2">
+                    <div className="grid grid-cols-4 gap-2 p-2 bg-secondary rounded-lg">
                       {PLAYER_COLORS.map((color) => (
                         <button
                           key={color.value}
@@ -406,15 +403,9 @@ export function RoomControl() {
                             setPlayerColor(colorPickerPlayer, color.value);
                             setColorPickerPlayer(null);
                           }}
-                          className={cn(
-                            "w-full aspect-square rounded-lg border-2 transition-transform hover:scale-110",
-                            room.players.find(p => p.id === colorPickerPlayer)?.color === color.value
-                              ? 'border-white'
-                              : 'border-transparent'
-                          )}
+                          className="w-full aspect-square rounded-lg border-2 transition-transform hover:scale-110 border-transparent"
                           style={{ backgroundColor: `hsl(${color.value})` }}
                           title={color.name}
-                          aria-label={`Select ${color.name}`}
                         />
                       ))}
                     </div>
@@ -425,27 +416,21 @@ export function RoomControl() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => { resetGame(); setMenuOpen(false); }}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 py-2 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80"
                   >
-                    <RotateCcw className="w-4 h-4" />
-                    Reset
+                    <RotateCcw className="w-4 h-4" /> Reset
                   </button>
                   <button
                     onClick={randomizeFirstPlayer}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 py-2 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80"
                   >
-                    <Shuffle className="w-4 h-4" />
-                    Random
+                    <Shuffle className="w-4 h-4" /> Random
                   </button>
                 </div>
 
-                {/* Keyboard shortcuts hint */}
-                <div className="text-xs text-muted-foreground p-3 bg-secondary/50 rounded-lg space-y-1">
-                  <div className="font-medium mb-1">Keyboard Shortcuts (click panel first):</div>
-                  <div>↑/↓ or +/- : Adjust life by 1</div>
-                  <div>←/→ or Shift+↑/↓ : Adjust life by 5</div>
-                  <div>1-5 : Subtract 1-5 life · 6-0 : Add 1-5 life</div>
-                  <div>C : Counters · M : Monarch · I : Initiative</div>
+                {/* Overlay tip */}
+                <div className="text-xs text-muted-foreground p-2 bg-secondary/50 rounded-lg text-center">
+                  💡 Open the overlay URL to drag & arrange elements for OBS
                 </div>
               </>
             )}
@@ -453,35 +438,22 @@ export function RoomControl() {
             {menuTab === 'history' && (
               <div className="space-y-3">
                 {room.history.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground text-sm">
-                    No changes recorded yet
-                  </div>
+                  <div className="text-center py-6 text-muted-foreground text-sm">No changes yet</div>
                 ) : (
                   <>
-                    <div className="max-h-64 overflow-y-auto space-y-1.5 pr-1">
+                    <div className="max-h-56 overflow-y-auto space-y-1 pr-1">
                       {[...room.history].reverse().map((entry) => (
-                        <div
-                          key={entry.id}
-                          className="flex items-center gap-2 text-sm py-1.5 px-2 rounded-lg bg-secondary/50"
-                        >
+                        <div key={entry.id} className="flex items-center gap-2 text-sm py-1 px-2 rounded bg-secondary/50">
                           <HistoryIcon type={entry.type} />
                           <span className="font-medium text-foreground">{entry.playerName}</span>
-                          <span className="text-muted-foreground flex-1 truncate">
-                            {formatHistoryChange(entry)}
-                          </span>
-                          <span className="text-xs text-muted-foreground/60">
-                            {formatTimestamp(entry.timestamp)}
-                          </span>
+                          <span className="text-muted-foreground flex-1 truncate">{formatHistoryChange(entry)}</span>
+                          <span className="text-xs text-muted-foreground/60">{formatTimestamp(entry.timestamp)}</span>
                         </div>
                       ))}
                     </div>
                     {isAdmin && (
-                      <button
-                        onClick={clearHistory}
-                        className="w-full flex items-center justify-center gap-2 py-2 bg-destructive/10 text-destructive rounded-lg text-sm hover:bg-destructive/20 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Clear History
+                      <button onClick={clearHistory} className="w-full py-2 bg-destructive/10 text-destructive rounded-lg text-sm hover:bg-destructive/20">
+                        <Trash2 className="w-4 h-4 inline mr-2" />Clear
                       </button>
                     )}
                   </>
@@ -490,24 +462,22 @@ export function RoomControl() {
             )}
 
             {menuTab === 'settings' && !isAdmin && (
-              <div className="text-center py-4 text-muted-foreground text-sm">
-                View-only mode. Admin access required to change settings.
-              </div>
+              <div className="text-center py-4 text-muted-foreground text-sm">View-only mode</div>
             )}
 
             {/* URLs */}
             <div className="space-y-2 pt-2 border-t border-border">
               <button
                 onClick={() => copyUrl('overlay')}
-                className="w-full flex items-center justify-center gap-2 py-2.5 bg-accent rounded-xl text-accent-foreground text-sm font-medium hover:bg-accent/90 transition-colors"
+                className="w-full flex items-center justify-center gap-2 py-2 bg-accent rounded-xl text-accent-foreground text-sm font-medium hover:bg-accent/90"
               >
                 {copiedUrl === 'overlay' ? <Check className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
-                Copy Overlay URL (for OBS)
+                Copy Overlay URL
               </button>
               {isAdmin && (
                 <button
                   onClick={() => copyUrl('control')}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 py-2 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80"
                 >
                   {copiedUrl === 'control' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                   Copy Admin URL
@@ -517,10 +487,9 @@ export function RoomControl() {
 
             <button
               onClick={() => navigate('/')}
-              className="w-full flex items-center justify-center gap-2 py-2 text-muted-foreground text-sm hover:text-foreground transition-colors"
+              className="w-full flex items-center justify-center gap-2 py-2 text-muted-foreground text-sm hover:text-foreground"
             >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Home
+              <ArrowLeft className="w-4 h-4" /> Home
             </button>
           </div>
         </div>
