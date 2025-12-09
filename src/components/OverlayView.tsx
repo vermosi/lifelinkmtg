@@ -1,6 +1,7 @@
 import { useParams } from 'react-router-dom';
 import { useRoomState } from '@/hooks/useRoomState';
 import { cn } from '@/lib/utils';
+import { Skull } from 'lucide-react';
 
 export function OverlayView() {
   const { roomId } = useParams<{ roomId: string }>();
@@ -18,12 +19,9 @@ export function OverlayView() {
 
   const getFontSize = () => {
     switch (room.settings.overlayFontSize) {
-      case 'small':
-        return 'text-5xl';
-      case 'large':
-        return 'text-9xl';
-      default:
-        return 'text-7xl';
+      case 'small': return 'text-5xl';
+      case 'large': return 'text-9xl';
+      default: return 'text-7xl';
     }
   };
 
@@ -37,7 +35,7 @@ export function OverlayView() {
           <div
             key={player.id}
             className={cn(
-              'flex flex-col items-center justify-center py-4 px-8 rounded-2xl min-w-[140px]',
+              'flex flex-col items-center justify-center py-4 px-8 rounded-2xl min-w-[140px] relative',
               room.settings.showBackgroundCards && 'backdrop-blur-md'
             )}
             style={{ 
@@ -67,6 +65,36 @@ export function OverlayView() {
             >
               {player.life}
             </div>
+
+            {/* Poison indicator */}
+            {player.poison > 0 && (
+              <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-lg bg-black/30">
+                <Skull className="w-3 h-3 text-green-400" />
+                <span className="font-display text-sm text-green-400">{player.poison}</span>
+              </div>
+            )}
+
+            {/* Commander damage indicators */}
+            {Object.keys(player.commanderDamage).length > 0 && (
+              <div className="flex gap-1 mt-2">
+                {room.players.filter(p => p.id !== player.id).map(opp => {
+                  const dmg = player.commanderDamage[opp.id];
+                  if (!dmg) return null;
+                  return (
+                    <div
+                      key={opp.id}
+                      className="px-2 py-0.5 rounded text-xs font-display"
+                      style={{ 
+                        backgroundColor: `hsl(${opp.color} / 0.8)`,
+                        color: 'rgba(0,0,0,0.7)',
+                      }}
+                    >
+                      {dmg}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         ))}
       </div>

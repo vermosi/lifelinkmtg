@@ -1,8 +1,8 @@
 import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Settings2 } from 'lucide-react';
+import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette } from 'lucide-react';
 import { useRoomState } from '@/hooks/useRoomState';
-import { getControlUrl, getOverlayUrl } from '@/lib/roomUtils';
+import { getControlUrl, getOverlayUrl, PLAYER_COLORS } from '@/lib/roomUtils';
 import { FullScreenPlayerPanel } from './FullScreenPlayerPanel';
 import { cn } from '@/lib/utils';
 
@@ -18,12 +18,16 @@ export function RoomControl() {
     updatePlayerLife,
     setPlayerLife,
     setPlayerName,
+    setPlayerColor,
+    updatePlayerPoison,
+    updateCommanderDamage,
     resetGame,
     setPlayerCount,
     setStartingLife,
   } = useRoomState(roomId);
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [colorPickerPlayer, setColorPickerPlayer] = useState<number | null>(null);
   const [copiedUrl, setCopiedUrl] = useState<'control' | 'overlay' | null>(null);
   const [highlightedPlayer, setHighlightedPlayer] = useState<number | null>(null);
 
@@ -66,45 +70,24 @@ export function RoomControl() {
     setMenuOpen(false);
   };
 
-  // Get rotation and position for each player based on count
   const getPlayerLayout = (index: number, total: number) => {
     if (total === 2) {
-      return {
-        rotation: index === 0 ? 180 : 0,
-        gridArea: index === 0 ? 'top' : 'bottom',
-      };
+      return { rotation: index === 0 ? 180 : 0 };
     }
     if (total === 3) {
-      if (index === 0) return { rotation: 180, gridArea: 'top-left' };
-      if (index === 1) return { rotation: 180, gridArea: 'top-right' };
-      return { rotation: 0, gridArea: 'bottom' };
+      if (index === 0) return { rotation: 180 };
+      if (index === 1) return { rotation: 180 };
+      return { rotation: 0 };
     }
-    // 4 players
     const rotations = [180, 180, 0, 0];
-    const areas = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
-    return { rotation: rotations[index], gridArea: areas[index] };
+    return { rotation: rotations[index] };
   };
 
   const getGridStyle = () => {
     if (room.playerCount === 2) {
-      return {
-        display: 'grid',
-        gridTemplateRows: '1fr 1fr',
-        gridTemplateColumns: '1fr',
-      };
+      return { display: 'grid', gridTemplateRows: '1fr 1fr', gridTemplateColumns: '1fr' };
     }
-    if (room.playerCount === 3) {
-      return {
-        display: 'grid',
-        gridTemplateRows: '1fr 1fr',
-        gridTemplateColumns: '1fr 1fr',
-      };
-    }
-    return {
-      display: 'grid',
-      gridTemplateRows: '1fr 1fr',
-      gridTemplateColumns: '1fr 1fr',
-    };
+    return { display: 'grid', gridTemplateRows: '1fr 1fr', gridTemplateColumns: '1fr 1fr' };
   };
 
   const getPlayerGridArea = (index: number, total: number) => {
@@ -125,17 +108,19 @@ export function RoomControl() {
               key={player.id}
               className={cn(
                 'relative',
-                highlightedPlayer === player.id && 'ring-4 ring-white ring-inset'
+                highlightedPlayer === player.id && 'ring-4 ring-white ring-inset animate-pulse'
               )}
               style={getPlayerGridArea(index, room.playerCount)}
             >
               <FullScreenPlayerPanel
                 player={player}
+                allPlayers={room.players}
                 onLifeChange={(delta) => updatePlayerLife(player.id, delta)}
                 onLifeSet={(life) => setPlayerLife(player.id, life)}
+                onPoisonChange={(delta) => updatePlayerPoison(player.id, delta)}
+                onCommanderDamageChange={(fromId, delta) => updateCommanderDamage(player.id, fromId, delta)}
                 isAdmin={isAdmin}
                 rotation={layout.rotation}
-                position={layout.gridArea as any}
               />
             </div>
           );
@@ -157,11 +142,11 @@ export function RoomControl() {
       {/* Menu overlay */}
       {menuOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-background/95 backdrop-blur-sm flex items-center justify-center"
-          onClick={() => setMenuOpen(false)}
+          className="fixed inset-0 z-40 bg-background/95 backdrop-blur-sm flex items-center justify-center overflow-y-auto py-8"
+          onClick={() => { setMenuOpen(false); setColorPickerPlayer(null); }}
         >
           <div 
-            className="bg-card border border-border rounded-2xl p-6 w-[90%] max-w-md space-y-6"
+            className="bg-card border border-border rounded-2xl p-6 w-[90%] max-w-md space-y-5 my-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -219,23 +204,52 @@ export function RoomControl() {
                   </div>
                 </div>
 
-                {/* Player names */}
+                {/* Player names & colors */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <Settings2 className="w-4 h-4" /> Player Names
+                    <Palette className="w-4 h-4" /> Players & Colors
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-2">
                     {room.players.map((player) => (
-                      <input
-                        key={player.id}
-                        type="text"
-                        value={player.name}
-                        onChange={(e) => setPlayerName(player.id, e.target.value)}
-                        className="px-3 py-2 rounded-lg bg-secondary text-foreground border border-border focus:outline-none focus:ring-2 focus:ring-foreground/20"
-                        placeholder={`Player ${player.id}`}
-                      />
+                      <div key={player.id} className="flex gap-2">
+                        <button
+                          onClick={() => setColorPickerPlayer(colorPickerPlayer === player.id ? null : player.id)}
+                          className="w-10 h-10 rounded-lg border-2 border-border flex-shrink-0 transition-transform hover:scale-105"
+                          style={{ backgroundColor: `hsl(${player.color})` }}
+                        />
+                        <input
+                          type="text"
+                          value={player.name}
+                          onChange={(e) => setPlayerName(player.id, e.target.value)}
+                          className="flex-1 px-3 py-2 rounded-lg bg-secondary text-foreground border border-border focus:outline-none focus:ring-2 focus:ring-foreground/20"
+                          placeholder={`Player ${player.id}`}
+                        />
+                      </div>
                     ))}
                   </div>
+
+                  {/* Color picker dropdown */}
+                  {colorPickerPlayer !== null && (
+                    <div className="grid grid-cols-4 gap-2 p-3 bg-secondary rounded-xl mt-2">
+                      {PLAYER_COLORS.map((color) => (
+                        <button
+                          key={color.value}
+                          onClick={() => {
+                            setPlayerColor(colorPickerPlayer, color.value);
+                            setColorPickerPlayer(null);
+                          }}
+                          className={cn(
+                            "w-full aspect-square rounded-lg border-2 transition-transform hover:scale-110",
+                            room.players.find(p => p.id === colorPickerPlayer)?.color === color.value
+                              ? 'border-white'
+                              : 'border-transparent'
+                          )}
+                          style={{ backgroundColor: `hsl(${color.value})` }}
+                          title={color.name}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Actions */}
@@ -258,17 +272,20 @@ export function RoomControl() {
               </>
             )}
 
+            {/* Hint for counters */}
+            {isAdmin && (
+              <div className="text-center text-sm text-muted-foreground py-2 px-4 bg-secondary/50 rounded-lg">
+                💡 Long-press a player panel for poison & commander damage
+              </div>
+            )}
+
             {/* URLs */}
             <div className="space-y-2 pt-2 border-t border-border">
               <button
                 onClick={() => copyUrl('overlay')}
                 className="w-full flex items-center justify-center gap-2 py-3 bg-accent rounded-xl text-accent-foreground font-medium hover:bg-accent/90 transition-colors"
               >
-                {copiedUrl === 'overlay' ? (
-                  <Check className="w-4 h-4" />
-                ) : (
-                  <Monitor className="w-4 h-4" />
-                )}
+                {copiedUrl === 'overlay' ? <Check className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
                 Copy Overlay URL (for OBS)
               </button>
               {isAdmin && (
@@ -276,11 +293,7 @@ export function RoomControl() {
                   onClick={() => copyUrl('control')}
                   className="w-full flex items-center justify-center gap-2 py-3 bg-secondary rounded-xl text-foreground hover:bg-secondary/80 transition-colors"
                 >
-                  {copiedUrl === 'control' ? (
-                    <Check className="w-4 h-4" />
-                  ) : (
-                    <Copy className="w-4 h-4" />
-                  )}
+                  {copiedUrl === 'control' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                   Copy Admin URL
                 </button>
               )}
