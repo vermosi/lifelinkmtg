@@ -35,12 +35,14 @@ export function RoomSelector() {
     navigate(`/room/${roomId}?adminKey=${adminKey}`);
   };
 
-  const handleDeleteRoom = async (roomId: string, e: React.MouseEvent) => {
+  const handleDeleteRoom = async (roomId: string, adminKey: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm('Delete this room?')) {
-      await deleteCloudRoom(roomId);
-      removeFromRecentRooms(roomId);
-      setRecentRooms(prev => prev.filter(r => r.id !== roomId));
+      const success = await deleteCloudRoom(roomId, adminKey);
+      if (success) {
+        removeFromRecentRooms(roomId);
+        setRecentRooms(prev => prev.filter(r => r.id !== roomId));
+      }
     }
   };
 
@@ -123,7 +125,7 @@ export function RoomSelector() {
                     </div>
                   </div>
                   <button
-                    onClick={(e) => handleDeleteRoom(room.id, e)}
+                    onClick={(e) => handleDeleteRoom(room.id, room.adminKey, e)}
                     className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all text-sm"
                   >
                     Delete

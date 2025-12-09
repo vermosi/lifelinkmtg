@@ -18,10 +18,10 @@ export function roomToDbFormat(room: Room) {
   };
 }
 
-// Convert database format to Room
+// Convert database format to Room (from rooms_public view - no admin_key)
 export function dbToRoom(dbRoom: {
   id: string;
-  admin_key: string;
+  admin_key?: string; // Optional - not present when querying from rooms_public view
   settings: unknown;
   players: unknown;
   day_night: string | null;
@@ -40,7 +40,7 @@ export function dbToRoom(dbRoom: {
   
   return {
     id: dbRoom.id,
-    adminKey: dbRoom.admin_key,
+    adminKey: dbRoom.admin_key || '', // Empty if not provided (secure)
     playerCount: players.length as 2 | 3 | 4,
     players: players.map(p => ({
       ...p,
@@ -106,10 +106,10 @@ export async function createCloudRoom(playerCount: 2 | 3 | 4 = 4): Promise<Room 
   return room;
 }
 
-// Get a room from the cloud
+// Get a room from the cloud (using public view - no admin_key exposed)
 export async function getCloudRoom(roomId: string): Promise<Room | null> {
   const { data, error } = await supabase
-    .from('rooms')
+    .from('rooms_public')
     .select('*')
     .eq('id', roomId)
     .maybeSingle();
@@ -121,38 +121,118 @@ export async function getCloudRoom(roomId: string): Promise<Room | null> {
 
   if (!data) return null;
 
-  return dbToRoom(data);
+  return dbToRoom(data as any);
 }
 
-// Update a room in the cloud
-export async function updateCloudRoom(room: Room): Promise<boolean> {
-  const { error } = await supabase
-    .from('rooms')
-    .update(roomToDbFormat(room))
-    .eq('id', room.id);
+// Type for the room data returned by verify_room_admin RPC
+interface RoomDataFromRpc {
+  id: string;
+  players: Player[];
+  settings: RoomSettings;
+  day_night: string;
+  monarch: string | null;
+  initiative: string | null;
+  dungeon_progress: number;
+  overlay_layout: OverlayLayout | null;
+  history: HistoryEntry[];
+  created_at: string;
+  last_updated: string;
+}
+
+// Verify admin key server-side and get room data
+export async function verifyRoomAdmin(roomId: string, adminKey: string): Promise<{ isAdmin: boolean; room: Room | null }> {
+  const { data, error } = await supabase
+    .rpc('verify_room_admin', { room_id: roomId, provided_admin_key: adminKey });
+
+  if (error) {
+    console.error('Error verifying admin:', error);
+    return { isAdmin: false, room: null };
+  }
+
+  if (!data || data.length === 0) {
+    return { isAdmin: false, room: null };
+  }
+
+  const result = data[0] as unknown as { is_admin: boolean; room_data: RoomDataFromRpc | null };
+  if (!result.room_data) {
+    return { isAdmin: false, room: null };
+  }
+
+  // Parse room_data from JSONB
+  const roomData = result.room_data;
+  const room: Room = {
+    id: roomData.id,
+    adminKey: '', // Never expose admin key
+    playerCount: (roomData.players?.length || 4) as 2 | 3 | 4,
+    players: (roomData.players || []).map((p: Player) => ({
+      ...p,
+      poison: p.poison ?? 0,
+      experience: p.experience ?? 0,
+      energy: p.energy ?? 0,
+      commanderDamage: p.commanderDamage ?? {},
+    })),
+    settings: {
+      theme: roomData.settings?.theme ?? 'dark',
+      startingLife: roomData.settings?.startingLife ?? 40,
+      overlayFontSize: roomData.settings?.overlayFontSize ?? 'medium',
+      showNamesOnOverlay: roomData.settings?.showNamesOnOverlay ?? true,
+      showBackgroundCards: roomData.settings?.showBackgroundCards ?? true,
+      overlayLayout: roomData.settings?.overlayLayout ?? 'horizontal',
+    },
+    monarchId: roomData.monarch ? parseInt(roomData.monarch) : null,
+    initiativeId: roomData.initiative ? parseInt(roomData.initiative) : null,
+    dungeonProgress: roomData.dungeon_progress ?? 0,
+    isDay: roomData.day_night !== 'night',
+    history: roomData.history || [],
+    overlayLayout: roomData.overlay_layout ?? createDefaultOverlayLayout(roomData.players?.length || 4),
+    createdAt: new Date(roomData.created_at).getTime(),
+    lastUpdated: new Date(roomData.last_updated).getTime(),
+  };
+
+  return { isAdmin: result.is_admin, room };
+}
+
+// Update a room in the cloud (requires admin key verification)
+export async function updateCloudRoom(room: Room, adminKey: string): Promise<boolean> {
+  const roomData = {
+    players: JSON.stringify(room.players),
+    settings: JSON.stringify(room.settings),
+    day_night: room.isDay ? 'day' : 'night',
+    monarch: room.monarchId?.toString() ?? null,
+    initiative: room.initiativeId?.toString() ?? null,
+    dungeon_progress: room.dungeonProgress,
+    overlay_layout: room.overlayLayout as unknown as Json,
+    history: room.history as unknown as Json,
+  };
+
+  const { data, error } = await supabase
+    .rpc('update_room_as_admin', { 
+      room_id: room.id, 
+      provided_admin_key: adminKey,
+      room_data: roomData as unknown as Json
+    });
 
   if (error) {
     console.error('Error updating cloud room:', error);
     return false;
   }
 
-  return true;
+  return data === true;
 }
 
-// Delete a room from the cloud
-export async function deleteCloudRoom(roomId: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('rooms')
-    .delete()
-    .eq('id', roomId);
+// Delete a room from the cloud (requires admin key verification)
+export async function deleteCloudRoom(roomId: string, adminKey: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .rpc('delete_room_as_admin', { room_id: roomId, provided_admin_key: adminKey });
 
   if (error) {
     console.error('Error deleting cloud room:', error);
     return false;
   }
 
-  return true;
+  return data === true;
 }
+
 
 // Get recent rooms (from localStorage cache for now - could be extended with user accounts)
 export async function getRecentCloudRooms(): Promise<Room[]> {
@@ -163,7 +243,7 @@ export async function getRecentCloudRooms(): Promise<Room[]> {
     const recentIds: string[] = JSON.parse(stored);
     
     const { data, error } = await supabase
-      .from('rooms')
+      .from('rooms_public')
       .select('*')
       .in('id', recentIds)
       .order('last_updated', { ascending: false });
@@ -173,7 +253,7 @@ export async function getRecentCloudRooms(): Promise<Room[]> {
       return [];
     }
 
-    return (data || []).map(dbToRoom);
+    return (data || []).map((r) => dbToRoom(r as any));
   } catch {
     return [];
   }
