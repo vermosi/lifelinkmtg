@@ -1,8 +1,8 @@
 import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown, Shield, Sun, Moon, Dices } from 'lucide-react';
+import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown, Shield, Sun, Moon, Dices, Save, FolderOpen, Plus } from 'lucide-react';
 import { useRoomState } from '@/hooks/useRoomState';
-import { getControlUrl, getOverlayUrl, PLAYER_COLORS, formatTimestamp, HistoryEntry, DUNGEON_ROOMS } from '@/lib/roomUtils';
+import { getControlUrl, getOverlayUrl, PLAYER_COLORS, formatTimestamp, HistoryEntry, DUNGEON_ROOMS, loadPresets, savePreset, deletePreset, createPresetFromRoom, GamePreset } from '@/lib/roomUtils';
 import { FullScreenPlayerPanel } from './FullScreenPlayerPanel';
 import { DiceRoller } from './DiceRoller';
 import { cn } from '@/lib/utils';
@@ -46,13 +46,17 @@ export function RoomControl() {
     setPlayerCount,
     setStartingLife,
     clearHistory,
+    loadPreset,
   } = useRoomState(roomId);
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [menuTab, setMenuTab] = useState<'settings' | 'history' | 'dice'>('settings');
+  const [menuTab, setMenuTab] = useState<'settings' | 'history' | 'dice' | 'presets'>('settings');
   const [colorPickerPlayer, setColorPickerPlayer] = useState<number | null>(null);
   const [copiedUrl, setCopiedUrl] = useState<'control' | 'overlay' | null>(null);
   const [highlightedPlayer, setHighlightedPlayer] = useState<number | null>(null);
+  const [presets, setPresets] = useState<GamePreset[]>(() => loadPresets());
+  const [newPresetName, setNewPresetName] = useState('');
+  const [showSavePreset, setShowSavePreset] = useState(false);
 
   if (loading) {
     return (
@@ -218,35 +222,46 @@ export function RoomControl() {
               <button
                 onClick={() => setMenuTab('settings')}
                 className={cn(
-                  'flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5',
+                  'flex-1 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1',
                   menuTab === 'settings' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground'
                 )}
                 role="tab"
                 aria-selected={menuTab === 'settings'}
               >
-                <Palette className="w-3.5 h-3.5" /> Settings
+                <Palette className="w-3 h-3" /> Settings
+              </button>
+              <button
+                onClick={() => setMenuTab('presets')}
+                className={cn(
+                  'flex-1 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1',
+                  menuTab === 'presets' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground'
+                )}
+                role="tab"
+                aria-selected={menuTab === 'presets'}
+              >
+                <FolderOpen className="w-3 h-3" /> Presets
               </button>
               <button
                 onClick={() => setMenuTab('dice')}
                 className={cn(
-                  'flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5',
+                  'flex-1 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1',
                   menuTab === 'dice' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground'
                 )}
                 role="tab"
                 aria-selected={menuTab === 'dice'}
               >
-                <Dices className="w-3.5 h-3.5" /> Dice
+                <Dices className="w-3 h-3" /> Dice
               </button>
               <button
                 onClick={() => setMenuTab('history')}
                 className={cn(
-                  'flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5',
+                  'flex-1 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1',
                   menuTab === 'history' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground'
                 )}
                 role="tab"
                 aria-selected={menuTab === 'history'}
               >
-                <History className="w-3.5 h-3.5" />
+                <History className="w-3 h-3" />
                 {room.history.length > 0 && (
                   <span className="text-xs bg-primary/20 text-primary px-1 rounded">
                     {room.history.length}
@@ -257,6 +272,119 @@ export function RoomControl() {
 
             {/* Dice tab */}
             {menuTab === 'dice' && <DiceRoller />}
+
+            {/* Presets tab */}
+            {menuTab === 'presets' && (
+              <div className="space-y-3">
+                {isAdmin && (
+                  <>
+                    {showSavePreset ? (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newPresetName}
+                          onChange={(e) => setNewPresetName(e.target.value)}
+                          placeholder="Preset name..."
+                          className="flex-1 px-3 py-2 rounded-lg bg-secondary text-foreground text-sm border border-border focus:outline-none focus:ring-2 focus:ring-foreground/20"
+                          autoFocus
+                        />
+                        <button
+                          onClick={() => {
+                            if (newPresetName.trim() && room) {
+                              const preset = createPresetFromRoom(room, newPresetName.trim());
+                              savePreset(preset);
+                              setPresets(loadPresets());
+                              setNewPresetName('');
+                              setShowSavePreset(false);
+                            }
+                          }}
+                          disabled={!newPresetName.trim()}
+                          className="px-4 py-2 bg-accent text-accent-foreground rounded-lg text-sm font-medium disabled:opacity-50"
+                        >
+                          <Save className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => { setShowSavePreset(false); setNewPresetName(''); }}
+                          className="px-3 py-2 bg-secondary text-muted-foreground rounded-lg text-sm"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setShowSavePreset(true)}
+                        className="w-full flex items-center justify-center gap-2 py-2 bg-accent text-accent-foreground rounded-xl text-sm font-medium hover:bg-accent/90"
+                      >
+                        <Plus className="w-4 h-4" /> Save Current Setup as Preset
+                      </button>
+                    )}
+                  </>
+                )}
+
+                {presets.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground text-sm">
+                    No presets saved yet.
+                    {isAdmin && <div className="mt-1">Save your current playgroup setup!</div>}
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    {presets.map((preset) => (
+                      <div
+                        key={preset.id}
+                        className="p-3 bg-secondary/50 rounded-lg border border-border"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium text-foreground">{preset.name}</span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">
+                              {preset.playerCount}P • {preset.startingLife}HP
+                            </span>
+                            {isAdmin && (
+                              <button
+                                onClick={() => {
+                                  deletePreset(preset.id);
+                                  setPresets(loadPresets());
+                                }}
+                                className="p-1 text-destructive/70 hover:text-destructive"
+                                title="Delete preset"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-1.5 mb-2">
+                          {preset.players.map((p, i) => (
+                            <div
+                              key={i}
+                              className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs"
+                              style={{ backgroundColor: `hsl(${p.color} / 0.2)` }}
+                            >
+                              <div
+                                className="w-2.5 h-2.5 rounded-full"
+                                style={{ backgroundColor: `hsl(${p.color})` }}
+                              />
+                              <span className="text-foreground truncate max-w-16">{p.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                        {isAdmin && (
+                          <button
+                            onClick={() => {
+                              loadPreset(preset);
+                              setMenuOpen(false);
+                            }}
+                            className="w-full py-1.5 bg-foreground/10 hover:bg-foreground/20 text-foreground rounded-lg text-xs font-medium transition-colors"
+                          >
+                            Load Preset
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {menuTab === 'settings' && isAdmin && (
               <>

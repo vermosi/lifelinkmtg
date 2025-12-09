@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Room, HistoryEntry, OverlayLayout, getRoom, saveRoom, generateId, createDefaultOverlayLayout } from '@/lib/roomUtils';
+import { Room, HistoryEntry, OverlayLayout, getRoom, saveRoom, generateId, createDefaultOverlayLayout, GamePreset } from '@/lib/roomUtils';
 
 export function useRoomState(roomId: string | undefined) {
   const [room, setRoom] = useState<Room | null>(null);
@@ -343,6 +343,35 @@ export function useRoomState(roomId: string | undefined) {
     updateRoom(prev => ({ ...prev, history: [] }));
   }, [updateRoom]);
 
+  const loadPreset = useCallback((preset: GamePreset) => {
+    updateRoom(prev => {
+      const newPlayerCount = preset.playerCount;
+      const newPlayers = preset.players.map((p, i) => ({
+        id: i + 1,
+        name: p.name,
+        life: preset.startingLife,
+        color: p.color,
+        poison: 0,
+        experience: 0,
+        energy: 0,
+        commanderDamage: {},
+      }));
+
+      return {
+        ...prev,
+        playerCount: newPlayerCount,
+        players: newPlayers,
+        settings: { ...prev.settings, startingLife: preset.startingLife },
+        monarchId: null,
+        initiativeId: null,
+        dungeonProgress: 0,
+        isDay: true,
+        history: [],
+        overlayLayout: createDefaultOverlayLayout(newPlayerCount),
+      };
+    });
+  }, [updateRoom]);
+
   return {
     room,
     loading,
@@ -365,5 +394,6 @@ export function useRoomState(roomId: string | undefined) {
     setPlayerCount,
     setStartingLife,
     clearHistory,
+    loadPreset,
   };
 }
