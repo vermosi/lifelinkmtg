@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom';
 import { useRoomState } from '@/hooks/useRoomState';
 import { cn } from '@/lib/utils';
-import { Skull } from 'lucide-react';
+import { Skull, Sparkles, Zap, Crown } from 'lucide-react';
 
 export function OverlayView() {
   const { roomId } = useParams<{ roomId: string }>();
@@ -44,6 +44,14 @@ export function OverlayView() {
                 : 'transparent' 
             }}
           >
+            {/* Monarch crown */}
+            {room.monarchId === player.id && (
+              <Crown 
+                className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 text-yellow-400 drop-shadow-lg" 
+                fill="currentColor" 
+              />
+            )}
+
             {room.settings.showNamesOnOverlay && (
               <div 
                 className="font-body font-semibold text-lg mb-1"
@@ -66,17 +74,31 @@ export function OverlayView() {
               {player.life}
             </div>
 
-            {/* Poison indicator */}
-            {player.poison > 0 && (
-              <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-lg bg-black/30">
-                <Skull className="w-3 h-3 text-green-400" />
-                <span className="font-display text-sm text-green-400">{player.poison}</span>
-              </div>
-            )}
+            {/* Counters row */}
+            <div className="flex gap-2 mt-2">
+              {player.poison > 0 && (
+                <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-black/30">
+                  <Skull className="w-3 h-3 text-green-400" />
+                  <span className="font-display text-xs text-green-400">{player.poison}</span>
+                </div>
+              )}
+              {player.experience > 0 && (
+                <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-black/30">
+                  <Sparkles className="w-3 h-3 text-yellow-400" />
+                  <span className="font-display text-xs text-yellow-400">{player.experience}</span>
+                </div>
+              )}
+              {player.energy > 0 && (
+                <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-black/30">
+                  <Zap className="w-3 h-3 text-blue-400" />
+                  <span className="font-display text-xs text-blue-400">{player.energy}</span>
+                </div>
+              )}
+            </div>
 
             {/* Commander damage indicators */}
             {Object.keys(player.commanderDamage).length > 0 && (
-              <div className="flex gap-1 mt-2">
+              <div className="flex gap-1 mt-1">
                 {room.players.filter(p => p.id !== player.id).map(opp => {
                   const dmg = player.commanderDamage[opp.id];
                   if (!dmg) return null;

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Room, Player, getRoom, saveRoom, loadRoomsState } from '@/lib/roomUtils';
+import { Room, HistoryEntry, getRoom, saveRoom, generateId } from '@/lib/roomUtils';
 
 export function useRoomState(roomId: string | undefined) {
   const [room, setRoom] = useState<Room | null>(null);
@@ -10,7 +10,6 @@ export function useRoomState(roomId: string | undefined) {
       setLoading(false);
       return;
     }
-
     const loadedRoom = getRoom(roomId);
     setRoom(loadedRoom);
     setLoading(false);
@@ -18,7 +17,6 @@ export function useRoomState(roomId: string | undefined) {
 
   useEffect(() => {
     if (!roomId) return;
-
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'lifeTrackerRooms' && e.newValue) {
         try {
@@ -26,28 +24,46 @@ export function useRoomState(roomId: string | undefined) {
           if (state.rooms[roomId]) {
             setRoom(state.rooms[roomId]);
           }
-        } catch {
-          // Ignore parse errors
-        }
+        } catch {}
       }
     };
-
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [roomId]);
 
   useEffect(() => {
     if (!roomId) return;
-
     const interval = setInterval(() => {
       const currentRoom = getRoom(roomId);
       if (currentRoom && JSON.stringify(currentRoom) !== JSON.stringify(room)) {
         setRoom(currentRoom);
       }
     }, 500);
-
     return () => clearInterval(interval);
   }, [roomId, room]);
+
+  const addHistoryEntry = useCallback((
+    prev: Room,
+    playerId: number,
+    type: HistoryEntry['type'],
+    oldValue: number,
+    newValue: number,
+    fromPlayerName?: string
+  ): HistoryEntry[] => {
+    if (oldValue === newValue) return prev.history;
+    const player = prev.players.find(p => p.id === playerId);
+    const entry: HistoryEntry = {
+      id: generateId(8),
+      timestamp: Date.now(),
+      playerId,
+      playerName: player?.name || `Player ${playerId}`,
+      type,
+      oldValue,
+      newValue,
+      fromPlayerName,
+    };
+    return [...prev.history, entry];
+  }, []);
 
   const updateRoom = useCallback((updater: (prev: Room) => Room) => {
     setRoom(prev => {
@@ -59,22 +75,33 @@ export function useRoomState(roomId: string | undefined) {
   }, []);
 
   const updatePlayerLife = useCallback((playerId: number, delta: number) => {
-    updateRoom(prev => ({
-      ...prev,
-      players: prev.players.map(p =>
-        p.id === playerId ? { ...p, life: p.life + delta } : p
-      ),
-    }));
-  }, [updateRoom]);
+    updateRoom(prev => {
+      const player = prev.players.find(p => p.id === playerId);
+      const oldValue = player?.life || 0;
+      const newValue = oldValue + delta;
+      return {
+        ...prev,
+        players: prev.players.map(p =>
+          p.id === playerId ? { ...p, life: newValue } : p
+        ),
+        history: addHistoryEntry(prev, playerId, 'life', oldValue, newValue),
+      };
+    });
+  }, [updateRoom, addHistoryEntry]);
 
   const setPlayerLife = useCallback((playerId: number, life: number) => {
-    updateRoom(prev => ({
-      ...prev,
-      players: prev.players.map(p =>
-        p.id === playerId ? { ...p, life } : p
-      ),
-    }));
-  }, [updateRoom]);
+    updateRoom(prev => {
+      const player = prev.players.find(p => p.id === playerId);
+      const oldValue = player?.life || 0;
+      return {
+        ...prev,
+        players: prev.players.map(p =>
+          p.id === playerId ? { ...p, life } : p
+        ),
+        history: addHistoryEntry(prev, playerId, 'life', oldValue, life),
+      };
+    });
+  }, [updateRoom, addHistoryEntry]);
 
   const setPlayerName = useCallback((playerId: number, name: string) => {
     updateRoom(prev => ({
@@ -95,30 +122,88 @@ export function useRoomState(roomId: string | undefined) {
   }, [updateRoom]);
 
   const updatePlayerPoison = useCallback((playerId: number, delta: number) => {
-    updateRoom(prev => ({
-      ...prev,
-      players: prev.players.map(p =>
-        p.id === playerId ? { ...p, poison: Math.max(0, p.poison + delta) } : p
-      ),
-    }));
-  }, [updateRoom]);
+    updateRoom(prev => {
+      const player = prev.players.find(p => p.id === playerId);
+      const oldValue = player?.poison || 0;
+      const newValue = Math.max(0, oldValue + delta);
+      return {
+        ...prev,
+        players: prev.players.map(p =>
+          p.id === playerId ? { ...p, poison: newValue } : p
+        ),
+        history: addHistoryEntry(prev, playerId, 'poison', oldValue, newValue),
+      };
+    });
+  }, [updateRoom, addHistoryEntry]);
+
+  const updatePlayerExperience = useCallback((playerId: number, delta: number) => {
+    updateRoom(prev => {
+      const player = prev.players.find(p => p.id === playerId);
+      const oldValue = player?.experience || 0;
+      const newValue = Math.max(0, oldValue + delta);
+      return {
+        ...prev,
+        players: prev.players.map(p =>
+          p.id === playerId ? { ...p, experience: newValue } : p
+        ),
+        history: addHistoryEntry(prev, playerId, 'experience', oldValue, newValue),
+      };
+    });
+  }, [updateRoom, addHistoryEntry]);
+
+  const updatePlayerEnergy = useCallback((playerId: number, delta: number) => {
+    updateRoom(prev => {
+      const player = prev.players.find(p => p.id === playerId);
+      const oldValue = player?.energy || 0;
+      const newValue = Math.max(0, oldValue + delta);
+      return {
+        ...prev,
+        players: prev.players.map(p =>
+          p.id === playerId ? { ...p, energy: newValue } : p
+        ),
+        history: addHistoryEntry(prev, playerId, 'energy', oldValue, newValue),
+      };
+    });
+  }, [updateRoom, addHistoryEntry]);
 
   const updateCommanderDamage = useCallback((playerId: number, fromPlayerId: number, delta: number) => {
-    updateRoom(prev => ({
-      ...prev,
-      players: prev.players.map(p => {
-        if (p.id !== playerId) return p;
-        const currentDamage = p.commanderDamage[fromPlayerId] || 0;
-        return {
-          ...p,
-          commanderDamage: {
-            ...p.commanderDamage,
-            [fromPlayerId]: Math.max(0, currentDamage + delta),
-          },
-        };
-      }),
-    }));
-  }, [updateRoom]);
+    updateRoom(prev => {
+      const player = prev.players.find(p => p.id === playerId);
+      const fromPlayer = prev.players.find(p => p.id === fromPlayerId);
+      const oldValue = player?.commanderDamage[fromPlayerId] || 0;
+      const newValue = Math.max(0, oldValue + delta);
+      return {
+        ...prev,
+        players: prev.players.map(p => {
+          if (p.id !== playerId) return p;
+          return {
+            ...p,
+            commanderDamage: {
+              ...p.commanderDamage,
+              [fromPlayerId]: newValue,
+            },
+          };
+        }),
+        history: addHistoryEntry(prev, playerId, 'commander', oldValue, newValue, fromPlayer?.name),
+      };
+    });
+  }, [updateRoom, addHistoryEntry]);
+
+  const setMonarch = useCallback((playerId: number | null) => {
+    updateRoom(prev => {
+      const oldMonarch = prev.players.find(p => p.id === prev.monarchId);
+      const newMonarch = prev.players.find(p => p.id === playerId);
+      let history = prev.history;
+      if (playerId !== prev.monarchId && playerId !== null) {
+        history = addHistoryEntry(prev, playerId, 'monarch', 0, 1);
+      }
+      return {
+        ...prev,
+        monarchId: playerId,
+        history,
+      };
+    });
+  }, [updateRoom, addHistoryEntry]);
 
   const resetGame = useCallback(() => {
     updateRoom(prev => ({
@@ -127,8 +212,12 @@ export function useRoomState(roomId: string | undefined) {
         ...p,
         life: prev.settings.startingLife,
         poison: 0,
+        experience: 0,
+        energy: 0,
         commanderDamage: {},
       })),
+      monarchId: null,
+      history: [],
     }));
   }, [updateRoom]);
 
@@ -152,6 +241,8 @@ export function useRoomState(roomId: string | undefined) {
             life: prev.settings.startingLife,
             color: defaultColors[i],
             poison: 0,
+            experience: 0,
+            energy: 0,
             commanderDamage: {},
           });
         }
@@ -163,6 +254,7 @@ export function useRoomState(roomId: string | undefined) {
         ...prev,
         playerCount: count,
         players: newPlayers,
+        monarchId: prev.monarchId && prev.monarchId <= count ? prev.monarchId : null,
       };
     });
   }, [updateRoom]);
@@ -171,8 +263,21 @@ export function useRoomState(roomId: string | undefined) {
     updateRoom(prev => ({
       ...prev,
       settings: { ...prev.settings, startingLife: life },
-      players: prev.players.map(p => ({ ...p, life, poison: 0, commanderDamage: {} })),
+      players: prev.players.map(p => ({ 
+        ...p, 
+        life, 
+        poison: 0, 
+        experience: 0,
+        energy: 0,
+        commanderDamage: {} 
+      })),
+      monarchId: null,
+      history: [],
     }));
+  }, [updateRoom]);
+
+  const clearHistory = useCallback(() => {
+    updateRoom(prev => ({ ...prev, history: [] }));
   }, [updateRoom]);
 
   return {
@@ -184,9 +289,13 @@ export function useRoomState(roomId: string | undefined) {
     setPlayerName,
     setPlayerColor,
     updatePlayerPoison,
+    updatePlayerExperience,
+    updatePlayerEnergy,
     updateCommanderDamage,
+    setMonarch,
     resetGame,
     setPlayerCount,
     setStartingLife,
+    clearHistory,
   };
 }
