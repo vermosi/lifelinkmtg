@@ -40,7 +40,10 @@ export function RoomSelector() {
           <h1 className="font-display text-6xl text-foreground tracking-tight">
             LifeLink
           </h1>
-          <p className="text-muted-foreground text-lg -mt-1">
+          <p className="text-accent font-medium text-lg mt-1">
+            Track. Play. Win.
+          </p>
+          <p className="text-muted-foreground text-sm mt-1">
             Counter & OBS Overlay
           </p>
         </div>
