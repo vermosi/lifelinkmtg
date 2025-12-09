@@ -2,71 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap');
 
 @layer base {
   :root {
-    --background: 220 20% 6%;
+    --background: 0 0% 8%;
     --foreground: 0 0% 98%;
 
-    --card: 220 20% 10%;
+    --card: 0 0% 12%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 220 20% 8%;
+    --popover: 0 0% 10%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 142 70% 45%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 8%;
 
-    --secondary: 220 20% 16%;
+    --secondary: 0 0% 18%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 220 15% 20%;
-    --muted-foreground: 220 10% 60%;
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 60%;
 
-    --accent: 280 80% 60%;
+    --accent: 210 100% 60%;
     --accent-foreground: 0 0% 98%;
 
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 220 20% 18%;
-    --input: 220 20% 18%;
-    --ring: 142 70% 45%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 0 0% 98%;
 
     --radius: 0.75rem;
 
-    /* Player colors - gaming inspired */
-    --player-1: 45 100% 55%;
-    --player-2: 200 100% 50%;
-    --player-3: 0 0% 30%;
-    --player-4: 0 80% 55%;
-
-    /* Glow effects */
-    --glow-primary: 142 70% 45%;
-    --glow-intensity: 0.4;
+    /* Player colors - vibrant, saturated */
+    --player-1: 45 90% 45%;
+    --player-2: 345 75% 40%;
+    --player-3: 270 40% 30%;
+    --player-4: 220 60% 30%;
 
     /* Font families */
-    --font-display: 'Orbitron', sans-serif;
+    --font-display: 'Bebas Neue', sans-serif;
     --font-body: 'Inter', sans-serif;
-  }
-
-  .dark {
-    --background: 220 20% 6%;
-    --foreground: 0 0% 98%;
-  }
-
-  .light {
-    --background: 220 20% 95%;
-    --foreground: 220 20% 10%;
-    --card: 0 0% 100%;
-    --card-foreground: 220 20% 10%;
-    --secondary: 220 15% 90%;
-    --secondary-foreground: 220 20% 10%;
-    --muted: 220 15% 85%;
-    --muted-foreground: 220 10% 40%;
-    --border: 220 15% 85%;
-    --input: 220 15% 85%;
   }
 }
 
@@ -75,12 +53,13 @@
     @apply border-border;
   }
 
-  body {
-    @apply bg-background text-foreground font-body antialiased;
+  html, body, #root {
+    @apply h-full w-full m-0 p-0 overflow-hidden;
   }
 
-  html, body, #root {
-    @apply min-h-screen;
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-body);
   }
 }
 
@@ -93,76 +72,48 @@
     font-family: var(--font-body);
   }
 
-  .glow-primary {
-    text-shadow: 0 0 20px hsl(var(--primary) / 0.5),
-                 0 0 40px hsl(var(--primary) / 0.3),
-                 0 0 60px hsl(var(--primary) / 0.2);
+  .player-panel {
+    @apply relative flex items-center justify-center overflow-hidden select-none;
+    touch-action: manipulation;
   }
 
-  .glow-player-1 {
-    text-shadow: 0 0 20px hsl(var(--player-1) / 0.6),
-                 0 0 40px hsl(var(--player-1) / 0.4);
+  .life-number {
+    font-family: var(--font-display);
+    @apply font-normal tracking-tight;
+    color: rgba(0, 0, 0, 0.7);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
-  .glow-player-2 {
-    text-shadow: 0 0 20px hsl(var(--player-2) / 0.6),
-                 0 0 40px hsl(var(--player-2) / 0.4);
+  .life-button {
+    @apply absolute flex items-center justify-center text-4xl font-light select-none;
+    color: rgba(0, 0, 0, 0.3);
+    transition: color 0.15s, transform 0.1s;
   }
 
-  .glow-player-3 {
-    text-shadow: 0 0 20px hsl(var(--player-3) / 0.6),
-                 0 0 40px hsl(var(--player-3) / 0.4);
+  .life-button:hover {
+    color: rgba(0, 0, 0, 0.5);
   }
 
-  .glow-player-4 {
-    text-shadow: 0 0 20px hsl(var(--player-4) / 0.6),
-                 0 0 40px hsl(var(--player-4) / 0.4);
+  .life-button:active {
+    transform: scale(0.9);
+    color: rgba(0, 0, 0, 0.7);
   }
 
-  .panel-glow {
-    box-shadow: 0 0 30px -10px hsl(var(--primary) / 0.3),
-                inset 0 1px 0 hsl(0 0% 100% / 0.05);
-  }
-
-  .btn-life {
-    @apply flex items-center justify-center rounded-lg font-display font-bold
-           transition-all duration-150 active:scale-95 select-none
-           bg-secondary hover:bg-secondary/80 text-foreground;
-  }
-
-  .btn-life-primary {
-    @apply bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30;
+  .menu-button {
+    @apply absolute z-50 flex items-center justify-center rounded-full;
+    @apply bg-background/90 backdrop-blur-sm border-4 border-background;
+    @apply shadow-xl;
   }
 }
 
 @layer utilities {
-  .animate-pulse-life {
-    animation: pulse-life 0.3s ease-out;
+  .animate-pulse-scale {
+    animation: pulse-scale 0.2s ease-out;
   }
 
-  @keyframes pulse-life {
+  @keyframes pulse-scale {
     0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
+    50% { transform: scale(1.05); }
     100% { transform: scale(1); }
-  }
-
-  .animate-flash-green {
-    animation: flash-green 0.3s ease-out;
-  }
-
-  @keyframes flash-green {
-    0% { background-color: transparent; }
-    50% { background-color: hsl(142 70% 45% / 0.3); }
-    100% { background-color: transparent; }
-  }
-
-  .animate-flash-red {
-    animation: flash-red 0.3s ease-out;
-  }
-
-  @keyframes flash-red {
-    0% { background-color: transparent; }
-    50% { background-color: hsl(0 70% 50% / 0.3); }
-    100% { background-color: transparent; }
   }
 }

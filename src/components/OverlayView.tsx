@@ -8,62 +8,61 @@ export function OverlayView() {
 
   if (loading || !room) {
     return (
-      <div className="w-screen h-screen flex items-center justify-center bg-transparent">
-        <div className="font-display text-2xl text-white/50">
+      <div className="w-screen h-screen flex items-center justify-center" style={{ backgroundColor: 'transparent' }}>
+        <div className="font-display text-4xl text-white/30">
           {loading ? 'Loading...' : 'Room not found'}
         </div>
       </div>
     );
   }
 
-  const getLayoutClass = () => {
-    switch (room.playerCount) {
-      case 2:
-        return 'flex-row justify-between';
-      case 3:
-        return 'flex-row justify-between';
-      case 4:
-        return 'flex-row justify-between';
-      default:
-        return 'flex-row justify-between';
-    }
-  };
-
   const getFontSize = () => {
     switch (room.settings.overlayFontSize) {
       case 'small':
-        return 'text-4xl';
+        return 'text-5xl';
       case 'large':
-        return 'text-8xl';
+        return 'text-9xl';
       default:
-        return 'text-6xl';
+        return 'text-7xl';
     }
   };
 
   return (
     <div 
-      className="w-screen h-screen bg-transparent flex items-end p-8"
+      className="w-screen h-screen flex items-end justify-center p-6"
       style={{ backgroundColor: 'transparent' }}
     >
-      <div className={cn('w-full flex gap-4', getLayoutClass())}>
+      <div className="flex gap-4">
         {room.players.map((player) => (
           <div
             key={player.id}
             className={cn(
-              'flex-1 flex flex-col items-center justify-center py-4 px-6 rounded-xl transition-all',
-              room.settings.showBackgroundCards && 'bg-black/60 backdrop-blur-sm border border-white/10'
+              'flex flex-col items-center justify-center py-4 px-8 rounded-2xl min-w-[140px]',
+              room.settings.showBackgroundCards && 'backdrop-blur-md'
             )}
+            style={{ 
+              backgroundColor: room.settings.showBackgroundCards 
+                ? `hsl(${player.color} / 0.85)` 
+                : 'transparent' 
+            }}
           >
             {room.settings.showNamesOnOverlay && (
-              <div className="font-body font-semibold text-white/80 text-lg mb-1">
+              <div 
+                className="font-body font-semibold text-lg mb-1"
+                style={{ color: 'rgba(0,0,0,0.6)' }}
+              >
                 {player.name}
               </div>
             )}
             <div
-              className={cn('font-display font-bold', getFontSize())}
+              className={cn('font-display leading-none', getFontSize())}
               style={{
-                color: `hsl(${player.color})`,
-                textShadow: `0 0 30px hsl(${player.color} / 0.6), 0 0 60px hsl(${player.color} / 0.4), 0 2px 4px rgba(0,0,0,0.5)`,
+                color: room.settings.showBackgroundCards 
+                  ? 'rgba(0,0,0,0.7)' 
+                  : `hsl(${player.color})`,
+                textShadow: room.settings.showBackgroundCards 
+                  ? 'none'
+                  : `0 0 30px hsl(${player.color} / 0.6), 0 2px 4px rgba(0,0,0,0.5)`,
               }}
             >
               {player.life}

@@ -1,10 +1,9 @@
 import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { Copy, Check, RotateCcw, Users, Heart, Settings, ArrowLeft, Monitor, Shuffle } from 'lucide-react';
+import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Settings2 } from 'lucide-react';
 import { useRoomState } from '@/hooks/useRoomState';
 import { getControlUrl, getOverlayUrl } from '@/lib/roomUtils';
-import { PlayerPanel } from './PlayerPanel';
-import { Button } from '@/components/ui/button';
+import { FullScreenPlayerPanel } from './FullScreenPlayerPanel';
 import { cn } from '@/lib/utils';
 
 export function RoomControl() {
@@ -24,26 +23,29 @@ export function RoomControl() {
     setStartingLife,
   } = useRoomState(roomId);
 
+  const [menuOpen, setMenuOpen] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState<'control' | 'overlay' | null>(null);
-  const [showSettings, setShowSettings] = useState(false);
   const [highlightedPlayer, setHighlightedPlayer] = useState<number | null>(null);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="font-display text-2xl text-muted-foreground animate-pulse">Loading...</div>
+      <div className="h-screen w-screen flex items-center justify-center bg-background">
+        <div className="font-display text-4xl text-muted-foreground">Loading...</div>
       </div>
     );
   }
 
   if (!room) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-        <div className="font-display text-2xl text-foreground">Room not found</div>
-        <Button onClick={() => navigate('/')} variant="outline">
-          <ArrowLeft className="w-4 h-4 mr-2" />
+      <div className="h-screen w-screen flex flex-col items-center justify-center gap-6 bg-background">
+        <div className="font-display text-4xl text-foreground">Room not found</div>
+        <button
+          onClick={() => navigate('/')}
+          className="flex items-center gap-2 px-6 py-3 bg-secondary rounded-full text-foreground hover:bg-secondary/80 transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
           Back to Home
-        </Button>
+        </button>
       </div>
     );
   }
@@ -61,184 +63,240 @@ export function RoomControl() {
     const randomIndex = Math.floor(Math.random() * room.playerCount);
     setHighlightedPlayer(room.players[randomIndex].id);
     setTimeout(() => setHighlightedPlayer(null), 3000);
+    setMenuOpen(false);
   };
 
-  const getGridClass = () => {
-    switch (room.playerCount) {
-      case 2:
-        return 'grid-cols-1 sm:grid-cols-2';
-      case 3:
-        return 'grid-cols-1 sm:grid-cols-3';
-      case 4:
-        return 'grid-cols-2';
-      default:
-        return 'grid-cols-2';
+  // Get rotation and position for each player based on count
+  const getPlayerLayout = (index: number, total: number) => {
+    if (total === 2) {
+      return {
+        rotation: index === 0 ? 180 : 0,
+        gridArea: index === 0 ? 'top' : 'bottom',
+      };
     }
+    if (total === 3) {
+      if (index === 0) return { rotation: 180, gridArea: 'top-left' };
+      if (index === 1) return { rotation: 180, gridArea: 'top-right' };
+      return { rotation: 0, gridArea: 'bottom' };
+    }
+    // 4 players
+    const rotations = [180, 180, 0, 0];
+    const areas = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+    return { rotation: rotations[index], gridArea: areas[index] };
+  };
+
+  const getGridStyle = () => {
+    if (room.playerCount === 2) {
+      return {
+        display: 'grid',
+        gridTemplateRows: '1fr 1fr',
+        gridTemplateColumns: '1fr',
+      };
+    }
+    if (room.playerCount === 3) {
+      return {
+        display: 'grid',
+        gridTemplateRows: '1fr 1fr',
+        gridTemplateColumns: '1fr 1fr',
+      };
+    }
+    return {
+      display: 'grid',
+      gridTemplateRows: '1fr 1fr',
+      gridTemplateColumns: '1fr 1fr',
+    };
+  };
+
+  const getPlayerGridArea = (index: number, total: number) => {
+    if (total === 3 && index === 2) {
+      return { gridColumn: '1 / -1' };
+    }
+    return {};
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="flex items-center justify-between p-4 border-b border-border">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <h1 className="font-display font-bold text-lg text-foreground">Room {room.id}</h1>
-            <p className="text-xs text-muted-foreground">
-              {isAdmin ? 'Admin Control' : 'View Only'}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {isAdmin && (
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setShowSettings(!showSettings)}
-            >
-              <Settings className="w-4 h-4" />
-            </Button>
-          )}
-        </div>
-      </header>
-
-      {/* Settings panel */}
-      {showSettings && isAdmin && (
-        <div className="p-4 border-b border-border bg-card/50 animate-fade-in">
-          <div className="max-w-3xl mx-auto space-y-4">
-            <div className="flex flex-wrap gap-4">
-              {/* Player count */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Users className="w-4 h-4" /> Players
-                </label>
-                <div className="flex gap-1">
-                  {([2, 3, 4] as const).map((count) => (
-                    <button
-                      key={count}
-                      onClick={() => setPlayerCount(count)}
-                      className={cn(
-                        'px-4 py-2 rounded-lg font-display font-semibold transition-all',
-                        room.playerCount === count
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-secondary text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      {count}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Starting life */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Heart className="w-4 h-4" /> Starting Life
-                </label>
-                <div className="flex gap-1">
-                  {([20, 40] as const).map((life) => (
-                    <button
-                      key={life}
-                      onClick={() => setStartingLife(life)}
-                      className={cn(
-                        'px-4 py-2 rounded-lg font-display font-semibold transition-all',
-                        room.settings.startingLife === life
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-secondary text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      {life}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">Actions</label>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={resetGame}>
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Reset
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={randomizeFirstPlayer}>
-                    <Shuffle className="w-4 h-4 mr-2" />
-                    Random
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* URLs */}
-            <div className="flex flex-wrap gap-2">
-              {isAdmin && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => copyUrl('control')}
-                  className="gap-2"
-                >
-                  {copiedUrl === 'control' ? (
-                    <Check className="w-4 h-4 text-primary" />
-                  ) : (
-                    <Copy className="w-4 h-4" />
-                  )}
-                  Copy Control URL
-                </Button>
-              )}
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => copyUrl('overlay')}
-                className="gap-2"
-              >
-                {copiedUrl === 'overlay' ? (
-                  <Check className="w-4 h-4 text-primary" />
-                ) : (
-                  <Monitor className="w-4 h-4" />
-                )}
-                Copy Overlay URL
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
+    <div className="h-screen w-screen overflow-hidden relative">
       {/* Player grid */}
-      <main className="flex-1 p-4">
-        <div className={cn('grid gap-4 h-full max-w-4xl mx-auto', getGridClass())}>
-          {room.players.map((player) => (
+      <div className="h-full w-full" style={getGridStyle()}>
+        {room.players.map((player, index) => {
+          const layout = getPlayerLayout(index, room.playerCount);
+          return (
             <div
               key={player.id}
               className={cn(
-                'transition-all duration-300',
-                highlightedPlayer === player.id && 'ring-4 ring-primary rounded-2xl animate-pulse'
+                'relative',
+                highlightedPlayer === player.id && 'ring-4 ring-white ring-inset'
               )}
+              style={getPlayerGridArea(index, room.playerCount)}
             >
-              <PlayerPanel
+              <FullScreenPlayerPanel
                 player={player}
                 onLifeChange={(delta) => updatePlayerLife(player.id, delta)}
                 onLifeSet={(life) => setPlayerLife(player.id, life)}
-                onNameChange={(name) => setPlayerName(player.id, name)}
                 isAdmin={isAdmin}
-                compact={room.playerCount >= 3}
+                rotation={layout.rotation}
+                position={layout.gridArea as any}
               />
             </div>
-          ))}
-        </div>
-      </main>
+          );
+        })}
+      </div>
 
-      {/* Footer info */}
-      <footer className="p-4 border-t border-border text-center text-sm text-muted-foreground">
-        {isAdmin ? (
-          <span>Overlay URL: <code className="bg-secondary px-2 py-1 rounded">/room/{room.id}/overlay</code></span>
+      {/* Center menu button */}
+      <button
+        onClick={() => setMenuOpen(!menuOpen)}
+        className="menu-button w-14 h-14 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+      >
+        {menuOpen ? (
+          <X className="w-6 h-6 text-foreground" />
         ) : (
-          <span>View-only mode • Admin access required to make changes</span>
+          <Menu className="w-6 h-6 text-foreground" />
         )}
-      </footer>
+      </button>
+
+      {/* Menu overlay */}
+      {menuOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-background/95 backdrop-blur-sm flex items-center justify-center"
+          onClick={() => setMenuOpen(false)}
+        >
+          <div 
+            className="bg-card border border-border rounded-2xl p-6 w-[90%] max-w-md space-y-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-3xl text-foreground">Room {room.id}</h2>
+              <span className="text-sm text-muted-foreground px-3 py-1 bg-secondary rounded-full">
+                {isAdmin ? 'Admin' : 'View Only'}
+              </span>
+            </div>
+
+            {isAdmin && (
+              <>
+                {/* Player count */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Users className="w-4 h-4" /> Players
+                  </label>
+                  <div className="flex gap-2">
+                    {([2, 3, 4] as const).map((count) => (
+                      <button
+                        key={count}
+                        onClick={() => setPlayerCount(count)}
+                        className={cn(
+                          'flex-1 py-3 rounded-xl font-display text-2xl transition-all',
+                          room.playerCount === count
+                            ? 'bg-foreground text-background'
+                            : 'bg-secondary text-muted-foreground hover:text-foreground'
+                        )}
+                      >
+                        {count}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Starting life */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Heart className="w-4 h-4" /> Starting Life
+                  </label>
+                  <div className="flex gap-2">
+                    {([20, 40] as const).map((life) => (
+                      <button
+                        key={life}
+                        onClick={() => setStartingLife(life)}
+                        className={cn(
+                          'flex-1 py-3 rounded-xl font-display text-2xl transition-all',
+                          room.settings.startingLife === life
+                            ? 'bg-foreground text-background'
+                            : 'bg-secondary text-muted-foreground hover:text-foreground'
+                        )}
+                      >
+                        {life}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Player names */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Settings2 className="w-4 h-4" /> Player Names
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {room.players.map((player) => (
+                      <input
+                        key={player.id}
+                        type="text"
+                        value={player.name}
+                        onChange={(e) => setPlayerName(player.id, e.target.value)}
+                        className="px-3 py-2 rounded-lg bg-secondary text-foreground border border-border focus:outline-none focus:ring-2 focus:ring-foreground/20"
+                        placeholder={`Player ${player.id}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { resetGame(); setMenuOpen(false); }}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-secondary rounded-xl text-foreground hover:bg-secondary/80 transition-colors"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Reset
+                  </button>
+                  <button
+                    onClick={randomizeFirstPlayer}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-secondary rounded-xl text-foreground hover:bg-secondary/80 transition-colors"
+                  >
+                    <Shuffle className="w-4 h-4" />
+                    Random
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* URLs */}
+            <div className="space-y-2 pt-2 border-t border-border">
+              <button
+                onClick={() => copyUrl('overlay')}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-accent rounded-xl text-accent-foreground font-medium hover:bg-accent/90 transition-colors"
+              >
+                {copiedUrl === 'overlay' ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  <Monitor className="w-4 h-4" />
+                )}
+                Copy Overlay URL (for OBS)
+              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => copyUrl('control')}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-secondary rounded-xl text-foreground hover:bg-secondary/80 transition-colors"
+                >
+                  {copiedUrl === 'control' ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                  Copy Admin URL
+                </button>
+              )}
+            </div>
+
+            {/* Back to home */}
+            <button
+              onClick={() => navigate('/')}
+              className="w-full flex items-center justify-center gap-2 py-3 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Home
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
