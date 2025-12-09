@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useCloudRoomState } from '@/hooks/useCloudRoomState';
 import { cn } from '@/lib/utils';
 import { Skull, Sparkles, Zap, Crown, Shield, Sun, Moon, Move, Lock, Unlock, RotateCcw } from 'lucide-react';
@@ -63,27 +63,46 @@ function DraggableElement({ id, position, onPositionChange, isEditMode, children
   }, []);
 
   // Add global event listeners when dragging
-  useState(() => {
-    if (typeof window !== 'undefined') {
-      const mouseMove = (e: MouseEvent) => handleMouseMove(e);
-      const mouseUp = () => handleMouseUp();
-      const touchMove = (e: TouchEvent) => handleTouchMove(e);
-      const touchEnd = () => handleTouchEnd();
+  useEffect(() => {
+    if (!isDragging) return;
 
-      if (isDragging) {
-        window.addEventListener('mousemove', mouseMove);
-        window.addEventListener('mouseup', mouseUp);
-        window.addEventListener('touchmove', touchMove);
-        window.addEventListener('touchend', touchEnd);
-        return () => {
-          window.removeEventListener('mousemove', mouseMove);
-          window.removeEventListener('mouseup', mouseUp);
-          window.removeEventListener('touchmove', touchMove);
-          window.removeEventListener('touchend', touchEnd);
-        };
-      }
-    }
-  });
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      const deltaX = ((e.clientX - dragStart.current.x) / window.innerWidth) * 100;
+      const deltaY = ((e.clientY - dragStart.current.y) / window.innerHeight) * 100;
+      const newX = Math.max(5, Math.min(95, initialPos.current.x + deltaX));
+      const newY = Math.max(5, Math.min(95, initialPos.current.y + deltaY));
+      onPositionChange({ x: newX, y: newY });
+    };
+
+    const handleGlobalMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    const handleGlobalTouchMove = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      const deltaX = ((touch.clientX - dragStart.current.x) / window.innerWidth) * 100;
+      const deltaY = ((touch.clientY - dragStart.current.y) / window.innerHeight) * 100;
+      const newX = Math.max(5, Math.min(95, initialPos.current.x + deltaX));
+      const newY = Math.max(5, Math.min(95, initialPos.current.y + deltaY));
+      onPositionChange({ x: newX, y: newY });
+    };
+
+    const handleGlobalTouchEnd = () => {
+      setIsDragging(false);
+    };
+
+    window.addEventListener('mousemove', handleGlobalMouseMove);
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    window.addEventListener('touchmove', handleGlobalTouchMove);
+    window.addEventListener('touchend', handleGlobalTouchEnd);
+
+    return () => {
+      window.removeEventListener('mousemove', handleGlobalMouseMove);
+      window.removeEventListener('mouseup', handleGlobalMouseUp);
+      window.removeEventListener('touchmove', handleGlobalTouchMove);
+      window.removeEventListener('touchend', handleGlobalTouchEnd);
+    };
+  }, [isDragging, onPositionChange]);
 
   return (
     <div

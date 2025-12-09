@@ -49,7 +49,7 @@ export function RoomSelector() {
       <div className="w-full max-w-sm space-y-10">
         {/* Logo */}
         <div className="text-center">
-          <Infinity className="w-16 h-16 mx-auto text-accent mb-2" strokeWidth={1.5} />
+          <Infinity className="w-16 h-16 mx-auto text-accent mb-2 animate-infinity-glow" strokeWidth={1.5} />
           <h1 className="font-display text-6xl text-foreground tracking-tight">
             LifeLink
           </h1>
