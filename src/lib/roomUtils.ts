@@ -68,6 +68,67 @@ export interface RoomsState {
   recentRoomIds: string[];
 }
 
+export interface PlayerPreset {
+  name: string;
+  color: string;
+}
+
+export interface GamePreset {
+  id: string;
+  name: string;
+  players: PlayerPreset[];
+  playerCount: 2 | 3 | 4;
+  startingLife: 20 | 40;
+  createdAt: number;
+}
+
+export interface PresetsState {
+  presets: GamePreset[];
+}
+
+const PRESETS_KEY = 'lifeTrackerPresets';
+
+export function loadPresets(): GamePreset[] {
+  try {
+    const stored = localStorage.getItem(PRESETS_KEY);
+    if (stored) {
+      const state: PresetsState = JSON.parse(stored);
+      return state.presets || [];
+    }
+  } catch {
+    // Ignore errors
+  }
+  return [];
+}
+
+export function savePreset(preset: GamePreset): void {
+  const presets = loadPresets();
+  const existingIndex = presets.findIndex(p => p.id === preset.id);
+  if (existingIndex >= 0) {
+    presets[existingIndex] = preset;
+  } else {
+    presets.push(preset);
+  }
+  localStorage.setItem(PRESETS_KEY, JSON.stringify({ presets }));
+}
+
+export function deletePreset(presetId: string): void {
+  const presets = loadPresets().filter(p => p.id !== presetId);
+  localStorage.setItem(PRESETS_KEY, JSON.stringify({ presets }));
+}
+
+export function createPresetFromRoom(room: Room, presetName: string): GamePreset {
+  return {
+    id: generateId(8),
+    name: presetName,
+    players: room.players.map(p => ({ name: p.name, color: p.color })),
+    playerCount: room.playerCount,
+    startingLife: room.settings.startingLife,
+    createdAt: Date.now(),
+  };
+}
+
+
 export const PLAYER_COLORS = [
   { name: 'Gold', value: '45 90% 45%' },
   { name: 'Crimson', value: '345 75% 40%' },
