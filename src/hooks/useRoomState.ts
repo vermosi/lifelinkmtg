@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Room, HistoryEntry, getRoom, saveRoom, generateId } from '@/lib/roomUtils';
+import { Room, HistoryEntry, OverlayLayout, getRoom, saveRoom, generateId, createDefaultOverlayLayout } from '@/lib/roomUtils';
 
 export function useRoomState(roomId: string | undefined) {
   const [room, setRoom] = useState<Room | null>(null);
@@ -246,6 +246,20 @@ export function useRoomState(roomId: string | undefined) {
     });
   }, [updateRoom]);
 
+  const updateOverlayLayout = useCallback((layout: OverlayLayout) => {
+    updateRoom(prev => ({
+      ...prev,
+      overlayLayout: layout,
+    }));
+  }, [updateRoom]);
+
+  const resetOverlayLayout = useCallback(() => {
+    updateRoom(prev => ({
+      ...prev,
+      overlayLayout: createDefaultOverlayLayout(prev.playerCount),
+    }));
+  }, [updateRoom]);
+
   const resetGame = useCallback(() => {
     updateRoom(prev => ({
       ...prev,
@@ -300,6 +314,7 @@ export function useRoomState(roomId: string | undefined) {
         players: newPlayers,
         monarchId: prev.monarchId && prev.monarchId <= count ? prev.monarchId : null,
         initiativeId: prev.initiativeId && prev.initiativeId <= count ? prev.initiativeId : null,
+        overlayLayout: createDefaultOverlayLayout(count),
       };
     });
   }, [updateRoom]);
@@ -344,6 +359,8 @@ export function useRoomState(roomId: string | undefined) {
     setInitiative,
     advanceDungeon,
     toggleDayNight,
+    updateOverlayLayout,
+    resetOverlayLayout,
     resetGame,
     setPlayerCount,
     setStartingLife,

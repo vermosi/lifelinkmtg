@@ -29,6 +29,17 @@ export interface RoomSettings {
   overlayLayout: 'horizontal' | 'vertical';
 }
 
+export interface OverlayPosition {
+  x: number;
+  y: number;
+}
+
+export interface OverlayLayout {
+  players: Record<number, OverlayPosition>;
+  dayNight: OverlayPosition;
+  dungeon: OverlayPosition;
+}
+
 export const DUNGEON_ROOMS = [
   'Secret Entrance',
   'Forge',
@@ -44,9 +55,10 @@ export interface Room {
   settings: RoomSettings;
   monarchId: number | null;
   initiativeId: number | null;
-  dungeonProgress: number; // 0-3 for the 4 rooms
+  dungeonProgress: number;
   isDay: boolean;
   history: HistoryEntry[];
+  overlayLayout: OverlayLayout | null;
   createdAt: number;
   lastUpdated: number;
 }
@@ -96,6 +108,22 @@ export function createDefaultPlayers(count: 2 | 3 | 4, startingLife: number): Pl
   }));
 }
 
+export function createDefaultOverlayLayout(playerCount: number): OverlayLayout {
+  const players: Record<number, OverlayPosition> = {};
+  const baseY = 85; // percentage from top
+  const spacing = 100 / (playerCount + 1);
+  
+  for (let i = 1; i <= playerCount; i++) {
+    players[i] = { x: spacing * i, y: baseY };
+  }
+  
+  return {
+    players,
+    dayNight: { x: 5, y: 5 },
+    dungeon: { x: 95, y: 5 },
+  };
+}
+
 export function createRoom(playerCount: 2 | 3 | 4 = 4): Room {
   const startingLife = 40;
   return {
@@ -116,6 +144,7 @@ export function createRoom(playerCount: 2 | 3 | 4 = 4): Room {
     dungeonProgress: 0,
     isDay: true,
     history: [],
+    overlayLayout: createDefaultOverlayLayout(playerCount),
     createdAt: Date.now(),
     lastUpdated: Date.now(),
   };
@@ -148,6 +177,9 @@ export function loadRoomsState(): RoomsState {
         room.dungeonProgress = room.dungeonProgress ?? 0;
         room.isDay = room.isDay ?? true;
         room.history = room.history ?? [];
+        if (!room.overlayLayout) {
+          room.overlayLayout = createDefaultOverlayLayout(room.playerCount);
+        }
       }
       return state;
     }
