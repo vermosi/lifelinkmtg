@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Player } from '@/lib/roomUtils';
+import { Player, DUNGEON_ROOMS } from '@/lib/roomUtils';
 import { cn } from '@/lib/utils';
-import { Skull, ChevronLeft, ChevronRight, X, Crown, Zap, Sparkles } from 'lucide-react';
+import { Skull, ChevronLeft, ChevronRight, X, Crown, Zap, Sparkles, Shield } from 'lucide-react';
 
 interface FullScreenPlayerPanelProps {
   player: Player;
   allPlayers: Player[];
   isMonarch: boolean;
+  hasInitiative: boolean;
+  dungeonProgress: number;
   onLifeChange: (delta: number) => void;
   onLifeSet: (life: number) => void;
   onPoisonChange: (delta: number) => void;
@@ -14,6 +16,8 @@ interface FullScreenPlayerPanelProps {
   onEnergyChange: (delta: number) => void;
   onCommanderDamageChange: (fromPlayerId: number, delta: number) => void;
   onToggleMonarch: () => void;
+  onToggleInitiative: () => void;
+  onAdvanceDungeon: () => void;
   isAdmin: boolean;
   rotation: number;
 }
@@ -25,6 +29,8 @@ export function FullScreenPlayerPanel({
   player,
   allPlayers,
   isMonarch,
+  hasInitiative,
+  dungeonProgress,
   onLifeChange,
   onLifeSet,
   onPoisonChange,
@@ -32,6 +38,8 @@ export function FullScreenPlayerPanel({
   onEnergyChange,
   onCommanderDamageChange,
   onToggleMonarch,
+  onToggleInitiative,
+  onAdvanceDungeon,
   isAdmin,
   rotation,
 }: FullScreenPlayerPanelProps) {
@@ -41,7 +49,9 @@ export function FullScreenPlayerPanel({
   const [overlayMode, setOverlayMode] = useState<OverlayMode>('none');
   const [counterTab, setCounterTab] = useState<CounterTab>('poison');
   const [commanderIndex, setCommanderIndex] = useState(0);
+  const [isFocused, setIsFocused] = useState(false);
   
+  const panelRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const touchStartX = useRef<number>(0);
@@ -55,6 +65,63 @@ export function FullScreenPlayerPanel({
       inputRef.current.select();
     }
   }, [isEditing]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    if (!isFocused || !isAdmin || overlayMode !== 'none') return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent defaults for our shortcuts
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '+', '-', '='].includes(e.key)) {
+        e.preventDefault();
+      }
+
+      switch (e.key) {
+        case 'ArrowUp':
+        case '+':
+        case '=':
+          handleLifeChange(e.shiftKey ? 5 : 1);
+          break;
+        case 'ArrowDown':
+        case '-':
+          handleLifeChange(e.shiftKey ? -5 : -1);
+          break;
+        case 'ArrowRight':
+          handleLifeChange(5);
+          break;
+        case 'ArrowLeft':
+          handleLifeChange(-5);
+          break;
+        case '1': handleLifeChange(-1); break;
+        case '2': handleLifeChange(-2); break;
+        case '3': handleLifeChange(-3); break;
+        case '4': handleLifeChange(-4); break;
+        case '5': handleLifeChange(-5); break;
+        case '6': handleLifeChange(1); break;
+        case '7': handleLifeChange(2); break;
+        case '8': handleLifeChange(3); break;
+        case '9': handleLifeChange(4); break;
+        case '0': handleLifeChange(5); break;
+        case 'Enter':
+        case ' ':
+          setEditValue(player.life.toString());
+          setIsEditing(true);
+          break;
+        case 'c':
+          setOverlayMode('counters');
+          break;
+        case 'm':
+          onToggleMonarch();
+          break;
+        case 'i':
+          onToggleInitiative();
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFocused, isAdmin, overlayMode, player.life, onToggleMonarch, onToggleInitiative]);
 
   const handleLifeChange = (delta: number) => {
     if (!isAdmin) return;
@@ -84,12 +151,10 @@ export function FullScreenPlayerPanel({
     }
   };
 
-  // Touch handling for long press
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (!isAdmin) return;
     touchStartX.current = e.touches[0].clientX;
     isSwiping.current = false;
-
     longPressTimer.current = setTimeout(() => {
       if (!isSwiping.current) {
         setOverlayMode('counters');
@@ -109,7 +174,6 @@ export function FullScreenPlayerPanel({
     clearLongPress();
   }, []);
 
-  // Mouse handling for PC users
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     if (!isAdmin) return;
     e.preventDefault();
@@ -131,7 +195,6 @@ export function FullScreenPlayerPanel({
     clearLongPress();
   }, []);
 
-  // Swipe handling
   const handleSwipeStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
   }, []);
@@ -182,8 +245,15 @@ export function FullScreenPlayerPanel({
 
   return (
     <div
-      className="player-panel w-full h-full relative"
+      ref={panelRef}
+      tabIndex={isAdmin ? 0 : -1}
+      className={cn(
+        "player-panel w-full h-full relative outline-none",
+        isFocused && isAdmin && "ring-4 ring-white/50 ring-inset"
+      )}
       style={{ backgroundColor: `hsl(${player.color})` }}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
       onTouchStart={overlayMode === 'none' ? handleTouchStart : handleSwipeStart}
       onTouchMove={overlayMode === 'none' ? handleTouchMove : undefined}
       onTouchEnd={overlayMode === 'none' ? handleTouchEnd : handleSwipeEnd}
@@ -191,36 +261,45 @@ export function FullScreenPlayerPanel({
       onMouseDown={overlayMode === 'none' ? handleMouseDown : undefined}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
+      role="button"
+      aria-label={`${player.name}: ${player.life} life. ${isAdmin ? 'Click to focus, arrow keys to adjust life.' : ''}`}
     >
-      {/* Monarch crown */}
-      {isMonarch && (
-        <div 
-          className="absolute top-4 left-1/2 -translate-x-1/2 z-10"
-          style={{ transform: `translateX(-50%) rotate(${rotation}deg)` }}
-        >
-          <Crown className="w-8 h-8 text-yellow-400 drop-shadow-lg" fill="currentColor" />
-        </div>
-      )}
+      {/* Status badges - top */}
+      <div 
+        className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex gap-2"
+        style={{ transform: `translateX(-50%) rotate(${rotation}deg)` }}
+      >
+        {isMonarch && (
+          <div className="p-1.5 rounded-full bg-black/40" title="Monarch">
+            <Crown className="w-5 h-5 text-yellow-400" fill="currentColor" />
+          </div>
+        )}
+        {hasInitiative && (
+          <div className="p-1.5 rounded-full bg-black/40 flex items-center gap-1" title={`Initiative: ${DUNGEON_ROOMS[dungeonProgress]}`}>
+            <Shield className="w-5 h-5 text-purple-400" fill="currentColor" />
+            <span className="text-xs font-bold text-purple-300 pr-1">{dungeonProgress + 1}/4</span>
+          </div>
+        )}
+      </div>
 
       {/* Main life view */}
       <div
         className={cn(
           "relative flex flex-col items-center justify-center w-full h-full transition-opacity",
-          overlayMode !== 'none' && 'opacity-30'
+          overlayMode !== 'none' && 'opacity-20'
         )}
         style={{ transform: `rotate(${rotation}deg)` }}
       >
-        {/* Minus button */}
         {isAdmin && overlayMode === 'none' && (
           <button
             onClick={() => handleLifeChange(-1)}
-            className="life-button top-8"
+            className="life-button top-12"
+            aria-label="Decrease life by 1"
           >
             −
           </button>
         )}
 
-        {/* Life total */}
         {isEditing ? (
           <input
             ref={inputRef}
@@ -230,6 +309,7 @@ export function FullScreenPlayerPanel({
             onBlur={handleEditSubmit}
             onKeyDown={(e) => e.key === 'Enter' && handleEditSubmit()}
             className="life-number text-[18vmin] w-[4ch] text-center bg-transparent outline-none"
+            aria-label="Edit life total"
           />
         ) : (
           <button
@@ -240,56 +320,58 @@ export function FullScreenPlayerPanel({
               animating && 'animate-pulse-scale',
               isAdmin && overlayMode === 'none' && 'cursor-pointer active:scale-95'
             )}
+            aria-label={`Life total: ${player.life}. Click to edit.`}
           >
             {player.life}
           </button>
         )}
 
-        {/* Plus button */}
         {isAdmin && overlayMode === 'none' && (
           <button
             onClick={() => handleLifeChange(1)}
-            className="life-button bottom-8"
+            className="life-button bottom-12"
+            aria-label="Increase life by 1"
           >
             +
           </button>
         )}
 
-        {/* Counter indicators (bottom left) */}
+        {/* Counter indicators */}
         {overlayMode === 'none' && (
-          <div className="absolute bottom-16 left-4 flex flex-col gap-1">
+          <div className="absolute bottom-20 left-4 flex flex-col gap-1">
             {player.poison > 0 && (
-              <div className="flex items-center gap-1 px-2 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}>
+              <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-black/50 backdrop-blur-sm" aria-label={`Poison: ${player.poison}`}>
                 <Skull className="w-4 h-4 text-green-400" />
-                <span className="font-display text-sm text-green-400">{player.poison}</span>
+                <span className="font-display text-sm text-green-400 font-bold">{player.poison}</span>
               </div>
             )}
             {player.experience > 0 && (
-              <div className="flex items-center gap-1 px-2 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}>
+              <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-black/50 backdrop-blur-sm" aria-label={`Experience: ${player.experience}`}>
                 <Sparkles className="w-4 h-4 text-yellow-400" />
-                <span className="font-display text-sm text-yellow-400">{player.experience}</span>
+                <span className="font-display text-sm text-yellow-400 font-bold">{player.experience}</span>
               </div>
             )}
             {player.energy > 0 && (
-              <div className="flex items-center gap-1 px-2 py-1 rounded-lg" style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}>
+              <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-black/50 backdrop-blur-sm" aria-label={`Energy: ${player.energy}`}>
                 <Zap className="w-4 h-4 text-blue-400" />
-                <span className="font-display text-sm text-blue-400">{player.energy}</span>
+                <span className="font-display text-sm text-blue-400 font-bold">{player.energy}</span>
               </div>
             )}
           </div>
         )}
 
-        {/* Commander damage indicators (bottom right) */}
+        {/* Commander damage indicators */}
         {overlayMode === 'none' && Object.keys(player.commanderDamage).length > 0 && (
-          <div className="absolute bottom-16 right-4 flex gap-1">
+          <div className="absolute bottom-20 right-4 flex gap-1">
             {opponents.map(opp => {
               const dmg = player.commanderDamage[opp.id];
               if (!dmg) return null;
               return (
                 <div
                   key={opp.id}
-                  className="px-2 py-1 rounded-lg text-xs font-display"
-                  style={{ backgroundColor: `hsl(${opp.color} / 0.8)`, color: 'rgba(0,0,0,0.7)' }}
+                  className="px-2 py-1 rounded-lg text-xs font-display font-bold"
+                  style={{ backgroundColor: `hsl(${opp.color})`, color: 'rgba(0,0,0,0.8)' }}
+                  aria-label={`Commander damage from ${opp.name}: ${dmg}`}
                 >
                   {dmg}
                 </div>
@@ -298,45 +380,54 @@ export function FullScreenPlayerPanel({
           </div>
         )}
 
-        {/* Hint text for PC users */}
-        {isAdmin && overlayMode === 'none' && (
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs opacity-30" style={{ color: 'rgba(0,0,0,0.5)' }}>
-            Right-click for counters
+        {/* Keyboard hint */}
+        {isAdmin && overlayMode === 'none' && isFocused && (
+          <div 
+            className="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs px-2 py-1 rounded bg-black/50 backdrop-blur-sm"
+            style={{ color: 'white' }}
+          >
+            ↑↓ Life · C Counters · M Monarch · I Initiative
           </div>
         )}
       </div>
 
-      {/* Counters Overlay */}
+      {/* Counters Overlay - WCAG compliant with solid background */}
       {overlayMode === 'counters' && (
         <div 
-          className="absolute inset-0 flex flex-col items-center justify-center z-20 p-4"
+          className="absolute inset-0 flex flex-col items-center justify-center z-20 p-4 bg-gray-900/95 backdrop-blur-md"
           style={{ transform: `rotate(${rotation}deg)` }}
+          role="dialog"
+          aria-label="Counter overlay"
         >
           <button
             onClick={closeOverlay}
-            className="absolute top-4 right-4 p-2 rounded-full"
-            style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+            aria-label="Close overlay"
           >
             <X className="w-5 h-5 text-white" />
           </button>
 
           {/* Tab selector */}
-          <div className="flex gap-2 mb-6">
+          <div className="flex gap-2 mb-6" role="tablist">
             {(['poison', 'experience', 'energy'] as const).map(tab => {
               const Icon = tab === 'poison' ? Skull : tab === 'experience' ? Sparkles : Zap;
               const color = tab === 'poison' ? 'text-green-400' : tab === 'experience' ? 'text-yellow-400' : 'text-blue-400';
-              const bgColor = tab === 'poison' ? 'bg-green-400/20' : tab === 'experience' ? 'bg-yellow-400/20' : 'bg-blue-400/20';
+              const bgColor = tab === 'poison' ? 'bg-green-500/30' : tab === 'experience' ? 'bg-yellow-500/30' : 'bg-blue-500/30';
+              const isActive = counterTab === tab;
               return (
                 <button
                   key={tab}
                   onClick={() => setCounterTab(tab)}
                   className={cn(
-                    'px-4 py-2 rounded-xl flex items-center gap-2 transition-all',
-                    counterTab === tab ? bgColor : 'bg-black/20'
+                    'px-4 py-2 rounded-xl flex items-center gap-2 transition-all font-medium',
+                    isActive ? bgColor : 'bg-white/10 hover:bg-white/20'
                   )}
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-label={`${tab} counter`}
                 >
-                  <Icon className={cn('w-5 h-5', counterTab === tab ? color : 'text-white/50')} />
-                  <span className={cn('font-medium capitalize', counterTab === tab ? color : 'text-white/50')}>
+                  <Icon className={cn('w-5 h-5', isActive ? color : 'text-white/60')} />
+                  <span className={cn('capitalize', isActive ? color : 'text-white/60')}>
                     {tab}
                   </span>
                 </button>
@@ -348,97 +439,147 @@ export function FullScreenPlayerPanel({
           <div className="flex items-center gap-6">
             <button
               onClick={() => handleCounterChange(-1)}
-              className="w-14 h-14 rounded-full flex items-center justify-center text-3xl font-light"
-              style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'white' }}
+              className="w-16 h-16 rounded-full flex items-center justify-center text-4xl font-light bg-white/20 hover:bg-white/30 text-white transition-colors"
+              aria-label={`Decrease ${counterTab}`}
             >
               −
             </button>
             <div className="flex flex-col items-center">
-              <CounterIcon className={cn('w-8 h-8 mb-2', counterColor)} />
-              <span className={cn('font-display text-[12vmin] leading-none', counterColor)}>
+              <CounterIcon className={cn('w-10 h-10 mb-2', counterColor)} />
+              <span className={cn('font-display text-[14vmin] leading-none', counterColor)}>
                 {getCounterValue()}
               </span>
             </div>
             <button
               onClick={() => handleCounterChange(1)}
-              className="w-14 h-14 rounded-full flex items-center justify-center text-3xl font-light"
-              style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'white' }}
+              className="w-16 h-16 rounded-full flex items-center justify-center text-4xl font-light bg-white/20 hover:bg-white/30 text-white transition-colors"
+              aria-label={`Increase ${counterTab}`}
             >
               +
             </button>
           </div>
 
-          {/* Bottom actions */}
-          <div className="flex gap-3 mt-8">
+          {/* Status toggles */}
+          <div className="flex flex-wrap gap-3 mt-8 justify-center">
             <button
               onClick={onToggleMonarch}
               className={cn(
                 'px-5 py-3 rounded-xl font-medium flex items-center gap-2 transition-all',
-                isMonarch ? 'bg-yellow-400/30 text-yellow-400' : 'bg-black/30 text-white'
+                isMonarch ? 'bg-yellow-500/40 text-yellow-300' : 'bg-white/10 hover:bg-white/20 text-white'
               )}
+              aria-pressed={isMonarch}
             >
               <Crown className="w-5 h-5" fill={isMonarch ? 'currentColor' : 'none'} />
               {isMonarch ? 'Monarch' : 'Make Monarch'}
             </button>
             <button
-              onClick={switchToCommander}
-              className="px-5 py-3 rounded-xl font-medium bg-black/30 text-white"
+              onClick={onToggleInitiative}
+              className={cn(
+                'px-5 py-3 rounded-xl font-medium flex items-center gap-2 transition-all',
+                hasInitiative ? 'bg-purple-500/40 text-purple-300' : 'bg-white/10 hover:bg-white/20 text-white'
+              )}
+              aria-pressed={hasInitiative}
             >
-              Commander Dmg →
+              <Shield className="w-5 h-5" fill={hasInitiative ? 'currentColor' : 'none'} />
+              {hasInitiative ? 'Has Initiative' : 'Take Initiative'}
             </button>
           </div>
+
+          {/* Dungeon progress (only show if has initiative) */}
+          {hasInitiative && (
+            <div className="mt-4 flex flex-col items-center">
+              <div className="text-sm text-purple-300 mb-2">Undercity: {DUNGEON_ROOMS[dungeonProgress]}</div>
+              <div className="flex gap-2 items-center">
+                {DUNGEON_ROOMS.map((room, idx) => (
+                  <div
+                    key={room}
+                    className={cn(
+                      'w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all',
+                      idx <= dungeonProgress 
+                        ? 'bg-purple-500 text-white' 
+                        : 'bg-white/10 text-white/40'
+                    )}
+                    title={room}
+                  >
+                    {idx + 1}
+                  </div>
+                ))}
+                <button
+                  onClick={onAdvanceDungeon}
+                  disabled={dungeonProgress >= 3}
+                  className={cn(
+                    'ml-2 px-3 py-2 rounded-lg text-sm font-medium transition-all',
+                    dungeonProgress >= 3 
+                      ? 'bg-white/5 text-white/30 cursor-not-allowed' 
+                      : 'bg-purple-500/30 text-purple-300 hover:bg-purple-500/50'
+                  )}
+                >
+                  Advance →
+                </button>
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={switchToCommander}
+            className="mt-6 px-5 py-3 rounded-xl font-medium bg-white/10 hover:bg-white/20 text-white transition-colors"
+          >
+            Commander Damage →
+          </button>
         </div>
       )}
 
-      {/* Commander Damage Overlay */}
+      {/* Commander Damage Overlay - WCAG compliant */}
       {overlayMode === 'commander' && currentOpponent && (
         <div 
-          className="absolute inset-0 flex flex-col items-center justify-center z-20 p-4"
+          className="absolute inset-0 flex flex-col items-center justify-center z-20 p-4 bg-gray-900/95 backdrop-blur-md"
           style={{ transform: `rotate(${rotation}deg)` }}
+          role="dialog"
+          aria-label="Commander damage overlay"
         >
           <button
             onClick={closeOverlay}
-            className="absolute top-4 right-4 p-2 rounded-full"
-            style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+            aria-label="Close overlay"
           >
             <X className="w-5 h-5 text-white" />
           </button>
 
           <div className="text-center mb-4">
-            <span className="font-display text-xl text-white/80 uppercase tracking-wider">Commander Damage</span>
-            <div className="text-sm text-white/60 mt-1">from {currentOpponent.name}</div>
+            <span className="font-display text-xl text-white uppercase tracking-wider">Commander Damage</span>
+            <div className="text-sm text-white/70 mt-1">from {currentOpponent.name}</div>
           </div>
 
           <div className="flex items-center gap-4">
             {opponents.length > 1 && (
               <button
                 onClick={() => setCommanderIndex(prev => (prev - 1 + opponents.length) % opponents.length)}
-                className="p-2 rounded-full"
-                style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+                className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                aria-label="Previous opponent"
               >
                 <ChevronLeft className="w-6 h-6 text-white" />
               </button>
             )}
 
             <div 
-              className="px-8 py-4 rounded-2xl flex flex-col items-center"
-              style={{ backgroundColor: `hsl(${currentOpponent.color} / 0.8)` }}
+              className="px-10 py-6 rounded-2xl flex flex-col items-center"
+              style={{ backgroundColor: `hsl(${currentOpponent.color})` }}
             >
-              <div className="flex items-center gap-6">
+              <div className="flex items-center gap-8">
                 <button
                   onClick={() => onCommanderDamageChange(currentOpponent.id, -1)}
-                  className="w-12 h-12 rounded-full flex items-center justify-center text-2xl font-light"
-                  style={{ backgroundColor: 'rgba(0,0,0,0.3)', color: 'white' }}
+                  className="w-14 h-14 rounded-full flex items-center justify-center text-3xl font-light bg-black/30 hover:bg-black/40 text-white transition-colors"
+                  aria-label="Decrease commander damage"
                 >
                   −
                 </button>
-                <span className="font-display text-[10vmin] leading-none" style={{ color: 'rgba(0,0,0,0.7)' }}>
+                <span className="font-display text-[12vmin] leading-none" style={{ color: 'rgba(0,0,0,0.8)' }}>
                   {commanderDamage}
                 </span>
                 <button
                   onClick={() => onCommanderDamageChange(currentOpponent.id, 1)}
-                  className="w-12 h-12 rounded-full flex items-center justify-center text-2xl font-light"
-                  style={{ backgroundColor: 'rgba(0,0,0,0.3)', color: 'white' }}
+                  className="w-14 h-14 rounded-full flex items-center justify-center text-3xl font-light bg-black/30 hover:bg-black/40 text-white transition-colors"
+                  aria-label="Increase commander damage"
                 >
                   +
                 </button>
@@ -448,8 +589,8 @@ export function FullScreenPlayerPanel({
             {opponents.length > 1 && (
               <button
                 onClick={() => setCommanderIndex(prev => (prev + 1) % opponents.length)}
-                className="p-2 rounded-full"
-                style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+                className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                aria-label="Next opponent"
               >
                 <ChevronRight className="w-6 h-6 text-white" />
               </button>
@@ -457,16 +598,18 @@ export function FullScreenPlayerPanel({
           </div>
 
           {opponents.length > 1 && (
-            <div className="flex gap-2 mt-4">
+            <div className="flex gap-2 mt-4" role="tablist">
               {opponents.map((opp, idx) => (
                 <button
                   key={opp.id}
                   onClick={() => setCommanderIndex(idx)}
-                  className="w-3 h-3 rounded-full transition-all"
+                  className="w-4 h-4 rounded-full transition-all"
                   style={{ 
                     backgroundColor: idx === commanderIndex ? `hsl(${opp.color})` : 'rgba(255,255,255,0.3)',
                     transform: idx === commanderIndex ? 'scale(1.3)' : 'scale(1)',
                   }}
+                  aria-label={`Select ${opp.name}`}
+                  aria-selected={idx === commanderIndex}
                 />
               ))}
             </div>
@@ -474,7 +617,7 @@ export function FullScreenPlayerPanel({
 
           <button
             onClick={() => setOverlayMode('counters')}
-            className="mt-6 px-4 py-2 rounded-lg text-white/60 text-sm"
+            className="mt-6 px-4 py-2 rounded-lg text-white/70 hover:text-white text-sm transition-colors"
           >
             ← Back to Counters
           </button>

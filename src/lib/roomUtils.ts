@@ -14,7 +14,7 @@ export interface HistoryEntry {
   timestamp: number;
   playerId: number;
   playerName: string;
-  type: 'life' | 'poison' | 'commander' | 'experience' | 'energy' | 'monarch';
+  type: 'life' | 'poison' | 'commander' | 'experience' | 'energy' | 'monarch' | 'initiative' | 'daynight';
   oldValue: number;
   newValue: number;
   fromPlayerName?: string;
@@ -29,6 +29,13 @@ export interface RoomSettings {
   overlayLayout: 'horizontal' | 'vertical';
 }
 
+export const DUNGEON_ROOMS = [
+  'Secret Entrance',
+  'Forge',
+  'Lost Well',
+  'Throne',
+] as const;
+
 export interface Room {
   id: string;
   adminKey: string;
@@ -36,6 +43,9 @@ export interface Room {
   players: Player[];
   settings: RoomSettings;
   monarchId: number | null;
+  initiativeId: number | null;
+  dungeonProgress: number; // 0-3 for the 4 rooms
+  isDay: boolean;
   history: HistoryEntry[];
   createdAt: number;
   lastUpdated: number;
@@ -102,6 +112,9 @@ export function createRoom(playerCount: 2 | 3 | 4 = 4): Room {
       overlayLayout: 'horizontal',
     },
     monarchId: null,
+    initiativeId: null,
+    dungeonProgress: 0,
+    isDay: true,
     history: [],
     createdAt: Date.now(),
     lastUpdated: Date.now(),
@@ -121,7 +134,6 @@ export function loadRoomsState(): RoomsState {
     const stored = localStorage.getItem('lifeTrackerRooms');
     if (stored) {
       const state = JSON.parse(stored);
-      // Migrate old data
       for (const roomId in state.rooms) {
         const room = state.rooms[roomId];
         room.players = room.players.map((p: any) => ({
@@ -132,6 +144,9 @@ export function loadRoomsState(): RoomsState {
           commanderDamage: p.commanderDamage ?? {},
         }));
         room.monarchId = room.monarchId ?? null;
+        room.initiativeId = room.initiativeId ?? null;
+        room.dungeonProgress = room.dungeonProgress ?? 0;
+        room.isDay = room.isDay ?? true;
         room.history = room.history ?? [];
       }
       return state;
@@ -158,7 +173,6 @@ export function getRoom(roomId: string): Room | null {
 export function saveRoom(room: Room): void {
   const state = loadRoomsState();
   room.lastUpdated = Date.now();
-  // Keep only last 50 history entries
   room.history = room.history.slice(-50);
   state.rooms[room.id] = room;
   
