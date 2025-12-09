@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Play, Monitor, Trash2, Users } from 'lucide-react';
-import { Room, RoomsState, loadRoomsState, createRoom, saveRoom, deleteRoom, getControlUrl, getOverlayUrl } from '@/lib/roomUtils';
-import { Button } from '@/components/ui/button';
+import { Plus, Users } from 'lucide-react';
+import { RoomsState, loadRoomsState, createRoom, saveRoom, deleteRoom } from '@/lib/roomUtils';
 import { cn } from '@/lib/utils';
 
 export function RoomSelector() {
@@ -21,6 +20,10 @@ export function RoomSelector() {
     navigate(`/room/${room.id}?adminKey=${room.adminKey}`);
   };
 
+  const handleOpenRoom = (roomId: string, adminKey: string) => {
+    navigate(`/room/${roomId}?adminKey=${adminKey}`);
+  };
+
   const handleDeleteRoom = (roomId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm('Delete this room?')) {
@@ -29,107 +32,85 @@ export function RoomSelector() {
     }
   };
 
-  const handleOpenControl = (room: Room) => {
-    navigate(`/room/${room.id}?adminKey=${room.adminKey}`);
-  };
-
-  const handleCopyOverlay = (room: Room, e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(getOverlayUrl(room));
-  };
-
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-lg space-y-8 animate-fade-in">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="font-display text-4xl sm:text-5xl font-bold text-foreground glow-primary">
-            LIFE TRACKER
+      <div className="w-full max-w-sm space-y-10">
+        {/* Logo */}
+        <div className="text-center">
+          <h1 className="font-display text-7xl text-foreground tracking-tight">
+            LIFE
           </h1>
-          <p className="text-muted-foreground">
-            Track life totals & stream to OBS
+          <p className="text-muted-foreground text-lg -mt-2">
+            Counter & OBS Overlay
           </p>
         </div>
 
-        {/* Create new room */}
-        <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
-          <h2 className="font-display text-lg font-semibold text-foreground">New Game</h2>
-          
-          {/* Player count selector */}
+        {/* Player count selector */}
+        <div className="space-y-4">
           <div className="flex gap-2">
             {([2, 3, 4] as const).map((count) => (
               <button
                 key={count}
                 onClick={() => setSelectedPlayerCount(count)}
                 className={cn(
-                  'flex-1 py-3 rounded-lg font-display font-semibold transition-all flex items-center justify-center gap-2',
+                  'flex-1 py-6 rounded-2xl font-display text-4xl transition-all flex flex-col items-center gap-1',
                   selectedPlayerCount === count
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-foreground text-background'
                     : 'bg-secondary text-muted-foreground hover:text-foreground'
                 )}
               >
-                <Users className="w-4 h-4" />
+                <Users className="w-6 h-6" />
                 {count}
               </button>
             ))}
           </div>
 
-          <Button
+          <button
             onClick={handleCreateRoom}
-            className="w-full h-14 text-lg font-display font-semibold gap-2"
+            className="w-full py-5 bg-accent text-accent-foreground rounded-2xl font-display text-3xl flex items-center justify-center gap-3 hover:bg-accent/90 transition-colors"
           >
-            <Plus className="w-5 h-5" />
-            Create Room
-          </Button>
+            <Plus className="w-7 h-7" />
+            NEW GAME
+          </button>
         </div>
 
         {/* Recent rooms */}
         {recentRooms.length > 0 && (
           <div className="space-y-3">
-            <h2 className="font-display text-lg font-semibold text-foreground">Recent Rooms</h2>
+            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+              Recent Games
+            </h2>
             <div className="space-y-2">
-              {recentRooms.map((room) => (
-                <div
+              {recentRooms.slice(0, 5).map((room) => (
+                <button
                   key={room.id}
-                  className="bg-card border border-border rounded-xl p-4 flex items-center gap-4 hover:border-primary/50 transition-colors cursor-pointer group"
-                  onClick={() => handleOpenControl(room)}
+                  onClick={() => handleOpenRoom(room.id, room.adminKey)}
+                  className="w-full flex items-center justify-between p-4 bg-secondary rounded-xl hover:bg-secondary/80 transition-colors group"
                 >
-                  <div className="flex-1 min-w-0">
-                    <div className="font-display font-semibold text-foreground">
-                      Room {room.id}
+                  <div className="flex items-center gap-3">
+                    <div className="font-display text-2xl text-foreground">
+                      {room.id}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {room.playerCount} players · {room.settings.startingLife} life
+                      {room.playerCount}P · {room.settings.startingLife}
                     </div>
                   </div>
-                  
-                  <div className="flex gap-2">
-                    <button
-                      onClick={(e) => handleCopyOverlay(room, e)}
-                      className="p-2 rounded-lg bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-colors"
-                      title="Copy Overlay URL"
-                    >
-                      <Monitor className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={(e) => handleDeleteRoom(room.id, e)}
-                      className="p-2 rounded-lg bg-secondary hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
-                      title="Delete Room"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
+                  <button
+                    onClick={(e) => handleDeleteRoom(room.id, e)}
+                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all text-sm"
+                  >
+                    Delete
+                  </button>
+                </button>
               ))}
             </div>
           </div>
         )}
 
-        {/* OBS Instructions */}
-        <div className="text-center text-sm text-muted-foreground space-y-1">
-          <p className="font-medium">OBS Setup</p>
-          <p>Add Browser Source → paste Overlay URL → set 1920×1080</p>
-        </div>
+        {/* OBS tip */}
+        <p className="text-center text-sm text-muted-foreground">
+          Add overlay URL to OBS as Browser Source
+        </p>
       </div>
     </div>
   );
