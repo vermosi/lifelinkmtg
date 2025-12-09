@@ -1,8 +1,8 @@
 import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown } from 'lucide-react';
+import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown, Shield, Sun, Moon } from 'lucide-react';
 import { useRoomState } from '@/hooks/useRoomState';
-import { getControlUrl, getOverlayUrl, PLAYER_COLORS, formatTimestamp, HistoryEntry } from '@/lib/roomUtils';
+import { getControlUrl, getOverlayUrl, PLAYER_COLORS, formatTimestamp, HistoryEntry, DUNGEON_ROOMS } from '@/lib/roomUtils';
 import { FullScreenPlayerPanel } from './FullScreenPlayerPanel';
 import { cn } from '@/lib/utils';
 
@@ -14,6 +14,8 @@ function HistoryIcon({ type }: { type: HistoryEntry['type'] }) {
     case 'energy': return <Zap className="w-3 h-3 text-blue-400" />;
     case 'commander': return <Swords className="w-3 h-3 text-orange-400" />;
     case 'monarch': return <Crown className="w-3 h-3 text-yellow-400" />;
+    case 'initiative': return <Shield className="w-3 h-3 text-purple-400" />;
+    case 'daynight': return <Sun className="w-3 h-3 text-amber-400" />;
     default: return null;
   }
 }
@@ -36,6 +38,9 @@ export function RoomControl() {
     updatePlayerEnergy,
     updateCommanderDamage,
     setMonarch,
+    setInitiative,
+    advanceDungeon,
+    toggleDayNight,
     resetGame,
     setPlayerCount,
     setStartingLife,
@@ -91,9 +96,6 @@ export function RoomControl() {
     if (total === 2) {
       return { rotation: index === 0 ? 180 : 0 };
     }
-    if (total === 3) {
-      return { rotation: index < 2 ? 180 : 0 };
-    }
     return { rotation: index < 2 ? 180 : 0 };
   };
 
@@ -112,9 +114,9 @@ export function RoomControl() {
   };
 
   const formatHistoryChange = (entry: HistoryEntry) => {
-    if (entry.type === 'monarch') {
-      return 'became Monarch';
-    }
+    if (entry.type === 'monarch') return 'became Monarch';
+    if (entry.type === 'initiative') return 'took the Initiative';
+    if (entry.type === 'daynight') return entry.newValue === 1 ? 'Day began' : 'Night fell';
     if (entry.type === 'commander' && entry.fromPlayerName) {
       return `${entry.oldValue} → ${entry.newValue} (from ${entry.fromPlayerName})`;
     }
@@ -123,6 +125,25 @@ export function RoomControl() {
 
   return (
     <div className="h-screen w-screen overflow-hidden relative">
+      {/* Day/Night indicator */}
+      <div className="absolute top-4 left-4 z-30">
+        <button
+          onClick={() => isAdmin && toggleDayNight()}
+          disabled={!isAdmin}
+          className={cn(
+            'p-3 rounded-full transition-all shadow-lg',
+            room.isDay 
+              ? 'bg-amber-400 text-amber-900' 
+              : 'bg-indigo-900 text-indigo-200',
+            isAdmin && 'hover:scale-110 cursor-pointer'
+          )}
+          title={room.isDay ? 'Day (click to change)' : 'Night (click to change)'}
+          aria-label={room.isDay ? 'Currently Day. Click to switch to Night.' : 'Currently Night. Click to switch to Day.'}
+        >
+          {room.isDay ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
+        </button>
+      </div>
+
       {/* Player grid */}
       <div className="h-full w-full" style={getGridStyle()}>
         {room.players.map((player, index) => {
@@ -140,6 +161,8 @@ export function RoomControl() {
                 player={player}
                 allPlayers={room.players}
                 isMonarch={room.monarchId === player.id}
+                hasInitiative={room.initiativeId === player.id}
+                dungeonProgress={room.dungeonProgress}
                 onLifeChange={(delta) => updatePlayerLife(player.id, delta)}
                 onLifeSet={(life) => setPlayerLife(player.id, life)}
                 onPoisonChange={(delta) => updatePlayerPoison(player.id, delta)}
@@ -147,6 +170,8 @@ export function RoomControl() {
                 onEnergyChange={(delta) => updatePlayerEnergy(player.id, delta)}
                 onCommanderDamageChange={(fromId, delta) => updateCommanderDamage(player.id, fromId, delta)}
                 onToggleMonarch={() => setMonarch(room.monarchId === player.id ? null : player.id)}
+                onToggleInitiative={() => setInitiative(room.initiativeId === player.id ? null : player.id)}
+                onAdvanceDungeon={advanceDungeon}
                 isAdmin={isAdmin}
                 rotation={layout.rotation}
               />
@@ -159,6 +184,7 @@ export function RoomControl() {
       <button
         onClick={() => setMenuOpen(!menuOpen)}
         className="menu-button w-14 h-14 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+        aria-label={menuOpen ? 'Close menu' : 'Open menu'}
       >
         {menuOpen ? (
           <X className="w-6 h-6 text-foreground" />
@@ -170,8 +196,10 @@ export function RoomControl() {
       {/* Menu overlay */}
       {menuOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-background/95 backdrop-blur-sm flex items-center justify-center overflow-y-auto py-6"
+          className="fixed inset-0 z-40 bg-background/98 backdrop-blur-sm flex items-center justify-center overflow-y-auto py-6"
           onClick={() => { setMenuOpen(false); setColorPickerPlayer(null); }}
+          role="dialog"
+          aria-label="Settings menu"
         >
           <div 
             className="bg-card border border-border rounded-2xl p-5 w-[90%] max-w-md space-y-4 my-auto max-h-[90vh] overflow-y-auto"
@@ -185,13 +213,15 @@ export function RoomControl() {
             </div>
 
             {/* Tab switcher */}
-            <div className="flex gap-2">
+            <div className="flex gap-2" role="tablist">
               <button
                 onClick={() => setMenuTab('settings')}
                 className={cn(
                   'flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2',
                   menuTab === 'settings' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground'
                 )}
+                role="tab"
+                aria-selected={menuTab === 'settings'}
               >
                 <Palette className="w-4 h-4" /> Settings
               </button>
@@ -201,6 +231,8 @@ export function RoomControl() {
                   'flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2',
                   menuTab === 'history' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground'
                 )}
+                role="tab"
+                aria-selected={menuTab === 'history'}
               >
                 <History className="w-4 h-4" /> History
                 {room.history.length > 0 && (
@@ -259,6 +291,26 @@ export function RoomControl() {
                   </div>
                 </div>
 
+                {/* Day/Night toggle */}
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
+                    {room.isDay ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />} Day/Night Cycle
+                  </label>
+                  <button
+                    onClick={toggleDayNight}
+                    className={cn(
+                      'w-full py-3 rounded-xl font-medium flex items-center justify-center gap-3 transition-all',
+                      room.isDay
+                        ? 'bg-amber-400/20 text-amber-400 hover:bg-amber-400/30'
+                        : 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30'
+                    )}
+                  >
+                    {room.isDay ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                    {room.isDay ? 'Day' : 'Night'}
+                    <span className="text-xs opacity-70">(click to toggle)</span>
+                  </button>
+                </div>
+
                 {/* Player names & colors */}
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
@@ -271,12 +323,14 @@ export function RoomControl() {
                           onClick={() => setColorPickerPlayer(colorPickerPlayer === player.id ? null : player.id)}
                           className="w-9 h-9 rounded-lg border-2 border-border flex-shrink-0 transition-transform hover:scale-105"
                           style={{ backgroundColor: `hsl(${player.color})` }}
+                          aria-label={`Change color for ${player.name}`}
                         />
                         <input
                           type="text"
                           value={player.name}
                           onChange={(e) => setPlayerName(player.id, e.target.value)}
                           className="flex-1 px-3 py-2 rounded-lg bg-secondary text-foreground text-sm border border-border focus:outline-none focus:ring-2 focus:ring-foreground/20"
+                          aria-label={`Name for player ${player.id}`}
                         />
                         <button
                           onClick={() => setMonarch(room.monarchId === player.id ? null : player.id)}
@@ -287,12 +341,61 @@ export function RoomControl() {
                               : 'bg-secondary text-muted-foreground hover:text-foreground'
                           )}
                           title="Toggle Monarch"
+                          aria-label={`Toggle Monarch for ${player.name}`}
+                          aria-pressed={room.monarchId === player.id}
                         >
                           <Crown className="w-4 h-4" fill={room.monarchId === player.id ? 'currentColor' : 'none'} />
+                        </button>
+                        <button
+                          onClick={() => setInitiative(room.initiativeId === player.id ? null : player.id)}
+                          className={cn(
+                            'p-2 rounded-lg transition-all',
+                            room.initiativeId === player.id 
+                              ? 'bg-purple-400/20 text-purple-400' 
+                              : 'bg-secondary text-muted-foreground hover:text-foreground'
+                          )}
+                          title="Toggle Initiative"
+                          aria-label={`Toggle Initiative for ${player.name}`}
+                          aria-pressed={room.initiativeId === player.id}
+                        >
+                          <Shield className="w-4 h-4" fill={room.initiativeId === player.id ? 'currentColor' : 'none'} />
                         </button>
                       </div>
                     ))}
                   </div>
+
+                  {/* Initiative dungeon progress */}
+                  {room.initiativeId && (
+                    <div className="mt-2 p-3 bg-purple-500/10 rounded-xl">
+                      <div className="text-xs text-purple-400 mb-2 flex items-center gap-2">
+                        <Shield className="w-3 h-3" /> Undercity Progress: {DUNGEON_ROOMS[room.dungeonProgress]}
+                      </div>
+                      <div className="flex gap-2 items-center">
+                        {DUNGEON_ROOMS.map((roomName, idx) => (
+                          <div
+                            key={roomName}
+                            className={cn(
+                              'flex-1 h-2 rounded-full transition-all',
+                              idx <= room.dungeonProgress ? 'bg-purple-500' : 'bg-purple-500/20'
+                            )}
+                            title={roomName}
+                          />
+                        ))}
+                        <button
+                          onClick={advanceDungeon}
+                          disabled={room.dungeonProgress >= 3}
+                          className={cn(
+                            'text-xs px-2 py-1 rounded transition-all',
+                            room.dungeonProgress >= 3
+                              ? 'bg-secondary text-muted-foreground cursor-not-allowed'
+                              : 'bg-purple-500/30 text-purple-300 hover:bg-purple-500/50'
+                          )}
+                        >
+                          Advance
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {colorPickerPlayer !== null && (
                     <div className="grid grid-cols-4 gap-2 p-3 bg-secondary rounded-xl mt-2">
@@ -311,6 +414,7 @@ export function RoomControl() {
                           )}
                           style={{ backgroundColor: `hsl(${color.value})` }}
                           title={color.name}
+                          aria-label={`Select ${color.name}`}
                         />
                       ))}
                     </div>
@@ -335,9 +439,13 @@ export function RoomControl() {
                   </button>
                 </div>
 
-                {/* Hint */}
-                <div className="text-center text-xs text-muted-foreground py-2 px-3 bg-secondary/50 rounded-lg">
-                  💡 Long-press or right-click a panel for counters
+                {/* Keyboard shortcuts hint */}
+                <div className="text-xs text-muted-foreground p-3 bg-secondary/50 rounded-lg space-y-1">
+                  <div className="font-medium mb-1">Keyboard Shortcuts (click panel first):</div>
+                  <div>↑/↓ or +/- : Adjust life by 1</div>
+                  <div>←/→ or Shift+↑/↓ : Adjust life by 5</div>
+                  <div>1-5 : Subtract 1-5 life · 6-0 : Add 1-5 life</div>
+                  <div>C : Counters · M : Monarch · I : Initiative</div>
                 </div>
               </>
             )}

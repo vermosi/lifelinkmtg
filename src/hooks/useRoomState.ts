@@ -191,8 +191,6 @@ export function useRoomState(roomId: string | undefined) {
 
   const setMonarch = useCallback((playerId: number | null) => {
     updateRoom(prev => {
-      const oldMonarch = prev.players.find(p => p.id === prev.monarchId);
-      const newMonarch = prev.players.find(p => p.id === playerId);
       let history = prev.history;
       if (playerId !== prev.monarchId && playerId !== null) {
         history = addHistoryEntry(prev, playerId, 'monarch', 0, 1);
@@ -204,6 +202,49 @@ export function useRoomState(roomId: string | undefined) {
       };
     });
   }, [updateRoom, addHistoryEntry]);
+
+  const setInitiative = useCallback((playerId: number | null) => {
+    updateRoom(prev => {
+      let history = prev.history;
+      const isNewPlayer = playerId !== prev.initiativeId && playerId !== null;
+      if (isNewPlayer) {
+        history = addHistoryEntry(prev, playerId, 'initiative', 0, 1);
+      }
+      return {
+        ...prev,
+        initiativeId: playerId,
+        dungeonProgress: isNewPlayer ? 0 : prev.dungeonProgress,
+        history,
+      };
+    });
+  }, [updateRoom, addHistoryEntry]);
+
+  const advanceDungeon = useCallback(() => {
+    updateRoom(prev => ({
+      ...prev,
+      dungeonProgress: Math.min(3, prev.dungeonProgress + 1),
+    }));
+  }, [updateRoom]);
+
+  const toggleDayNight = useCallback(() => {
+    updateRoom(prev => {
+      const newIsDay = !prev.isDay;
+      const entry: HistoryEntry = {
+        id: generateId(8),
+        timestamp: Date.now(),
+        playerId: 0,
+        playerName: 'Game',
+        type: 'daynight',
+        oldValue: prev.isDay ? 1 : 0,
+        newValue: newIsDay ? 1 : 0,
+      };
+      return {
+        ...prev,
+        isDay: newIsDay,
+        history: [...prev.history, entry],
+      };
+    });
+  }, [updateRoom]);
 
   const resetGame = useCallback(() => {
     updateRoom(prev => ({
@@ -217,6 +258,9 @@ export function useRoomState(roomId: string | undefined) {
         commanderDamage: {},
       })),
       monarchId: null,
+      initiativeId: null,
+      dungeonProgress: 0,
+      isDay: true,
       history: [],
     }));
   }, [updateRoom]);
@@ -255,6 +299,7 @@ export function useRoomState(roomId: string | undefined) {
         playerCount: count,
         players: newPlayers,
         monarchId: prev.monarchId && prev.monarchId <= count ? prev.monarchId : null,
+        initiativeId: prev.initiativeId && prev.initiativeId <= count ? prev.initiativeId : null,
       };
     });
   }, [updateRoom]);
@@ -272,6 +317,9 @@ export function useRoomState(roomId: string | undefined) {
         commanderDamage: {} 
       })),
       monarchId: null,
+      initiativeId: null,
+      dungeonProgress: 0,
+      isDay: true,
       history: [],
     }));
   }, [updateRoom]);
@@ -293,6 +341,9 @@ export function useRoomState(roomId: string | undefined) {
     updatePlayerEnergy,
     updateCommanderDamage,
     setMonarch,
+    setInitiative,
+    advanceDungeon,
+    toggleDayNight,
     resetGame,
     setPlayerCount,
     setStartingLife,
