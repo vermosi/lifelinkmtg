@@ -324,6 +324,15 @@ export function OverlayView() {
               >
                 {player.life}
               </div>
+              {/* Deck/Commander name */}
+              {player.deckName && (
+                <div 
+                  className="font-body text-xs mt-0.5 px-2 py-0.5 rounded bg-black/30"
+                  style={{ color: 'rgba(255,255,255,0.9)' }}
+                >
+                  {player.deckName}
+                </div>
+              )}
 
               {/* Counters row */}
               <div className="flex gap-1.5 mt-1.5">

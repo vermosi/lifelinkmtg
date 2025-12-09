@@ -7,6 +7,7 @@ export interface Player {
   experience: number;
   energy: number;
   commanderDamage: Record<number, number>;
+  deckName?: string;
 }
 
 export interface HistoryEntry {

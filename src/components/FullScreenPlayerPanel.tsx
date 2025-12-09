@@ -18,6 +18,7 @@ interface FullScreenPlayerPanelProps {
   onToggleMonarch: () => void;
   onToggleInitiative: () => void;
   onAdvanceDungeon: () => void;
+  onDeckNameChange: (deckName: string) => void;
   isAdmin: boolean;
   rotation: number;
 }
@@ -40,11 +41,14 @@ export function FullScreenPlayerPanel({
   onToggleMonarch,
   onToggleInitiative,
   onAdvanceDungeon,
+  onDeckNameChange,
   isAdmin,
   rotation,
 }: FullScreenPlayerPanelProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(player.life.toString());
+  const [isEditingDeck, setIsEditingDeck] = useState(false);
+  const [deckEditValue, setDeckEditValue] = useState(player.deckName || '');
   const [animating, setAnimating] = useState(false);
   const [overlayMode, setOverlayMode] = useState<OverlayMode>('none');
   const [counterTab, setCounterTab] = useState<CounterTab>('poison');
@@ -142,6 +146,17 @@ export function FullScreenPlayerPanel({
       onLifeSet(newLife);
     }
     setIsEditing(false);
+  };
+
+  const handleDeckClick = () => {
+    if (!isAdmin || overlayMode !== 'none') return;
+    setDeckEditValue(player.deckName || '');
+    setIsEditingDeck(true);
+  };
+
+  const handleDeckSubmit = () => {
+    onDeckNameChange(deckEditValue);
+    setIsEditingDeck(false);
   };
 
   const clearLongPress = () => {
@@ -323,6 +338,36 @@ export function FullScreenPlayerPanel({
             aria-label={`Life total: ${player.life}. Click to edit.`}
           >
             {player.life}
+          </button>
+        )}
+
+        {/* Deck name / Commander - below life total */}
+        {isEditingDeck ? (
+          <input
+            type="text"
+            value={deckEditValue}
+            onChange={(e) => setDeckEditValue(e.target.value)}
+            onBlur={handleDeckSubmit}
+            onKeyDown={(e) => e.key === 'Enter' && handleDeckSubmit()}
+            placeholder="Deck / Commander..."
+            className="mt-2 px-3 py-1.5 rounded-lg bg-black/30 text-white text-sm text-center outline-none border border-white/20 focus:border-white/50 max-w-[80%]"
+            autoFocus
+            aria-label="Edit deck name"
+          />
+        ) : (
+          <button
+            onClick={handleDeckClick}
+            disabled={!isAdmin || overlayMode !== 'none'}
+            className={cn(
+              'mt-1 px-3 py-1 rounded-lg text-sm transition-all',
+              player.deckName 
+                ? 'bg-black/30 text-white/90' 
+                : 'bg-black/20 text-white/50 italic',
+              isAdmin && overlayMode === 'none' && 'cursor-pointer hover:bg-black/40'
+            )}
+            aria-label={player.deckName ? `Deck: ${player.deckName}. Click to edit.` : 'Click to add deck name'}
+          >
+            {player.deckName || 'Add deck/commander'}
           </button>
         )}
 

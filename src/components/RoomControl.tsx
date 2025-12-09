@@ -35,6 +35,7 @@ export function RoomControl() {
     setPlayerLife,
     setPlayerName,
     setPlayerColor,
+    setPlayerDeckName,
     updatePlayerPoison,
     updatePlayerExperience,
     updatePlayerEnergy,
@@ -226,6 +227,7 @@ export function RoomControl() {
                 onToggleMonarch={() => setMonarch(room.monarchId === player.id ? null : player.id)}
                 onToggleInitiative={() => setInitiative(room.initiativeId === player.id ? null : player.id)}
                 onAdvanceDungeon={advanceDungeon}
+                onDeckNameChange={(deckName) => setPlayerDeckName(player.id, deckName)}
                 isAdmin={isAdmin}
                 rotation={layout.rotation}
               />
