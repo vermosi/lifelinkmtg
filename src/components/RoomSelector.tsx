@@ -1,34 +1,46 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Users } from 'lucide-react';
-import { RoomsState, loadRoomsState, createRoom, saveRoom, deleteRoom } from '@/lib/roomUtils';
+import { Plus, Users, Cloud, Loader2 } from 'lucide-react';
+import { Room } from '@/lib/roomUtils';
+import { createCloudRoom, getRecentCloudRooms, deleteCloudRoom, removeFromRecentRooms } from '@/lib/cloudRoomUtils';
 import { cn } from '@/lib/utils';
 
 export function RoomSelector() {
   const navigate = useNavigate();
-  const [roomsState, setRoomsState] = useState<RoomsState>(loadRoomsState);
+  const [recentRooms, setRecentRooms] = useState<Room[]>([]);
   const [selectedPlayerCount, setSelectedPlayerCount] = useState<2 | 3 | 4>(4);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const recentRooms = roomsState.recentRoomIds
-    .map(id => roomsState.rooms[id])
-    .filter(Boolean);
+  useEffect(() => {
+    const loadRecentRooms = async () => {
+      setIsLoading(true);
+      const rooms = await getRecentCloudRooms();
+      setRecentRooms(rooms);
+      setIsLoading(false);
+    };
+    loadRecentRooms();
+  }, []);
 
-  const handleCreateRoom = () => {
-    const room = createRoom(selectedPlayerCount);
-    saveRoom(room);
-    setRoomsState(loadRoomsState());
-    navigate(`/room/${room.id}?adminKey=${room.adminKey}`);
+  const handleCreateRoom = async () => {
+    setIsCreating(true);
+    const room = await createCloudRoom(selectedPlayerCount);
+    if (room) {
+      navigate(`/room/${room.id}?adminKey=${room.adminKey}`);
+    }
+    setIsCreating(false);
   };
 
   const handleOpenRoom = (roomId: string, adminKey: string) => {
     navigate(`/room/${roomId}?adminKey=${adminKey}`);
   };
 
-  const handleDeleteRoom = (roomId: string, e: React.MouseEvent) => {
+  const handleDeleteRoom = async (roomId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm('Delete this room?')) {
-      deleteRoom(roomId);
-      setRoomsState(loadRoomsState());
+      await deleteCloudRoom(roomId);
+      removeFromRecentRooms(roomId);
+      setRecentRooms(prev => prev.filter(r => r.id !== roomId));
     }
   };
 
@@ -43,8 +55,9 @@ export function RoomSelector() {
           <p className="text-accent font-medium text-lg mt-1">
             Track. Play. Win.
           </p>
-          <p className="text-muted-foreground text-sm mt-1">
-            Counter & OBS Overlay
+          <p className="text-muted-foreground text-sm mt-1 flex items-center justify-center gap-1">
+            <Cloud className="w-3 h-3" />
+            Cloud Synced Counter & OBS Overlay
           </p>
         </div>
 
@@ -70,17 +83,27 @@ export function RoomSelector() {
 
           <button
             onClick={handleCreateRoom}
-            className="w-full py-5 bg-accent text-accent-foreground rounded-2xl font-display text-3xl flex items-center justify-center gap-3 hover:bg-accent/90 transition-colors"
+            disabled={isCreating}
+            className="w-full py-5 bg-accent text-accent-foreground rounded-2xl font-display text-3xl flex items-center justify-center gap-3 hover:bg-accent/90 transition-colors disabled:opacity-50"
           >
-            <Plus className="w-7 h-7" />
-            NEW GAME
+            {isCreating ? (
+              <Loader2 className="w-7 h-7 animate-spin" />
+            ) : (
+              <Plus className="w-7 h-7" />
+            )}
+            {isCreating ? 'CREATING...' : 'NEW GAME'}
           </button>
         </div>
 
         {/* Recent rooms */}
-        {recentRooms.length > 0 && (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-6">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : recentRooms.length > 0 && (
           <div className="space-y-3">
-            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <Cloud className="w-3 h-3" />
               Recent Games
             </h2>
             <div className="space-y-2">
@@ -112,7 +135,7 @@ export function RoomSelector() {
 
         {/* OBS tip */}
         <p className="text-center text-sm text-muted-foreground">
-          Add overlay URL to OBS as Browser Source
+          Rooms sync in real-time across all devices
         </p>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { useState, useRef, useCallback } from 'react';
-import { useRoomState } from '@/hooks/useRoomState';
+import { useCloudRoomState } from '@/hooks/useCloudRoomState';
 import { cn } from '@/lib/utils';
 import { Skull, Sparkles, Zap, Crown, Shield, Sun, Moon, Move, Lock, Unlock, RotateCcw } from 'lucide-react';
 import { DUNGEON_ROOMS, OverlayLayout, OverlayPosition, createDefaultOverlayLayout } from '@/lib/roomUtils';
@@ -113,7 +113,7 @@ function DraggableElement({ id, position, onPositionChange, isEditMode, children
 
 export function OverlayView() {
   const { roomId } = useParams<{ roomId: string }>();
-  const { room, loading, updateOverlayLayout, resetOverlayLayout } = useRoomState(roomId);
+  const { room, loading, updateOverlayLayout, resetOverlayLayout } = useCloudRoomState(roomId);
   const [isEditMode, setIsEditMode] = useState(false);
 
   if (loading || !room) {

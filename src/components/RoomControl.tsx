@@ -1,7 +1,7 @@
 import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown, Shield, Sun, Moon, Dices, Save, FolderOpen, Plus } from 'lucide-react';
-import { useRoomState } from '@/hooks/useRoomState';
+import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown, Shield, Sun, Moon, Dices, Save, FolderOpen, Plus, Cloud, Loader2 } from 'lucide-react';
+import { useCloudRoomState } from '@/hooks/useCloudRoomState';
 import { getControlUrl, getOverlayUrl, PLAYER_COLORS, formatTimestamp, HistoryEntry, DUNGEON_ROOMS, loadPresets, savePreset, deletePreset, createPresetFromRoom, GamePreset } from '@/lib/roomUtils';
 import { FullScreenPlayerPanel } from './FullScreenPlayerPanel';
 import { DiceRoller } from './DiceRoller';
@@ -30,6 +30,7 @@ export function RoomControl() {
   const {
     room,
     loading,
+    syncing,
     updatePlayerLife,
     setPlayerLife,
     setPlayerName,
@@ -47,7 +48,7 @@ export function RoomControl() {
     setStartingLife,
     clearHistory,
     loadPreset,
-  } = useRoomState(roomId);
+  } = useCloudRoomState(roomId);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuTab, setMenuTab] = useState<'settings' | 'history' | 'dice' | 'presets'>('settings');
@@ -212,9 +213,17 @@ export function RoomControl() {
           >
             <div className="flex items-center justify-between">
               <h2 className="font-display text-2xl text-foreground">Room {room.id}</h2>
-              <span className="text-xs text-muted-foreground px-2 py-1 bg-secondary rounded-full">
-                {isAdmin ? 'Admin' : 'View Only'}
-              </span>
+              <div className="flex items-center gap-2">
+                {syncing && (
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  </span>
+                )}
+                <span className="text-xs text-muted-foreground px-2 py-1 bg-secondary rounded-full flex items-center gap-1">
+                  <Cloud className="w-3 h-3" />
+                  {isAdmin ? 'Admin' : 'View Only'}
+                </span>
+              </div>
             </div>
 
             {/* Tab switcher */}
