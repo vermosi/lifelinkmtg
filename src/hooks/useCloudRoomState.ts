@@ -1,8 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Room, HistoryEntry, OverlayLayout, generateId, createDefaultOverlayLayout, GamePreset } from '@/lib/roomUtils';
 import { getCloudRoom, updateCloudRoom, subscribeToRoom, addToRecentRooms } from '@/lib/cloudRoomUtils';
 
 export function useCloudRoomState(roomId: string | undefined) {
+  const [searchParams] = useSearchParams();
+  const adminKey = searchParams.get('adminKey') || '';
+  
   const [room, setRoom] = useState<Room | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -69,7 +73,7 @@ export function useCloudRoomState(roomId: string | undefined) {
     return [...prev.history.slice(-49), entry];
   }, []);
 
-  // Debounced cloud sync
+  // Debounced cloud sync (uses adminKey from URL for secure server-side verification)
   const syncToCloud = useCallback((updatedRoom: Room) => {
     if (updateTimeoutRef.current) {
       clearTimeout(updateTimeoutRef.current);
@@ -78,10 +82,10 @@ export function useCloudRoomState(roomId: string | undefined) {
     setSyncing(true);
     updateTimeoutRef.current = setTimeout(async () => {
       lastUpdateRef.current = JSON.stringify(updatedRoom);
-      await updateCloudRoom(updatedRoom);
+      await updateCloudRoom(updatedRoom, adminKey);
       setSyncing(false);
     }, 100); // Debounce by 100ms
-  }, []);
+  }, [adminKey]);
 
   const updateRoom = useCallback((updater: (prev: Room) => Room) => {
     setRoom(prev => {

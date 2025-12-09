@@ -61,10 +61,65 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      rooms_public: {
+        Row: {
+          created_at: string | null
+          day_night: string | null
+          dungeon_progress: number | null
+          history: Json | null
+          id: string | null
+          initiative: string | null
+          last_updated: string | null
+          monarch: string | null
+          overlay_layout: Json | null
+          players: Json | null
+          settings: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          day_night?: string | null
+          dungeon_progress?: number | null
+          history?: Json | null
+          id?: string | null
+          initiative?: string | null
+          last_updated?: string | null
+          monarch?: string | null
+          overlay_layout?: Json | null
+          players?: Json | null
+          settings?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          day_night?: string | null
+          dungeon_progress?: number | null
+          history?: Json | null
+          id?: string | null
+          initiative?: string | null
+          last_updated?: string | null
+          monarch?: string | null
+          overlay_layout?: Json | null
+          players?: Json | null
+          settings?: Json | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      delete_room_as_admin: {
+        Args: { provided_admin_key: string; room_id: string }
+        Returns: boolean
+      }
+      update_room_as_admin: {
+        Args: { provided_admin_key: string; room_data: Json; room_id: string }
+        Returns: boolean
+      }
+      verify_room_admin: {
+        Args: { provided_admin_key: string; room_id: string }
+        Returns: {
+          is_admin: boolean
+          room_data: Json
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
