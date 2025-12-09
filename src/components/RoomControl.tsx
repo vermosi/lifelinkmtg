@@ -187,17 +187,15 @@ export function RoomControl() {
       </div>
 
       {/* Center menu button */}
-      <button
-        onClick={() => setMenuOpen(!menuOpen)}
-        className="menu-button w-14 h-14 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-      >
-        {menuOpen ? (
-          <X className="w-6 h-6 text-foreground" />
-        ) : (
+      {!menuOpen && (
+        <button
+          onClick={() => setMenuOpen(true)}
+          className="menu-button w-14 h-14 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+          aria-label="Open menu"
+        >
           <Menu className="w-6 h-6 text-foreground" />
-        )}
-      </button>
+        </button>
+      )}
 
       {/* Menu overlay */}
       {menuOpen && (
@@ -208,10 +206,19 @@ export function RoomControl() {
           aria-label="Settings menu"
         >
           <div 
-            className="bg-card border border-border rounded-2xl p-5 w-[90%] max-w-md space-y-4 my-auto max-h-[90vh] overflow-y-auto"
+            className="bg-card border border-border rounded-2xl p-5 w-[90%] max-w-md space-y-4 my-auto max-h-[90vh] overflow-y-auto relative"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between">
+            {/* Close button in top right of dialog */}
+            <button
+              onClick={() => { setMenuOpen(false); setColorPickerPlayer(null); }}
+              className="absolute top-3 right-3 p-2 rounded-full bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Close menu"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center justify-between pr-10">
               <h2 className="font-display text-2xl text-foreground">Room {room.id}</h2>
               <div className="flex items-center gap-2">
                 {syncing && (
