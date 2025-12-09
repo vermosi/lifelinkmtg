@@ -61,53 +61,44 @@ export type Database = {
       }
     }
     Views: {
-      rooms_public: {
-        Row: {
-          created_at: string | null
-          day_night: string | null
-          dungeon_progress: number | null
-          history: Json | null
-          id: string | null
-          initiative: string | null
-          last_updated: string | null
-          monarch: string | null
-          overlay_layout: Json | null
-          players: Json | null
-          settings: Json | null
-        }
-        Insert: {
-          created_at?: string | null
-          day_night?: string | null
-          dungeon_progress?: number | null
-          history?: Json | null
-          id?: string | null
-          initiative?: string | null
-          last_updated?: string | null
-          monarch?: string | null
-          overlay_layout?: Json | null
-          players?: Json | null
-          settings?: Json | null
-        }
-        Update: {
-          created_at?: string | null
-          day_night?: string | null
-          dungeon_progress?: number | null
-          history?: Json | null
-          id?: string | null
-          initiative?: string | null
-          last_updated?: string | null
-          monarch?: string | null
-          overlay_layout?: Json | null
-          players?: Json | null
-          settings?: Json | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       delete_room_as_admin: {
         Args: { provided_admin_key: string; room_id: string }
         Returns: boolean
+      }
+      get_recent_rooms: {
+        Args: { limit_count?: number }
+        Returns: {
+          created_at: string
+          day_night: string
+          dungeon_progress: number
+          history: Json
+          id: string
+          initiative: string
+          last_updated: string
+          monarch: string
+          overlay_layout: Json
+          players: Json
+          settings: Json
+        }[]
+      }
+      get_room_public: {
+        Args: { room_id_param: string }
+        Returns: {
+          created_at: string
+          day_night: string
+          dungeon_progress: number
+          history: Json
+          id: string
+          initiative: string
+          last_updated: string
+          monarch: string
+          overlay_layout: Json
+          players: Json
+          settings: Json
+        }[]
       }
       update_room_as_admin: {
         Args: { provided_admin_key: string; room_data: Json; room_id: string }
