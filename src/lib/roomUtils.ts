@@ -4,7 +4,20 @@ export interface Player {
   life: number;
   color: string;
   poison: number;
-  commanderDamage: Record<number, number>; // keyed by opponent player id
+  experience: number;
+  energy: number;
+  commanderDamage: Record<number, number>;
+}
+
+export interface HistoryEntry {
+  id: string;
+  timestamp: number;
+  playerId: number;
+  playerName: string;
+  type: 'life' | 'poison' | 'commander' | 'experience' | 'energy' | 'monarch';
+  oldValue: number;
+  newValue: number;
+  fromPlayerName?: string;
 }
 
 export interface RoomSettings {
@@ -22,6 +35,8 @@ export interface Room {
   playerCount: 2 | 3 | 4;
   players: Player[];
   settings: RoomSettings;
+  monarchId: number | null;
+  history: HistoryEntry[];
   createdAt: number;
   lastUpdated: number;
 }
@@ -65,6 +80,8 @@ export function createDefaultPlayers(count: 2 | 3 | 4, startingLife: number): Pl
     life: startingLife,
     color: defaultColors[i],
     poison: 0,
+    experience: 0,
+    energy: 0,
     commanderDamage: {},
   }));
 }
@@ -84,6 +101,8 @@ export function createRoom(playerCount: 2 | 3 | 4 = 4): Room {
       showBackgroundCards: true,
       overlayLayout: 'horizontal',
     },
+    monarchId: null,
+    history: [],
     createdAt: Date.now(),
     lastUpdated: Date.now(),
   };
@@ -102,14 +121,18 @@ export function loadRoomsState(): RoomsState {
     const stored = localStorage.getItem('lifeTrackerRooms');
     if (stored) {
       const state = JSON.parse(stored);
-      // Migrate old players without poison/commanderDamage
+      // Migrate old data
       for (const roomId in state.rooms) {
         const room = state.rooms[roomId];
         room.players = room.players.map((p: any) => ({
           ...p,
           poison: p.poison ?? 0,
+          experience: p.experience ?? 0,
+          energy: p.energy ?? 0,
           commanderDamage: p.commanderDamage ?? {},
         }));
+        room.monarchId = room.monarchId ?? null;
+        room.history = room.history ?? [];
       }
       return state;
     }
@@ -135,6 +158,8 @@ export function getRoom(roomId: string): Room | null {
 export function saveRoom(room: Room): void {
   const state = loadRoomsState();
   room.lastUpdated = Date.now();
+  // Keep only last 50 history entries
+  room.history = room.history.slice(-50);
   state.rooms[room.id] = room;
   
   state.recentRoomIds = [
@@ -155,4 +180,9 @@ export function deleteRoom(roomId: string): void {
   delete state.rooms[roomId];
   state.recentRoomIds = state.recentRoomIds.filter(id => id !== roomId);
   saveRoomsState(state);
+}
+
+export function formatTimestamp(timestamp: number): string {
+  const date = new Date(timestamp);
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }

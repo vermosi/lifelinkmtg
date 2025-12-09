@@ -1,10 +1,22 @@
 import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette } from 'lucide-react';
+import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown } from 'lucide-react';
 import { useRoomState } from '@/hooks/useRoomState';
-import { getControlUrl, getOverlayUrl, PLAYER_COLORS } from '@/lib/roomUtils';
+import { getControlUrl, getOverlayUrl, PLAYER_COLORS, formatTimestamp, HistoryEntry } from '@/lib/roomUtils';
 import { FullScreenPlayerPanel } from './FullScreenPlayerPanel';
 import { cn } from '@/lib/utils';
+
+function HistoryIcon({ type }: { type: HistoryEntry['type'] }) {
+  switch (type) {
+    case 'life': return <Heart className="w-3 h-3" />;
+    case 'poison': return <Skull className="w-3 h-3 text-green-400" />;
+    case 'experience': return <Sparkles className="w-3 h-3 text-yellow-400" />;
+    case 'energy': return <Zap className="w-3 h-3 text-blue-400" />;
+    case 'commander': return <Swords className="w-3 h-3 text-orange-400" />;
+    case 'monarch': return <Crown className="w-3 h-3 text-yellow-400" />;
+    default: return null;
+  }
+}
 
 export function RoomControl() {
   const { roomId } = useParams<{ roomId: string }>();
@@ -20,13 +32,18 @@ export function RoomControl() {
     setPlayerName,
     setPlayerColor,
     updatePlayerPoison,
+    updatePlayerExperience,
+    updatePlayerEnergy,
     updateCommanderDamage,
+    setMonarch,
     resetGame,
     setPlayerCount,
     setStartingLife,
+    clearHistory,
   } = useRoomState(roomId);
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuTab, setMenuTab] = useState<'settings' | 'history'>('settings');
   const [colorPickerPlayer, setColorPickerPlayer] = useState<number | null>(null);
   const [copiedUrl, setCopiedUrl] = useState<'control' | 'overlay' | null>(null);
   const [highlightedPlayer, setHighlightedPlayer] = useState<number | null>(null);
@@ -75,12 +92,9 @@ export function RoomControl() {
       return { rotation: index === 0 ? 180 : 0 };
     }
     if (total === 3) {
-      if (index === 0) return { rotation: 180 };
-      if (index === 1) return { rotation: 180 };
-      return { rotation: 0 };
+      return { rotation: index < 2 ? 180 : 0 };
     }
-    const rotations = [180, 180, 0, 0];
-    return { rotation: rotations[index] };
+    return { rotation: index < 2 ? 180 : 0 };
   };
 
   const getGridStyle = () => {
@@ -95,6 +109,16 @@ export function RoomControl() {
       return { gridColumn: '1 / -1' };
     }
     return {};
+  };
+
+  const formatHistoryChange = (entry: HistoryEntry) => {
+    if (entry.type === 'monarch') {
+      return 'became Monarch';
+    }
+    if (entry.type === 'commander' && entry.fromPlayerName) {
+      return `${entry.oldValue} → ${entry.newValue} (from ${entry.fromPlayerName})`;
+    }
+    return `${entry.oldValue} → ${entry.newValue}`;
   };
 
   return (
@@ -115,10 +139,14 @@ export function RoomControl() {
               <FullScreenPlayerPanel
                 player={player}
                 allPlayers={room.players}
+                isMonarch={room.monarchId === player.id}
                 onLifeChange={(delta) => updatePlayerLife(player.id, delta)}
                 onLifeSet={(life) => setPlayerLife(player.id, life)}
                 onPoisonChange={(delta) => updatePlayerPoison(player.id, delta)}
+                onExperienceChange={(delta) => updatePlayerExperience(player.id, delta)}
+                onEnergyChange={(delta) => updatePlayerEnergy(player.id, delta)}
                 onCommanderDamageChange={(fromId, delta) => updateCommanderDamage(player.id, fromId, delta)}
+                onToggleMonarch={() => setMonarch(room.monarchId === player.id ? null : player.id)}
                 isAdmin={isAdmin}
                 rotation={layout.rotation}
               />
@@ -142,26 +170,53 @@ export function RoomControl() {
       {/* Menu overlay */}
       {menuOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-background/95 backdrop-blur-sm flex items-center justify-center overflow-y-auto py-8"
+          className="fixed inset-0 z-40 bg-background/95 backdrop-blur-sm flex items-center justify-center overflow-y-auto py-6"
           onClick={() => { setMenuOpen(false); setColorPickerPlayer(null); }}
         >
           <div 
-            className="bg-card border border-border rounded-2xl p-6 w-[90%] max-w-md space-y-5 my-auto"
+            className="bg-card border border-border rounded-2xl p-5 w-[90%] max-w-md space-y-4 my-auto max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-3xl text-foreground">Room {room.id}</h2>
-              <span className="text-sm text-muted-foreground px-3 py-1 bg-secondary rounded-full">
+              <h2 className="font-display text-2xl text-foreground">Room {room.id}</h2>
+              <span className="text-xs text-muted-foreground px-2 py-1 bg-secondary rounded-full">
                 {isAdmin ? 'Admin' : 'View Only'}
               </span>
             </div>
 
-            {isAdmin && (
+            {/* Tab switcher */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setMenuTab('settings')}
+                className={cn(
+                  'flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2',
+                  menuTab === 'settings' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground'
+                )}
+              >
+                <Palette className="w-4 h-4" /> Settings
+              </button>
+              <button
+                onClick={() => setMenuTab('history')}
+                className={cn(
+                  'flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2',
+                  menuTab === 'history' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground'
+                )}
+              >
+                <History className="w-4 h-4" /> History
+                {room.history.length > 0 && (
+                  <span className="text-xs bg-primary/20 text-primary px-1.5 rounded">
+                    {room.history.length}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {menuTab === 'settings' && isAdmin && (
               <>
                 {/* Player count */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <Users className="w-4 h-4" /> Players
+                  <label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
+                    <Users className="w-3 h-3" /> Players
                   </label>
                   <div className="flex gap-2">
                     {([2, 3, 4] as const).map((count) => (
@@ -169,7 +224,7 @@ export function RoomControl() {
                         key={count}
                         onClick={() => setPlayerCount(count)}
                         className={cn(
-                          'flex-1 py-3 rounded-xl font-display text-2xl transition-all',
+                          'flex-1 py-2 rounded-xl font-display text-xl transition-all',
                           room.playerCount === count
                             ? 'bg-foreground text-background'
                             : 'bg-secondary text-muted-foreground hover:text-foreground'
@@ -183,8 +238,8 @@ export function RoomControl() {
 
                 {/* Starting life */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <Heart className="w-4 h-4" /> Starting Life
+                  <label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
+                    <Heart className="w-3 h-3" /> Starting Life
                   </label>
                   <div className="flex gap-2">
                     {([20, 40] as const).map((life) => (
@@ -192,7 +247,7 @@ export function RoomControl() {
                         key={life}
                         onClick={() => setStartingLife(life)}
                         className={cn(
-                          'flex-1 py-3 rounded-xl font-display text-2xl transition-all',
+                          'flex-1 py-2 rounded-xl font-display text-xl transition-all',
                           room.settings.startingLife === life
                             ? 'bg-foreground text-background'
                             : 'bg-secondary text-muted-foreground hover:text-foreground'
@@ -206,29 +261,39 @@ export function RoomControl() {
 
                 {/* Player names & colors */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <Palette className="w-4 h-4" /> Players & Colors
+                  <label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
+                    <Palette className="w-3 h-3" /> Players & Colors
                   </label>
                   <div className="space-y-2">
                     {room.players.map((player) => (
-                      <div key={player.id} className="flex gap-2">
+                      <div key={player.id} className="flex gap-2 items-center">
                         <button
                           onClick={() => setColorPickerPlayer(colorPickerPlayer === player.id ? null : player.id)}
-                          className="w-10 h-10 rounded-lg border-2 border-border flex-shrink-0 transition-transform hover:scale-105"
+                          className="w-9 h-9 rounded-lg border-2 border-border flex-shrink-0 transition-transform hover:scale-105"
                           style={{ backgroundColor: `hsl(${player.color})` }}
                         />
                         <input
                           type="text"
                           value={player.name}
                           onChange={(e) => setPlayerName(player.id, e.target.value)}
-                          className="flex-1 px-3 py-2 rounded-lg bg-secondary text-foreground border border-border focus:outline-none focus:ring-2 focus:ring-foreground/20"
-                          placeholder={`Player ${player.id}`}
+                          className="flex-1 px-3 py-2 rounded-lg bg-secondary text-foreground text-sm border border-border focus:outline-none focus:ring-2 focus:ring-foreground/20"
                         />
+                        <button
+                          onClick={() => setMonarch(room.monarchId === player.id ? null : player.id)}
+                          className={cn(
+                            'p-2 rounded-lg transition-all',
+                            room.monarchId === player.id 
+                              ? 'bg-yellow-400/20 text-yellow-400' 
+                              : 'bg-secondary text-muted-foreground hover:text-foreground'
+                          )}
+                          title="Toggle Monarch"
+                        >
+                          <Crown className="w-4 h-4" fill={room.monarchId === player.id ? 'currentColor' : 'none'} />
+                        </button>
                       </div>
                     ))}
                   </div>
 
-                  {/* Color picker dropdown */}
                   {colorPickerPlayer !== null && (
                     <div className="grid grid-cols-4 gap-2 p-3 bg-secondary rounded-xl mt-2">
                       {PLAYER_COLORS.map((color) => (
@@ -256,26 +321,69 @@ export function RoomControl() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => { resetGame(); setMenuOpen(false); }}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-secondary rounded-xl text-foreground hover:bg-secondary/80 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80 transition-colors"
                   >
                     <RotateCcw className="w-4 h-4" />
                     Reset
                   </button>
                   <button
                     onClick={randomizeFirstPlayer}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-secondary rounded-xl text-foreground hover:bg-secondary/80 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80 transition-colors"
                   >
                     <Shuffle className="w-4 h-4" />
                     Random
                   </button>
                 </div>
+
+                {/* Hint */}
+                <div className="text-center text-xs text-muted-foreground py-2 px-3 bg-secondary/50 rounded-lg">
+                  💡 Long-press or right-click a panel for counters
+                </div>
               </>
             )}
 
-            {/* Hint for counters */}
-            {isAdmin && (
-              <div className="text-center text-sm text-muted-foreground py-2 px-4 bg-secondary/50 rounded-lg">
-                💡 Long-press a player panel for poison & commander damage
+            {menuTab === 'history' && (
+              <div className="space-y-3">
+                {room.history.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground text-sm">
+                    No changes recorded yet
+                  </div>
+                ) : (
+                  <>
+                    <div className="max-h-64 overflow-y-auto space-y-1.5 pr-1">
+                      {[...room.history].reverse().map((entry) => (
+                        <div
+                          key={entry.id}
+                          className="flex items-center gap-2 text-sm py-1.5 px-2 rounded-lg bg-secondary/50"
+                        >
+                          <HistoryIcon type={entry.type} />
+                          <span className="font-medium text-foreground">{entry.playerName}</span>
+                          <span className="text-muted-foreground flex-1 truncate">
+                            {formatHistoryChange(entry)}
+                          </span>
+                          <span className="text-xs text-muted-foreground/60">
+                            {formatTimestamp(entry.timestamp)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    {isAdmin && (
+                      <button
+                        onClick={clearHistory}
+                        className="w-full flex items-center justify-center gap-2 py-2 bg-destructive/10 text-destructive rounded-lg text-sm hover:bg-destructive/20 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Clear History
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {menuTab === 'settings' && !isAdmin && (
+              <div className="text-center py-4 text-muted-foreground text-sm">
+                View-only mode. Admin access required to change settings.
               </div>
             )}
 
@@ -283,7 +391,7 @@ export function RoomControl() {
             <div className="space-y-2 pt-2 border-t border-border">
               <button
                 onClick={() => copyUrl('overlay')}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-accent rounded-xl text-accent-foreground font-medium hover:bg-accent/90 transition-colors"
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-accent rounded-xl text-accent-foreground text-sm font-medium hover:bg-accent/90 transition-colors"
               >
                 {copiedUrl === 'overlay' ? <Check className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
                 Copy Overlay URL (for OBS)
@@ -291,7 +399,7 @@ export function RoomControl() {
               {isAdmin && (
                 <button
                   onClick={() => copyUrl('control')}
-                  className="w-full flex items-center justify-center gap-2 py-3 bg-secondary rounded-xl text-foreground hover:bg-secondary/80 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80 transition-colors"
                 >
                   {copiedUrl === 'control' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                   Copy Admin URL
@@ -299,10 +407,9 @@ export function RoomControl() {
               )}
             </div>
 
-            {/* Back to home */}
             <button
               onClick={() => navigate('/')}
-              className="w-full flex items-center justify-center gap-2 py-3 text-muted-foreground hover:text-foreground transition-colors"
+              className="w-full flex items-center justify-center gap-2 py-2 text-muted-foreground text-sm hover:text-foreground transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Home
