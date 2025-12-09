@@ -139,6 +139,15 @@ export function useCloudRoomState(roomId: string | undefined) {
     }));
   }, [updateRoom]);
 
+  const setPlayerDeckName = useCallback((playerId: number, deckName: string) => {
+    updateRoom(prev => ({
+      ...prev,
+      players: prev.players.map(p =>
+        p.id === playerId ? { ...p, deckName } : p
+      ),
+    }));
+  }, [updateRoom]);
+
   const updatePlayerPoison = useCallback((playerId: number, delta: number) => {
     updateRoom(prev => {
       const player = prev.players.find(p => p.id === playerId);
@@ -408,6 +417,7 @@ export function useCloudRoomState(roomId: string | undefined) {
     setPlayerLife,
     setPlayerName,
     setPlayerColor,
+    setPlayerDeckName,
     updatePlayerPoison,
     updatePlayerExperience,
     updatePlayerEnergy,
