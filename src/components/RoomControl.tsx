@@ -2,7 +2,7 @@ import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown, Shield, Sun, Moon, Dices, Save, FolderOpen, Plus, Cloud, Loader2 } from 'lucide-react';
 import { useCloudRoomState } from '@/hooks/useCloudRoomState';
-import { getControlUrl, getOverlayUrl, formatTimestamp, HistoryEntry, DUNGEON_ROOMS, loadPresets, savePreset, deletePreset, createPresetFromRoom, GamePreset } from '@/lib/roomUtils';
+import { getControlUrl, getOverlayUrl, PLAYER_COLORS, formatTimestamp, HistoryEntry, DUNGEON_ROOMS, loadPresets, savePreset, deletePreset, createPresetFromRoom, GamePreset } from '@/lib/roomUtils';
 import { FullScreenPlayerPanel } from './FullScreenPlayerPanel';
 import { DiceRoller } from './DiceRoller';
 import { cn } from '@/lib/utils';
@@ -522,52 +522,69 @@ export function RoomControl() {
                   <label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                     <Palette className="w-3 h-3" /> Players
                   </label>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {room.players.map((player) => (
-                      <div key={player.id} className="flex gap-2 items-center">
-                        <label className="relative w-8 h-8 rounded-lg border-2 border-border flex-shrink-0 overflow-hidden cursor-pointer transition-transform hover:scale-105">
+                      <div key={player.id} className="space-y-1.5">
+                        <div className="flex gap-2 items-center">
+                          <label className="relative w-8 h-8 rounded-lg border-2 border-border flex-shrink-0 overflow-hidden cursor-pointer transition-transform hover:scale-105">
+                            <input
+                              type="color"
+                              value={hslToHex(player.color)}
+                              onChange={(e) => setPlayerColor(player.id, hexToHsl(e.target.value))}
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                              aria-label={`Change color for ${player.name}`}
+                            />
+                            <div 
+                              className="w-full h-full"
+                              style={{ backgroundColor: `hsl(${player.color})` }}
+                            />
+                          </label>
                           <input
-                            type="color"
-                            value={hslToHex(player.color)}
-                            onChange={(e) => setPlayerColor(player.id, hexToHsl(e.target.value))}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                            aria-label={`Change color for ${player.name}`}
+                            type="text"
+                            value={player.name}
+                            onChange={(e) => setPlayerName(player.id, e.target.value)}
+                            className="flex-1 px-2 py-1.5 rounded-lg bg-secondary text-foreground text-sm border border-border focus:outline-none focus:ring-2 focus:ring-foreground/20"
                           />
-                          <div 
-                            className="w-full h-full"
-                            style={{ backgroundColor: `hsl(${player.color})` }}
-                          />
-                        </label>
-                        <input
-                          type="text"
-                          value={player.name}
-                          onChange={(e) => setPlayerName(player.id, e.target.value)}
-                          className="flex-1 px-2 py-1.5 rounded-lg bg-secondary text-foreground text-sm border border-border focus:outline-none focus:ring-2 focus:ring-foreground/20"
-                        />
-                        <button
-                          onClick={() => setMonarch(room.monarchId === player.id ? null : player.id)}
-                          className={cn(
-                            'p-1.5 rounded-lg transition-all',
-                            room.monarchId === player.id 
-                              ? 'bg-yellow-400/20 text-yellow-400' 
-                              : 'bg-secondary text-muted-foreground hover:text-foreground'
-                          )}
-                          title="Monarch"
-                        >
-                          <Crown className="w-4 h-4" fill={room.monarchId === player.id ? 'currentColor' : 'none'} />
-                        </button>
-                        <button
-                          onClick={() => setInitiative(room.initiativeId === player.id ? null : player.id)}
-                          className={cn(
-                            'p-1.5 rounded-lg transition-all',
-                            room.initiativeId === player.id 
-                              ? 'bg-purple-400/20 text-purple-400' 
-                              : 'bg-secondary text-muted-foreground hover:text-foreground'
-                          )}
-                          title="Initiative"
-                        >
-                          <Shield className="w-4 h-4" fill={room.initiativeId === player.id ? 'currentColor' : 'none'} />
-                        </button>
+                          <button
+                            onClick={() => setMonarch(room.monarchId === player.id ? null : player.id)}
+                            className={cn(
+                              'p-1.5 rounded-lg transition-all',
+                              room.monarchId === player.id 
+                                ? 'bg-yellow-400/20 text-yellow-400' 
+                                : 'bg-secondary text-muted-foreground hover:text-foreground'
+                            )}
+                            title="Monarch"
+                          >
+                            <Crown className="w-4 h-4" fill={room.monarchId === player.id ? 'currentColor' : 'none'} />
+                          </button>
+                          <button
+                            onClick={() => setInitiative(room.initiativeId === player.id ? null : player.id)}
+                            className={cn(
+                              'p-1.5 rounded-lg transition-all',
+                              room.initiativeId === player.id 
+                                ? 'bg-purple-400/20 text-purple-400' 
+                                : 'bg-secondary text-muted-foreground hover:text-foreground'
+                            )}
+                            title="Initiative"
+                          >
+                            <Shield className="w-4 h-4" fill={room.initiativeId === player.id ? 'currentColor' : 'none'} />
+                          </button>
+                        </div>
+                        {/* Preset colors row */}
+                        <div className="flex gap-1 pl-10">
+                          {PLAYER_COLORS.map((color) => (
+                            <button
+                              key={color.value}
+                              onClick={() => setPlayerColor(player.id, color.value)}
+                              className={cn(
+                                'w-5 h-5 rounded-full border-2 transition-transform hover:scale-110',
+                                player.color === color.value ? 'border-white scale-110' : 'border-transparent'
+                              )}
+                              style={{ backgroundColor: `hsl(${color.value})` }}
+                              title={color.name}
+                            />
+                          ))}
+                        </div>
                       </div>
                     ))}
                   </div>
