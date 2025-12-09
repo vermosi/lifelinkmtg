@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Users, Cloud, Loader2 } from 'lucide-react';
+import { Plus, Users, Cloud, Loader2, Infinity } from 'lucide-react';
 import { Room } from '@/lib/roomUtils';
 import { createCloudRoom, getRecentCloudRooms, deleteCloudRoom, removeFromRecentRooms } from '@/lib/cloudRoomUtils';
 import { cn } from '@/lib/utils';
@@ -49,6 +49,7 @@ export function RoomSelector() {
       <div className="w-full max-w-sm space-y-10">
         {/* Logo */}
         <div className="text-center">
+          <Infinity className="w-16 h-16 mx-auto text-accent mb-2" strokeWidth={1.5} />
           <h1 className="font-display text-6xl text-foreground tracking-tight">
             LifeLink
           </h1>
