@@ -106,22 +106,32 @@ export async function createCloudRoom(playerCount: 2 | 3 | 4 = 4): Promise<Room 
   return room;
 }
 
-// Get a room from the cloud (using public view - no admin_key exposed)
+// Get a room from the cloud (using RPC function - no admin_key exposed)
 export async function getCloudRoom(roomId: string): Promise<Room | null> {
   const { data, error } = await supabase
-    .from('rooms_public')
-    .select('*')
-    .eq('id', roomId)
-    .maybeSingle();
+    .rpc('get_room_public', { room_id_param: roomId });
 
   if (error) {
     console.error('Error fetching cloud room:', error);
     return null;
   }
 
-  if (!data) return null;
+  if (!data || data.length === 0) return null;
 
-  return dbToRoom(data as any);
+  const row = data[0];
+  return dbToRoom({
+    id: row.id,
+    settings: row.settings,
+    players: row.players,
+    day_night: row.day_night,
+    monarch: row.monarch,
+    initiative: row.initiative,
+    dungeon_progress: row.dungeon_progress,
+    overlay_layout: row.overlay_layout,
+    history: row.history,
+    created_at: row.created_at,
+    last_updated: row.last_updated,
+  });
 }
 
 // Type for the room data returned by verify_room_admin RPC
@@ -242,18 +252,15 @@ export async function getRecentCloudRooms(): Promise<Room[]> {
     
     const recentIds: string[] = JSON.parse(stored);
     
-    const { data, error } = await supabase
-      .from('rooms_public')
-      .select('*')
-      .in('id', recentIds)
-      .order('last_updated', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching recent rooms:', error);
-      return [];
+    // Fetch each room individually using RPC (since we can't use IN with RPC)
+    const rooms: Room[] = [];
+    for (const roomId of recentIds) {
+      const room = await getCloudRoom(roomId);
+      if (room) rooms.push(room);
     }
-
-    return (data || []).map((r) => dbToRoom(r as any));
+    
+    // Sort by last updated
+    return rooms.sort((a, b) => b.lastUpdated - a.lastUpdated);
   } catch {
     return [];
   }
