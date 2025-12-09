@@ -3,6 +3,8 @@ export interface Player {
   name: string;
   life: number;
   color: string;
+  poison: number;
+  commanderDamage: Record<number, number>; // keyed by opponent player id
 }
 
 export interface RoomSettings {
@@ -29,11 +31,15 @@ export interface RoomsState {
   recentRoomIds: string[];
 }
 
-const PLAYER_COLORS = [
-  '45 100% 55%',   // Gold/White
-  '200 100% 50%',  // Blue
-  '0 0% 40%',      // Gray/Black
-  '0 80% 55%',     // Red
+export const PLAYER_COLORS = [
+  { name: 'Gold', value: '45 90% 45%' },
+  { name: 'Crimson', value: '345 75% 40%' },
+  { name: 'Purple', value: '270 40% 35%' },
+  { name: 'Navy', value: '220 60% 30%' },
+  { name: 'Forest', value: '140 50% 30%' },
+  { name: 'Orange', value: '25 90% 45%' },
+  { name: 'Teal', value: '180 60% 35%' },
+  { name: 'Rose', value: '330 60% 50%' },
 ];
 
 export function generateId(length: number = 6): string {
@@ -46,11 +52,20 @@ export function generateId(length: number = 6): string {
 }
 
 export function createDefaultPlayers(count: 2 | 3 | 4, startingLife: number): Player[] {
+  const defaultColors = [
+    '45 90% 45%',
+    '345 75% 40%',
+    '270 40% 35%',
+    '220 60% 30%',
+  ];
+  
   return Array.from({ length: count }, (_, i) => ({
     id: i + 1,
     name: `Player ${i + 1}`,
     life: startingLife,
-    color: PLAYER_COLORS[i],
+    color: defaultColors[i],
+    poison: 0,
+    commanderDamage: {},
   }));
 }
 
@@ -86,7 +101,17 @@ export function loadRoomsState(): RoomsState {
   try {
     const stored = localStorage.getItem('lifeTrackerRooms');
     if (stored) {
-      return JSON.parse(stored);
+      const state = JSON.parse(stored);
+      // Migrate old players without poison/commanderDamage
+      for (const roomId in state.rooms) {
+        const room = state.rooms[roomId];
+        room.players = room.players.map((p: any) => ({
+          ...p,
+          poison: p.poison ?? 0,
+          commanderDamage: p.commanderDamage ?? {},
+        }));
+      }
+      return state;
     }
   } catch {
     // Ignore errors
@@ -112,7 +137,6 @@ export function saveRoom(room: Room): void {
   room.lastUpdated = Date.now();
   state.rooms[room.id] = room;
   
-  // Update recent rooms list
   state.recentRoomIds = [
     room.id,
     ...state.recentRoomIds.filter(id => id !== room.id)
@@ -120,7 +144,6 @@ export function saveRoom(room: Room): void {
   
   saveRoomsState(state);
   
-  // Dispatch storage event for other windows
   window.dispatchEvent(new StorageEvent('storage', {
     key: 'lifeTrackerRooms',
     newValue: JSON.stringify(state),

@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Room, getRoom, saveRoom, loadRoomsState } from '@/lib/roomUtils';
+import { Room, Player, getRoom, saveRoom, loadRoomsState } from '@/lib/roomUtils';
 
 export function useRoomState(roomId: string | undefined) {
   const [room, setRoom] = useState<Room | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Load room on mount
   useEffect(() => {
     if (!roomId) {
       setLoading(false);
@@ -17,7 +16,6 @@ export function useRoomState(roomId: string | undefined) {
     setLoading(false);
   }, [roomId]);
 
-  // Listen for storage events (cross-tab sync)
   useEffect(() => {
     if (!roomId) return;
 
@@ -38,7 +36,6 @@ export function useRoomState(roomId: string | undefined) {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [roomId]);
 
-  // Poll for updates (for same-window sync with overlay)
   useEffect(() => {
     if (!roomId) return;
 
@@ -88,12 +85,49 @@ export function useRoomState(roomId: string | undefined) {
     }));
   }, [updateRoom]);
 
+  const setPlayerColor = useCallback((playerId: number, color: string) => {
+    updateRoom(prev => ({
+      ...prev,
+      players: prev.players.map(p =>
+        p.id === playerId ? { ...p, color } : p
+      ),
+    }));
+  }, [updateRoom]);
+
+  const updatePlayerPoison = useCallback((playerId: number, delta: number) => {
+    updateRoom(prev => ({
+      ...prev,
+      players: prev.players.map(p =>
+        p.id === playerId ? { ...p, poison: Math.max(0, p.poison + delta) } : p
+      ),
+    }));
+  }, [updateRoom]);
+
+  const updateCommanderDamage = useCallback((playerId: number, fromPlayerId: number, delta: number) => {
+    updateRoom(prev => ({
+      ...prev,
+      players: prev.players.map(p => {
+        if (p.id !== playerId) return p;
+        const currentDamage = p.commanderDamage[fromPlayerId] || 0;
+        return {
+          ...p,
+          commanderDamage: {
+            ...p.commanderDamage,
+            [fromPlayerId]: Math.max(0, currentDamage + delta),
+          },
+        };
+      }),
+    }));
+  }, [updateRoom]);
+
   const resetGame = useCallback(() => {
     updateRoom(prev => ({
       ...prev,
       players: prev.players.map(p => ({
         ...p,
         life: prev.settings.startingLife,
+        poison: 0,
+        commanderDamage: {},
       })),
     }));
   }, [updateRoom]);
@@ -103,18 +137,25 @@ export function useRoomState(roomId: string | undefined) {
       const currentPlayers = prev.players;
       let newPlayers = [...currentPlayers];
       
+      const defaultColors = [
+        '45 90% 45%',
+        '345 75% 40%',
+        '270 40% 35%',
+        '220 60% 30%',
+      ];
+      
       if (count > currentPlayers.length) {
-        // Add new players
         for (let i = currentPlayers.length; i < count; i++) {
           newPlayers.push({
             id: i + 1,
             name: `Player ${i + 1}`,
             life: prev.settings.startingLife,
-            color: ['45 100% 55%', '200 100% 50%', '0 0% 40%', '0 80% 55%'][i],
+            color: defaultColors[i],
+            poison: 0,
+            commanderDamage: {},
           });
         }
       } else {
-        // Remove extra players
         newPlayers = newPlayers.slice(0, count);
       }
       
@@ -130,7 +171,7 @@ export function useRoomState(roomId: string | undefined) {
     updateRoom(prev => ({
       ...prev,
       settings: { ...prev.settings, startingLife: life },
-      players: prev.players.map(p => ({ ...p, life })),
+      players: prev.players.map(p => ({ ...p, life, poison: 0, commanderDamage: {} })),
     }));
   }, [updateRoom]);
 
@@ -141,6 +182,9 @@ export function useRoomState(roomId: string | undefined) {
     updatePlayerLife,
     setPlayerLife,
     setPlayerName,
+    setPlayerColor,
+    updatePlayerPoison,
+    updateCommanderDamage,
     resetGame,
     setPlayerCount,
     setStartingLife,
