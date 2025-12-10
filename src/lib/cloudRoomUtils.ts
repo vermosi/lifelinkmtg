@@ -293,31 +293,34 @@ export function removeFromRecentRooms(roomId: string): void {
   }
 }
 
-// Subscribe to room changes
-export function subscribeToRoom(
-  roomId: string, 
-  onUpdate: (room: Room) => void
-) {
-  const channel = supabase
-    .channel(`room-${roomId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'rooms',
-        filter: `id=eq.${roomId}`,
-      },
-      (payload) => {
-        if (payload.new) {
-          const room = dbToRoom(payload.new as any);
-          onUpdate(room);
-        }
+// Poll for room updates (realtime requires SELECT access which would expose admin_key)
+export function subscribeToRoom(roomId: string, onUpdate: (room: Room) => void) {
+  let lastUpdated: number | null = null;
+  let isActive = true;
+  
+  const pollRoom = async () => {
+    if (!isActive) return;
+    
+    try {
+      const room = await getCloudRoom(roomId);
+      if (room && room.lastUpdated !== lastUpdated) {
+        lastUpdated = room.lastUpdated;
+        onUpdate(room);
       }
-    )
-    .subscribe();
+    } catch (error) {
+      console.error('Error polling room:', error);
+    }
+    
+    if (isActive) {
+      setTimeout(pollRoom, 2000); // Poll every 2 seconds
+    }
+  };
+  
+  // Start polling
+  pollRoom();
 
+  // Return unsubscribe function
   return () => {
-    supabase.removeChannel(channel);
+    isActive = false;
   };
 }
