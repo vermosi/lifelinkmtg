@@ -38,9 +38,12 @@ export function dbToRoom(dbRoom: {
   const history = (dbRoom.history as unknown as HistoryEntry[]) || [];
   const overlayLayout = dbRoom.overlay_layout as OverlayLayout | null;
   
+  // Try to get admin key from local storage if not provided
+  const storedAdminKey = getStoredAdminKey(dbRoom.id);
+  
   return {
     id: dbRoom.id,
-    adminKey: dbRoom.admin_key || '', // Empty if not provided (secure)
+    adminKey: dbRoom.admin_key || storedAdminKey || '',
     playerCount: players.length as 2 | 3 | 4,
     players: players.map(p => ({
       ...p,
@@ -66,6 +69,43 @@ export function dbToRoom(dbRoom: {
     createdAt: new Date(dbRoom.created_at).getTime(),
     lastUpdated: new Date(dbRoom.last_updated).getTime(),
   };
+}
+
+// Store admin key locally for a room
+export function storeAdminKey(roomId: string, adminKey: string): void {
+  try {
+    const stored = localStorage.getItem('lifeTrackerAdminKeys');
+    const keys: Record<string, string> = stored ? JSON.parse(stored) : {};
+    keys[roomId] = adminKey;
+    localStorage.setItem('lifeTrackerAdminKeys', JSON.stringify(keys));
+  } catch {
+    // Ignore errors
+  }
+}
+
+// Get stored admin key for a room
+export function getStoredAdminKey(roomId: string): string | null {
+  try {
+    const stored = localStorage.getItem('lifeTrackerAdminKeys');
+    if (!stored) return null;
+    const keys: Record<string, string> = JSON.parse(stored);
+    return keys[roomId] || null;
+  } catch {
+    return null;
+  }
+}
+
+// Remove stored admin key for a room
+export function removeStoredAdminKey(roomId: string): void {
+  try {
+    const stored = localStorage.getItem('lifeTrackerAdminKeys');
+    if (!stored) return;
+    const keys: Record<string, string> = JSON.parse(stored);
+    delete keys[roomId];
+    localStorage.setItem('lifeTrackerAdminKeys', JSON.stringify(keys));
+  } catch {
+    // Ignore errors
+  }
 }
 
 // Create a new room in the cloud
@@ -102,6 +142,9 @@ export async function createCloudRoom(playerCount: 2 | 3 | 4 = 4): Promise<Room 
     console.error('Error creating cloud room:', error);
     return null;
   }
+
+  // Store admin key locally for future access
+  storeAdminKey(room.id, room.adminKey);
 
   return room;
 }
@@ -239,6 +282,9 @@ export async function deleteCloudRoom(roomId: string, adminKey: string): Promise
     console.error('Error deleting cloud room:', error);
     return false;
   }
+
+  // Also remove the stored admin key
+  removeStoredAdminKey(roomId);
 
   return data === true;
 }
