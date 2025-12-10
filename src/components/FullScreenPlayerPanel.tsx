@@ -75,6 +75,11 @@ export function FullScreenPlayerPanel({
     if (!isFocused || !isAdmin || overlayMode !== 'none') return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept keyboard shortcuts when user is typing in an input
+      const activeElement = document.activeElement;
+      if (activeElement?.tagName === 'INPUT' || activeElement?.tagName === 'TEXTAREA') {
+        return;
+      }
       // Prevent defaults for our shortcuts
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '+', '-', '='].includes(e.key)) {
         e.preventDefault();
