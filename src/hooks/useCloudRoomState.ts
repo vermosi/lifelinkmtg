@@ -1,11 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Room, HistoryEntry, OverlayLayout, generateId, createDefaultOverlayLayout, GamePreset } from '@/lib/roomUtils';
-import { getCloudRoom, updateCloudRoom, subscribeToRoom, addToRecentRooms } from '@/lib/cloudRoomUtils';
+import { getCloudRoom, updateCloudRoom, subscribeToRoom, addToRecentRooms, getStoredAdminKey } from '@/lib/cloudRoomUtils';
 
 export function useCloudRoomState(roomId: string | undefined) {
   const [searchParams] = useSearchParams();
-  const adminKey = searchParams.get('adminKey') || '';
+  // Get admin key from URL first, fall back to locally stored key
+  const urlAdminKey = searchParams.get('adminKey') || '';
+  const storedAdminKey = roomId ? getStoredAdminKey(roomId) : null;
+  const adminKey = urlAdminKey || storedAdminKey || '';
   
   const [room, setRoom] = useState<Room | null>(null);
   const [loading, setLoading] = useState(true);
