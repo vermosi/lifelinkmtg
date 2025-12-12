@@ -348,17 +348,26 @@ export function FullScreenPlayerPanel({
 
         {/* Deck name / Commander - below life total */}
         {isEditingDeck ? (
-          <input
-            type="text"
-            value={deckEditValue}
-            onChange={(e) => setDeckEditValue(e.target.value)}
-            onBlur={handleDeckSubmit}
-            onKeyDown={(e) => e.key === 'Enter' && handleDeckSubmit()}
-            placeholder="Deck / Commander..."
-            className="mt-2 px-3 py-1.5 rounded-lg bg-black/30 text-white text-sm text-center outline-none border border-white/20 focus:border-white/50 max-w-[80%]"
-            autoFocus
-            aria-label="Edit deck name"
-          />
+          <div className="flex flex-col items-center mt-2">
+            <input
+              type="text"
+              value={deckEditValue}
+              onChange={(e) => setDeckEditValue(e.target.value)}
+              onBlur={handleDeckSubmit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleDeckSubmit();
+                if (e.key === 'Escape') {
+                  setDeckEditValue(player.deckName || '');
+                  setIsEditingDeck(false);
+                }
+              }}
+              placeholder="Deck / Commander..."
+              className="px-3 py-1.5 rounded-lg bg-black/30 text-white text-sm text-center outline-none border border-white/20 focus:border-white/50 max-w-[80%]"
+              autoFocus
+              aria-label="Edit deck name"
+            />
+            <span className="mt-1 text-[10px] text-white/50">Enter to save · Esc to cancel</span>
+          </div>
         ) : (
           <button
             onClick={handleDeckClick}
