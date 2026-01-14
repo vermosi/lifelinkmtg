@@ -29,6 +29,7 @@ export interface RoomSettings {
   showBackgroundCards: boolean;
   overlayLayout: 'horizontal' | 'vertical';
   simpleTextStyle: boolean;
+  enableHoldToAdjust: boolean;
 }
 
 export interface OverlayPosition {
@@ -202,6 +203,7 @@ export function createRoom(playerCount: 2 | 3 | 4 = 4): Room {
       showBackgroundCards: true,
       overlayLayout: 'horizontal',
       simpleTextStyle: false,
+      enableHoldToAdjust: false,
     },
     monarchId: null,
     initiativeId: null,
@@ -219,7 +221,7 @@ export function getControlUrl(room: Room): string {
 }
 
 export function getOverlayUrl(room: Room): string {
-  return `${window.location.origin}/room/${room.id}/overlay`;
+  return `${window.location.origin}/overlay?roomId=${room.id}`;
 }
 
 export function loadRoomsState(): RoomsState {
@@ -241,6 +243,10 @@ export function loadRoomsState(): RoomsState {
         room.dungeonProgress = room.dungeonProgress ?? 0;
         room.isDay = room.isDay ?? true;
         room.history = room.history ?? [];
+        room.settings = {
+          ...(room.settings || {}),
+          enableHoldToAdjust: room.settings?.enableHoldToAdjust ?? false,
+        };
         if (!room.overlayLayout) {
           room.overlayLayout = createDefaultOverlayLayout(room.playerCount);
         }

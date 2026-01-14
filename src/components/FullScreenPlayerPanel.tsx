@@ -21,6 +21,9 @@ interface FullScreenPlayerPanelProps {
   onDeckNameChange: (deckName: string) => void;
   isAdmin: boolean;
   rotation: number;
+  isSelected: boolean;
+  enableHoldToAdjust: boolean;
+  onSelect: () => void;
 }
 
 type OverlayMode = 'none' | 'counters' | 'commander';
@@ -44,6 +47,9 @@ export function FullScreenPlayerPanel({
   onDeckNameChange,
   isAdmin,
   rotation,
+  isSelected,
+  enableHoldToAdjust,
+  onSelect,
 }: FullScreenPlayerPanelProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(player.life.toString());
@@ -58,6 +64,9 @@ export function FullScreenPlayerPanel({
   const panelRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const holdTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const holdIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastLifeActionRef = useRef(0);
   const touchStartX = useRef<number>(0);
   const isSwiping = useRef(false);
 
@@ -132,8 +141,13 @@ export function FullScreenPlayerPanel({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isFocused, isAdmin, overlayMode, player.life, onToggleMonarch, onToggleInitiative]);
 
-  const handleLifeChange = (delta: number) => {
+  const handleLifeChange = (delta: number, fromHold = false) => {
     if (!isAdmin) return;
+    if (!fromHold) {
+      const now = Date.now();
+      if (now - lastLifeActionRef.current < 120) return;
+      lastLifeActionRef.current = now;
+    }
     onLifeChange(delta);
     setAnimating(true);
     setTimeout(() => setAnimating(false), 200);
@@ -171,6 +185,32 @@ export function FullScreenPlayerPanel({
     }
   };
 
+  const stopHoldToAdjust = () => {
+    if (holdTimeoutRef.current) {
+      clearTimeout(holdTimeoutRef.current);
+      holdTimeoutRef.current = null;
+    }
+    if (holdIntervalRef.current) {
+      clearInterval(holdIntervalRef.current);
+      holdIntervalRef.current = null;
+    }
+  };
+
+  const startHoldToAdjust = (delta: number) => {
+    if (!isAdmin || !enableHoldToAdjust) return;
+    holdTimeoutRef.current = setTimeout(() => {
+      handleLifeChange(delta, true);
+      holdIntervalRef.current = setInterval(() => handleLifeChange(delta, true), 150);
+    }, 300);
+  };
+
+  useEffect(() => {
+    return () => {
+      stopHoldToAdjust();
+      clearLongPress();
+    };
+  }, []);
+
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (!isAdmin) return;
     touchStartX.current = e.touches[0].clientX;
@@ -192,6 +232,7 @@ export function FullScreenPlayerPanel({
 
   const handleTouchEnd = useCallback(() => {
     clearLongPress();
+    stopHoldToAdjust();
   }, []);
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
@@ -209,10 +250,12 @@ export function FullScreenPlayerPanel({
 
   const handleMouseUp = useCallback(() => {
     clearLongPress();
+    stopHoldToAdjust();
   }, []);
 
   const handleMouseLeave = useCallback(() => {
     clearLongPress();
+    stopHoldToAdjust();
   }, []);
 
   const handleSwipeStart = useCallback((e: React.TouchEvent) => {
@@ -269,11 +312,13 @@ export function FullScreenPlayerPanel({
       tabIndex={isAdmin ? 0 : -1}
       className={cn(
         "player-panel w-full h-full relative outline-none",
-        isFocused && isAdmin && "ring-4 ring-white/50 ring-inset"
+        isFocused && isAdmin && "ring-4 ring-white/50 ring-inset",
+        isSelected && "ring-4 ring-white/80 ring-inset"
       )}
       style={{ backgroundColor: `hsl(${player.color})` }}
-      onFocus={() => setIsFocused(true)}
+      onFocus={() => { setIsFocused(true); onSelect(); }}
       onBlur={() => setIsFocused(false)}
+      onClick={onSelect}
       onTouchStart={overlayMode === 'none' ? handleTouchStart : handleSwipeStart}
       onTouchMove={overlayMode === 'none' ? handleTouchMove : undefined}
       onTouchEnd={overlayMode === 'none' ? handleTouchEnd : handleSwipeEnd}
@@ -315,6 +360,10 @@ export function FullScreenPlayerPanel({
             onClick={() => handleLifeChange(-1)}
             className="life-button top-12"
             aria-label="Decrease life by 1"
+            onPointerDown={() => startHoldToAdjust(-1)}
+            onPointerUp={stopHoldToAdjust}
+            onPointerLeave={stopHoldToAdjust}
+            onPointerCancel={stopHoldToAdjust}
           >
             −
           </button>
@@ -390,6 +439,10 @@ export function FullScreenPlayerPanel({
             onClick={() => handleLifeChange(1)}
             className="life-button bottom-12"
             aria-label="Increase life by 1"
+            onPointerDown={() => startHoldToAdjust(1)}
+            onPointerUp={stopHoldToAdjust}
+            onPointerLeave={stopHoldToAdjust}
+            onPointerCancel={stopHoldToAdjust}
           >
             +
           </button>
@@ -445,7 +498,7 @@ export function FullScreenPlayerPanel({
             className="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs px-2 py-1 rounded bg-black/50 backdrop-blur-sm"
             style={{ color: 'white' }}
           >
-            ↑↓ Life · C Counters · M Monarch · I Initiative
+            ↑↓ / ± Life · C Counters · M Monarch · I Initiative · U Undo · R Reset
           </div>
         )}
       </div>

@@ -1,0 +1,13 @@
+import { useEffect } from 'react';
+import { ObsOverlayView } from '@/components/ObsOverlayView';
+import { trackEvent } from '@/lib/analytics';
+
+const ObsOverlayPage = () => {
+  useEffect(() => {
+    trackEvent('overlay_loaded');
+  }, []);
+
+  return <ObsOverlayView />;
+};
+
+export default ObsOverlayPage;

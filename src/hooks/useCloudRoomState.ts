@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Room, HistoryEntry, OverlayLayout, generateId, createDefaultOverlayLayout, GamePreset } from '@/lib/roomUtils';
 import { getCloudRoom, updateCloudRoom, subscribeToRoom, addToRecentRooms, getStoredAdminKey } from '@/lib/cloudRoomUtils';
+import { loadPersistedRoom, savePersistedRoom } from '@/lib/roomPersistence';
+import { trackEvent } from '@/lib/analytics';
 
 export function useCloudRoomState(roomId: string | undefined) {
   const [searchParams] = useSearchParams();
@@ -23,20 +25,27 @@ export function useCloudRoomState(roomId: string | undefined) {
       return;
     }
 
+    const cachedRoom = loadPersistedRoom(roomId);
+    if (cachedRoom) {
+      setRoom(cachedRoom);
+      setLoading(false);
+    }
+
     const loadRoom = async () => {
-      setLoading(true);
+      setLoading(!cachedRoom);
       try {
         const cloudRoom = await getCloudRoom(roomId);
         if (cloudRoom) {
           setRoom(cloudRoom);
           addToRecentRooms(roomId);
           lastUpdateRef.current = JSON.stringify(cloudRoom);
+          savePersistedRoom(cloudRoom);
         } else {
-          setRoom(null);
+          setRoom(cachedRoom || null);
         }
       } catch (error) {
         console.error('Failed to load room.', error);
-        setRoom(null);
+        setRoom(cachedRoom || null);
       } finally {
         setLoading(false);
       }
@@ -55,6 +64,7 @@ export function useCloudRoomState(roomId: string | undefined) {
       if (updateStr !== lastUpdateRef.current) {
         lastUpdateRef.current = updateStr;
         setRoom(updatedRoom);
+        savePersistedRoom(updatedRoom);
       }
     });
 
@@ -108,6 +118,7 @@ export function useCloudRoomState(roomId: string | undefined) {
       if (!prev) return prev;
       const updated = updater(prev);
       syncToCloud(updated);
+      savePersistedRoom(updated);
       return updated;
     });
   }, [syncToCloud]);
@@ -117,6 +128,7 @@ export function useCloudRoomState(roomId: string | undefined) {
       const player = prev.players.find(p => p.id === playerId);
       const oldValue = player?.life || 0;
       const newValue = oldValue + delta;
+      trackEvent('life_changed', { roomId: prev.id, playerId, delta, newValue });
       return {
         ...prev,
         players: prev.players.map(p =>
@@ -127,10 +139,32 @@ export function useCloudRoomState(roomId: string | undefined) {
     });
   }, [updateRoom, addHistoryEntry]);
 
+  const undoLastLifeChange = useCallback(() => {
+    updateRoom(prev => {
+      const lastLifeEntryIndex = [...prev.history].reverse().findIndex(entry => entry.type === 'life');
+      if (lastLifeEntryIndex === -1) return prev;
+
+      const reverseIndex = prev.history.length - 1 - lastLifeEntryIndex;
+      const entry = prev.history[reverseIndex];
+      const updatedPlayers = prev.players.map(p =>
+        p.id === entry.playerId ? { ...p, life: entry.oldValue } : p
+      );
+      const updatedHistory = prev.history.filter((_, index) => index !== reverseIndex);
+
+      trackEvent('undo_used', { roomId: prev.id, playerId: entry.playerId });
+      return {
+        ...prev,
+        players: updatedPlayers,
+        history: updatedHistory,
+      };
+    });
+  }, [updateRoom]);
+
   const setPlayerLife = useCallback((playerId: number, life: number) => {
     updateRoom(prev => {
       const player = prev.players.find(p => p.id === playerId);
       const oldValue = player?.life || 0;
+      trackEvent('life_changed', { roomId: prev.id, playerId, delta: life - oldValue, newValue: life });
       return {
         ...prev,
         players: prev.players.map(p =>
@@ -397,6 +431,13 @@ export function useCloudRoomState(roomId: string | undefined) {
     }));
   }, [updateRoom]);
 
+  const setHoldToAdjust = useCallback((enabled: boolean) => {
+    updateRoom(prev => ({
+      ...prev,
+      settings: { ...prev.settings, enableHoldToAdjust: enabled },
+    }));
+  }, [updateRoom]);
+
   const loadPreset = useCallback((preset: GamePreset) => {
     updateRoom(prev => {
       const newPlayerCount = preset.playerCount;
@@ -461,5 +502,7 @@ export function useCloudRoomState(roomId: string | undefined) {
     clearHistory,
     loadPreset,
     setSimpleTextStyle,
+    setHoldToAdjust,
+    undoLastLifeChange,
   };
 }
