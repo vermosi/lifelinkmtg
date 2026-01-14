@@ -66,6 +66,7 @@ export function RoomControl() {
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [isPortrait, setIsPortrait] = useState(() => window.innerHeight >= window.innerWidth);
   const [hasTrackedStart, setHasTrackedStart] = useState(false);
+  const isAdmin = room ? adminKey === room.adminKey : false;
 
   // Convert hex to HSL for color picker
   const hexToHsl = (hex: string): string => {
@@ -115,31 +116,6 @@ export function RoomControl() {
     const toHex = (x: number) => Math.round(x * 255).toString(16).padStart(2, '0');
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
   };
-
-  if (loading) {
-    return (
-      <div className="h-screen w-screen flex items-center justify-center bg-background">
-        <div className="font-display text-4xl text-muted-foreground">Loading...</div>
-      </div>
-    );
-  }
-
-  if (!room) {
-    return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center gap-6 bg-background">
-        <div className="font-display text-4xl text-foreground">Room not found</div>
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center gap-2 px-6 py-3 bg-secondary rounded-full text-foreground hover:bg-secondary/80 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Back to Home
-        </button>
-      </div>
-    );
-  }
-
-  const isAdmin = adminKey === room.adminKey;
 
   const copyUrl = async (type: 'control' | 'overlay') => {
     const url = type === 'control' ? getControlUrl(room) : getOverlayUrl(room);
@@ -276,6 +252,29 @@ export function RoomControl() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [room, isAdmin, menuOpen, selectedPlayerId, updatePlayerLife, undoLastLifeChange, resetGame]);
+
+  if (loading) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-background">
+        <div className="font-display text-4xl text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!room) {
+    return (
+      <div className="h-screen w-screen flex flex-col items-center justify-center gap-6 bg-background">
+        <div className="font-display text-4xl text-foreground">Room not found</div>
+        <button
+          onClick={() => navigate('/')}
+          className="flex items-center gap-2 px-6 py-3 bg-secondary rounded-full text-foreground hover:bg-secondary/80 transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Back to Home
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen w-screen overflow-hidden relative">
