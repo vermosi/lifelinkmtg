@@ -269,6 +269,7 @@ export function OverlayView() {
       {/* Player cards */}
       {room.players.map((player) => {
         const playerPos = layout.players[player.id] || { x: 50, y: 85 };
+        const useSimpleText = room.settings.simpleTextStyle;
         
         return (
           <DraggableElement
@@ -281,10 +282,10 @@ export function OverlayView() {
             <div
               className={cn(
                 'flex flex-col items-center justify-center py-3 px-6 rounded-2xl min-w-[120px] relative',
-                room.settings.showBackgroundCards && 'backdrop-blur-md'
+                !useSimpleText && room.settings.showBackgroundCards && 'backdrop-blur-md'
               )}
               style={{ 
-                backgroundColor: room.settings.showBackgroundCards 
+                backgroundColor: !useSimpleText && room.settings.showBackgroundCards 
                   ? `hsl(${player.color} / 0.9)` 
                   : 'transparent' 
               }}
@@ -292,13 +293,31 @@ export function OverlayView() {
               {/* Status badges */}
               <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 flex gap-1">
                 {room.monarchId === player.id && (
-                  <div className="p-1 rounded-full bg-black/50">
-                    <Crown className="w-4 h-4 text-yellow-400" fill="currentColor" />
+                  <div className={cn(
+                    'p-1 rounded-full',
+                    useSimpleText ? 'bg-transparent' : 'bg-black/50'
+                  )}>
+                    <Crown 
+                      className="w-4 h-4 text-yellow-400" 
+                      fill="currentColor"
+                      style={useSimpleText ? {
+                        filter: 'drop-shadow(1px 1px 0 black) drop-shadow(-1px -1px 0 black) drop-shadow(1px -1px 0 black) drop-shadow(-1px 1px 0 black)'
+                      } : undefined}
+                    />
                   </div>
                 )}
                 {room.initiativeId === player.id && (
-                  <div className="p-1 rounded-full bg-black/50">
-                    <Shield className="w-4 h-4 text-purple-400" fill="currentColor" />
+                  <div className={cn(
+                    'p-1 rounded-full',
+                    useSimpleText ? 'bg-transparent' : 'bg-black/50'
+                  )}>
+                    <Shield 
+                      className="w-4 h-4 text-purple-400" 
+                      fill="currentColor"
+                      style={useSimpleText ? {
+                        filter: 'drop-shadow(1px 1px 0 black) drop-shadow(-1px -1px 0 black) drop-shadow(1px -1px 0 black) drop-shadow(-1px 1px 0 black)'
+                      } : undefined}
+                    />
                   </div>
                 )}
               </div>
@@ -306,14 +325,22 @@ export function OverlayView() {
               {room.settings.showNamesOnOverlay && (
                 <div 
                   className="font-body font-semibold text-base mb-0.5"
-                  style={{ color: 'rgba(0,0,0,0.7)' }}
+                  style={useSimpleText ? {
+                    color: 'white',
+                    textShadow: '2px 2px 0 black, -2px -2px 0 black, 2px -2px 0 black, -2px 2px 0 black, 0 2px 0 black, 0 -2px 0 black, 2px 0 0 black, -2px 0 0 black',
+                  } : { 
+                    color: 'rgba(0,0,0,0.7)' 
+                  }}
                 >
                   {player.name}
                 </div>
               )}
               <div
                 className={cn('font-display leading-none', getFontSize())}
-                style={{
+                style={useSimpleText ? {
+                  color: 'white',
+                  textShadow: '3px 3px 0 black, -3px -3px 0 black, 3px -3px 0 black, -3px 3px 0 black, 0 3px 0 black, 0 -3px 0 black, 3px 0 0 black, -3px 0 0 black',
+                } : {
                   color: room.settings.showBackgroundCards 
                     ? 'rgba(0,0,0,0.8)' 
                     : `hsl(${player.color})`,
@@ -327,8 +354,16 @@ export function OverlayView() {
               {/* Deck/Commander name */}
               {player.deckName && (
                 <div 
-                  className="font-body text-xs mt-0.5 px-2 py-0.5 rounded bg-black/30"
-                  style={{ color: 'rgba(255,255,255,0.9)' }}
+                  className={cn(
+                    'font-body text-xs mt-0.5 px-2 py-0.5 rounded',
+                    !useSimpleText && 'bg-black/30'
+                  )}
+                  style={useSimpleText ? {
+                    color: 'white',
+                    textShadow: '1px 1px 0 black, -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black',
+                  } : { 
+                    color: 'rgba(255,255,255,0.9)' 
+                  }}
                 >
                   {player.deckName}
                 </div>
@@ -337,21 +372,54 @@ export function OverlayView() {
               {/* Counters row */}
               <div className="flex gap-1.5 mt-1.5">
                 {player.poison > 0 && (
-                  <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-black/40">
-                    <Skull className="w-3 h-3 text-green-400" />
-                    <span className="font-display text-xs text-green-400 font-bold">{player.poison}</span>
+                  <div className={cn(
+                    'flex items-center gap-0.5 px-1.5 py-0.5 rounded',
+                    !useSimpleText && 'bg-black/40'
+                  )}>
+                    <Skull className="w-3 h-3 text-green-400" style={useSimpleText ? {
+                      filter: 'drop-shadow(1px 1px 0 black) drop-shadow(-1px -1px 0 black)'
+                    } : undefined} />
+                    <span 
+                      className="font-display text-xs font-bold"
+                      style={useSimpleText ? {
+                        color: '#4ade80',
+                        textShadow: '1px 1px 0 black, -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black',
+                      } : { color: '#4ade80' }}
+                    >{player.poison}</span>
                   </div>
                 )}
                 {player.experience > 0 && (
-                  <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-black/40">
-                    <Sparkles className="w-3 h-3 text-yellow-400" />
-                    <span className="font-display text-xs text-yellow-400 font-bold">{player.experience}</span>
+                  <div className={cn(
+                    'flex items-center gap-0.5 px-1.5 py-0.5 rounded',
+                    !useSimpleText && 'bg-black/40'
+                  )}>
+                    <Sparkles className="w-3 h-3 text-yellow-400" style={useSimpleText ? {
+                      filter: 'drop-shadow(1px 1px 0 black) drop-shadow(-1px -1px 0 black)'
+                    } : undefined} />
+                    <span 
+                      className="font-display text-xs font-bold"
+                      style={useSimpleText ? {
+                        color: '#facc15',
+                        textShadow: '1px 1px 0 black, -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black',
+                      } : { color: '#facc15' }}
+                    >{player.experience}</span>
                   </div>
                 )}
                 {player.energy > 0 && (
-                  <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-black/40">
-                    <Zap className="w-3 h-3 text-blue-400" />
-                    <span className="font-display text-xs text-blue-400 font-bold">{player.energy}</span>
+                  <div className={cn(
+                    'flex items-center gap-0.5 px-1.5 py-0.5 rounded',
+                    !useSimpleText && 'bg-black/40'
+                  )}>
+                    <Zap className="w-3 h-3 text-blue-400" style={useSimpleText ? {
+                      filter: 'drop-shadow(1px 1px 0 black) drop-shadow(-1px -1px 0 black)'
+                    } : undefined} />
+                    <span 
+                      className="font-display text-xs font-bold"
+                      style={useSimpleText ? {
+                        color: '#60a5fa',
+                        textShadow: '1px 1px 0 black, -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black',
+                      } : { color: '#60a5fa' }}
+                    >{player.energy}</span>
                   </div>
                 )}
               </div>
@@ -365,8 +433,14 @@ export function OverlayView() {
                     return (
                       <div
                         key={opp.id}
-                        className="px-1.5 py-0.5 rounded text-xs font-display font-bold"
-                        style={{ 
+                        className={cn(
+                          'px-1.5 py-0.5 rounded text-xs font-display font-bold',
+                          useSimpleText && 'bg-transparent'
+                        )}
+                        style={useSimpleText ? {
+                          color: 'white',
+                          textShadow: '1px 1px 0 black, -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black',
+                        } : { 
                           backgroundColor: `hsl(${opp.color})`,
                           color: 'rgba(0,0,0,0.8)',
                         }}

@@ -49,6 +49,7 @@ export function RoomControl() {
     setStartingLife,
     clearHistory,
     loadPreset,
+    setSimpleTextStyle,
   } = useCloudRoomState(roomId);
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -627,6 +628,30 @@ export function RoomControl() {
                   >
                     <Shuffle className="w-4 h-4" /> Random
                   </button>
+                </div>
+
+                {/* Overlay settings */}
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
+                    <Monitor className="w-3 h-3" /> Stream Overlay
+                  </label>
+                  <button
+                    onClick={() => setSimpleTextStyle(!room.settings.simpleTextStyle)}
+                    className={cn(
+                      'w-full py-2 px-3 rounded-xl text-sm font-medium transition-all flex items-center justify-between',
+                      room.settings.simpleTextStyle
+                        ? 'bg-foreground text-background'
+                        : 'bg-secondary text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    <span>Simple Text (OBS)</span>
+                    <span className="text-xs opacity-70">
+                      {room.settings.simpleTextStyle ? 'ON' : 'OFF'}
+                    </span>
+                  </button>
+                  <p className="text-xs text-muted-foreground">
+                    White text with black outline - no backgrounds
+                  </p>
                 </div>
 
                 {/* Overlay tip */}
