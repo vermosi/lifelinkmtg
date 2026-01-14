@@ -377,6 +377,13 @@ export function useCloudRoomState(roomId: string | undefined) {
     updateRoom(prev => ({ ...prev, history: [] }));
   }, [updateRoom]);
 
+  const setSimpleTextStyle = useCallback((enabled: boolean) => {
+    updateRoom(prev => ({
+      ...prev,
+      settings: { ...prev.settings, simpleTextStyle: enabled },
+    }));
+  }, [updateRoom]);
+
   const loadPreset = useCallback((preset: GamePreset) => {
     updateRoom(prev => {
       const newPlayerCount = preset.playerCount;
@@ -440,5 +447,6 @@ export function useCloudRoomState(roomId: string | undefined) {
     setStartingLife,
     clearHistory,
     loadPreset,
+    setSimpleTextStyle,
   };
 }

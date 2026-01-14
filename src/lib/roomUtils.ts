@@ -28,6 +28,7 @@ export interface RoomSettings {
   showNamesOnOverlay: boolean;
   showBackgroundCards: boolean;
   overlayLayout: 'horizontal' | 'vertical';
+  simpleTextStyle: boolean;
 }
 
 export interface OverlayPosition {
@@ -200,6 +201,7 @@ export function createRoom(playerCount: 2 | 3 | 4 = 4): Room {
       showNamesOnOverlay: true,
       showBackgroundCards: true,
       overlayLayout: 'horizontal',
+      simpleTextStyle: false,
     },
     monarchId: null,
     initiativeId: null,
