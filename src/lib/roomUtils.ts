@@ -269,7 +269,7 @@ export function getControlUrl(room: Room): string {
 }
 
 export function getOverlayUrl(room: Room): string {
-  return `${window.location.origin}/overlay?roomId=${room.id}`;
+  return `${window.location.origin}/room/${room.id}/overlay?adminKey=${room.adminKey}`;
 }
 
 export function loadRoomsState(): RoomsState {
