@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useCloudRoomState } from '@/hooks/useCloudRoomState';
 import { cn } from '@/lib/utils';
+import { createDefaultOverlayLayout } from '@/lib/roomUtils';
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
@@ -13,7 +14,7 @@ export function ObsOverlayView() {
   const config = useMemo(() => {
     const parsedPlayers = Number(searchParams.get('players'));
     const players = Number.isFinite(parsedPlayers) ? clamp(parsedPlayers, 2, 6) : undefined;
-    const layout = searchParams.get('layout') || 'grid';
+    const layout = searchParams.get('layout') || 'free';
     const theme = searchParams.get('theme') || undefined;
     const showNames = searchParams.get('showNames');
     const showCommanderDamage = searchParams.get('showCommanderDamage');
@@ -57,15 +58,23 @@ export function ObsOverlayView() {
     ? room.players.slice(0, config.players)
     : room.players;
 
+  const isFreeLayout = config.layout === 'free';
   const isVertical = config.layout === 'vertical';
   const gridColumns = config.layout === '2x2' ? 2 : playersToShow.length <= 2 ? 1 : 2;
   const gridRows = config.layout === '2x2' ? 2 : Math.ceil(playersToShow.length / gridColumns);
-  const layoutClass = isVertical
-    ? 'flex flex-col'
-    : gridColumns === 1
-      ? 'grid grid-cols-1'
-      : 'grid grid-cols-2';
-  const layoutStyle = isVertical ? undefined : { gridTemplateRows: `repeat(${gridRows}, minmax(0, 1fr))` };
+  const layoutClass = isFreeLayout
+    ? 'relative'
+    : isVertical
+      ? 'flex flex-col'
+      : gridColumns === 1
+        ? 'grid grid-cols-1'
+        : 'grid grid-cols-2';
+  const layoutStyle = isFreeLayout
+    ? undefined
+    : isVertical
+      ? undefined
+      : { gridTemplateRows: `repeat(${gridRows}, minmax(0, 1fr))` };
+  const overlayLayout = room.overlayLayout ?? createDefaultOverlayLayout(room.players.length);
 
   return (
     <div
@@ -81,8 +90,17 @@ export function ObsOverlayView() {
             key={player.id}
             className={cn(
               'flex flex-col items-center justify-center rounded-2xl px-4 py-3',
+              isFreeLayout && 'absolute -translate-x-1/2 -translate-y-1/2',
               effectiveTheme === 'light' ? 'bg-white/70' : 'bg-black/50'
             )}
+            style={
+              isFreeLayout
+                ? {
+                    left: `${(overlayLayout.players[player.id]?.x ?? 50)}%`,
+                    top: `${(overlayLayout.players[player.id]?.y ?? 50)}%`,
+                  }
+                : undefined
+            }
           >
             {showNames && (
               <div className="text-sm font-semibold" style={{ color: effectiveTheme === 'light' ? '#1f2937' : 'white' }}>
