@@ -1,4 +1,4 @@
-import { Room } from './roomUtils';
+import { Room, normalizeRoom } from './roomUtils';
 
 const ROOM_STATE_VERSION = 1;
 const STORAGE_PREFIX = 'lifeTrackerRoomState_v1';
@@ -15,7 +15,8 @@ export function loadPersistedRoom(roomId: string): Room | null {
     if (!stored) return null;
     const parsed: PersistedRoomState = JSON.parse(stored);
     if (parsed.version !== ROOM_STATE_VERSION) return null;
-    return parsed.room;
+    if (!parsed.room) return null;
+    return normalizeRoom(parsed.room);
   } catch {
     return null;
   }
