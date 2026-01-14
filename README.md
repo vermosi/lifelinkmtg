@@ -2,7 +2,8 @@
 
 Track. Play. Win.
 
-LifeLink is a cloud-synced Magic: The Gathering life counter with an OBS-ready overlay. Spin up a room, share the link with your table, and keep every device in sync in real time.
+LifeLink is a cloud-synced Magic: The Gathering life counter with an OBS-ready overlay.
+Spin up a room, share the link with your table, and keep every device in sync in real time.
 
 ## ✨ Features
 
