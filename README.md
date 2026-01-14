@@ -1,73 +1,78 @@
-# Welcome to your Lovable project
+# LifeLink
 
-## Project info
+Track. Play. Win.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+LifeLink is a cloud-synced Magic: The Gathering life counter with an OBS-ready overlay. Spin up a room, share the link with your table, and keep every device in sync in real time.
 
-## How can I edit this code?
+## ✨ Features
 
-There are several ways of editing your application.
+- **Cloud rooms** with shareable control + overlay links.
+- **Life, commander damage, poison, energy, and experience** tracking.
+- **Monarch, initiative, and day/night** indicators.
+- **Preset playgroups** to jump into your favorite setups quickly.
+- **Dice roller** for quick decisions and random starts.
+- **Customizable overlay** layout for streaming tools like OBS.
+- **Realtime sync** across all players and devices.
 
-**Use Lovable**
+## 🧭 How it works
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+1. Create a room and pick the player count.
+2. Share the control link for players (admin link enables edits).
+3. Open the overlay link inside OBS as a browser source.
+4. Track life totals and counters while the overlay updates live.
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🚀 Getting Started
 
-**Use your preferred IDE**
+### Prerequisites
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- Node.js 18+
+- npm or bun
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Install & Run
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Build
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+npm run build
+npm run preview
+```
 
-**Use GitHub Codespaces**
+## 🔐 Environment Variables
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+LifeLink uses Supabase for realtime state sync. Set the following variables:
 
-## What technologies are used for this project?
+```bash
+VITE_SUPABASE_URL=your-supabase-url
+VITE_SUPABASE_PUBLISHABLE_KEY=your-supabase-anon-key
+```
 
-This project is built with:
+## 🧰 Tech Stack
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- Vite + React + TypeScript
+- Tailwind CSS + shadcn/ui
+- Supabase (Realtime)
 
-## How can I deploy this project?
+## 📁 Project Structure
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+```text
+src/
+  components/   # UI building blocks
+  hooks/        # React hooks (room sync, etc.)
+  lib/          # room logic + helpers
+  pages/        # route-level views
+```
 
-## Can I connect a custom domain to my Lovable project?
+## 🗺️ Roadmap Ideas
 
-Yes, you can!
+- Match history export
+- Custom themes per room
+- Mobile-friendly overlay presets
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+---
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Built for MTG tables and streamers who want a clean, synced scoreboard.
