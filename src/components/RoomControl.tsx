@@ -1,5 +1,5 @@
 import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown, Shield, Sun, Moon, Dices, Save, FolderOpen, Plus, Cloud, Loader2 } from 'lucide-react';
 import { useCloudRoomState } from '@/hooks/useCloudRoomState';
 import { getControlUrl, getOverlayUrl, PLAYER_COLORS, formatTimestamp, HistoryEntry, DUNGEON_ROOMS, loadPresets, savePreset, deletePreset, createPresetFromRoom, GamePreset } from '@/lib/roomUtils';
@@ -7,6 +7,7 @@ import { FullScreenPlayerPanel } from './FullScreenPlayerPanel';
 import { DiceRoller } from './DiceRoller';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { trackEvent } from '@/lib/analytics';
 
 function HistoryIcon({ type }: { type: HistoryEntry['type'] }) {
   switch (type) {
@@ -51,6 +52,8 @@ export function RoomControl() {
     clearHistory,
     loadPreset,
     setSimpleTextStyle,
+    setHoldToAdjust,
+    undoLastLifeChange,
   } = useCloudRoomState(roomId);
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -60,6 +63,9 @@ export function RoomControl() {
   const [presets, setPresets] = useState<GamePreset[]>(() => loadPresets());
   const [newPresetName, setNewPresetName] = useState('');
   const [showSavePreset, setShowSavePreset] = useState(false);
+  const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
+  const [isPortrait, setIsPortrait] = useState(() => window.innerHeight >= window.innerWidth);
+  const [hasTrackedStart, setHasTrackedStart] = useState(false);
 
   // Convert hex to HSL for color picker
   const hexToHsl = (hex: string): string => {
@@ -177,13 +183,18 @@ export function RoomControl() {
 
   const getGridStyle = () => {
     if (room.playerCount === 2) {
-      return { display: 'grid', gridTemplateRows: '1fr 1fr', gridTemplateColumns: '1fr' };
+      return isPortrait
+        ? { display: 'grid', gridTemplateRows: '1fr 1fr', gridTemplateColumns: '1fr' }
+        : { display: 'grid', gridTemplateRows: '1fr', gridTemplateColumns: '1fr 1fr' };
+    }
+    if (room.playerCount === 3 && !isPortrait) {
+      return { display: 'grid', gridTemplateRows: '1fr', gridTemplateColumns: '1fr 1fr 1fr' };
     }
     return { display: 'grid', gridTemplateRows: '1fr 1fr', gridTemplateColumns: '1fr 1fr' };
   };
 
   const getPlayerGridArea = (index: number, total: number) => {
-    if (total === 3 && index === 2) {
+    if (total === 3 && isPortrait && index === 2) {
       return { gridColumn: '1 / -1' };
     }
     return {};
@@ -198,6 +209,73 @@ export function RoomControl() {
     }
     return `${entry.oldValue} → ${entry.newValue}`;
   };
+
+  useEffect(() => {
+    const handleResize = () => setIsPortrait(window.innerHeight >= window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (!room) return;
+    const hasSelected = room.players.some((player) => player.id === selectedPlayerId);
+    if (!selectedPlayerId || !hasSelected) {
+      setSelectedPlayerId(room.players[0]?.id ?? null);
+    }
+  }, [room, selectedPlayerId]);
+
+  useEffect(() => {
+    if (!room || hasTrackedStart) return;
+    trackEvent('game_started', { roomId: room.id });
+    setHasTrackedStart(true);
+  }, [room, hasTrackedStart]);
+
+  useEffect(() => {
+    if (!room || !isAdmin) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const activeElement = document.activeElement;
+      if (activeElement?.tagName === 'INPUT' || activeElement?.tagName === 'TEXTAREA') {
+        return;
+      }
+      if (menuOpen) return;
+
+      const key = event.key;
+      if (['+', '-', '=', 'u', 'U', 'r', 'R', '1', '2', '3', '4', '5', '6'].includes(key)) {
+        event.preventDefault();
+      }
+
+      if (key >= '1' && key <= '6') {
+        const index = Number(key) - 1;
+        const player = room.players[index];
+        if (player) {
+          setSelectedPlayerId(player.id);
+        }
+        return;
+      }
+
+      const activePlayerId = selectedPlayerId ?? room.players[0]?.id;
+      if (!activePlayerId) return;
+
+      if (key === '+' || key === '=') {
+        updatePlayerLife(activePlayerId, 1);
+      }
+      if (key === '-') {
+        updatePlayerLife(activePlayerId, -1);
+      }
+      if (key === 'u' || key === 'U') {
+        undoLastLifeChange();
+      }
+      if (key === 'r' || key === 'R') {
+        if (window.confirm('Reset the match? This will clear life totals and counters.')) {
+          resetGame();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [room, isAdmin, menuOpen, selectedPlayerId, updatePlayerLife, undoLastLifeChange, resetGame]);
 
   return (
     <div className="h-screen w-screen overflow-hidden relative">
@@ -233,12 +311,12 @@ export function RoomControl() {
               )}
               style={getPlayerGridArea(index, room.playerCount)}
             >
-              <FullScreenPlayerPanel
-                player={player}
-                allPlayers={room.players}
-                isMonarch={room.monarchId === player.id}
-                hasInitiative={room.initiativeId === player.id}
-                dungeonProgress={room.dungeonProgress}
+            <FullScreenPlayerPanel
+              player={player}
+              allPlayers={room.players}
+              isMonarch={room.monarchId === player.id}
+              hasInitiative={room.initiativeId === player.id}
+              dungeonProgress={room.dungeonProgress}
                 onLifeChange={(delta) => updatePlayerLife(player.id, delta)}
                 onLifeSet={(life) => setPlayerLife(player.id, life)}
                 onPoisonChange={(delta) => updatePlayerPoison(player.id, delta)}
@@ -247,11 +325,14 @@ export function RoomControl() {
                 onCommanderDamageChange={(fromId, delta) => updateCommanderDamage(player.id, fromId, delta)}
                 onToggleMonarch={() => setMonarch(room.monarchId === player.id ? null : player.id)}
                 onToggleInitiative={() => setInitiative(room.initiativeId === player.id ? null : player.id)}
-                onAdvanceDungeon={advanceDungeon}
-                onDeckNameChange={(deckName) => setPlayerDeckName(player.id, deckName)}
-                isAdmin={isAdmin}
-                rotation={layout.rotation}
-              />
+              onAdvanceDungeon={advanceDungeon}
+              onDeckNameChange={(deckName) => setPlayerDeckName(player.id, deckName)}
+              isAdmin={isAdmin}
+              rotation={layout.rotation}
+              isSelected={isAdmin && selectedPlayerId === player.id}
+              enableHoldToAdjust={room.settings.enableHoldToAdjust}
+              onSelect={() => setSelectedPlayerId(player.id)}
+            />
             </div>
           );
         })}
@@ -637,11 +718,25 @@ export function RoomControl() {
                 {/* Actions */}
                 <div className="flex gap-2">
                   <button
-                    onClick={() => { resetGame(); setMenuOpen(false); }}
+                    onClick={undoLastLifeChange}
+                    disabled={!room.history.some((entry) => entry.type === 'life')}
+                    className="flex-1 flex items-center justify-center gap-2 py-2 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80 disabled:opacity-50"
+                  >
+                    <RotateCcw className="w-4 h-4" /> Undo
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Reset the match? This will clear life totals and counters.')) {
+                        resetGame();
+                        setMenuOpen(false);
+                      }
+                    }}
                     className="flex-1 flex items-center justify-center gap-2 py-2 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80"
                   >
-                    <RotateCcw className="w-4 h-4" /> Reset
+                    <RotateCcw className="w-4 h-4" /> Reset Match
                   </button>
+                </div>
+                <div className="flex gap-2">
                   <button
                     onClick={randomizeFirstPlayer}
                     className="flex-1 flex items-center justify-center gap-2 py-2 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80"
@@ -674,9 +769,31 @@ export function RoomControl() {
                   </p>
                 </div>
 
+                {/* Interaction settings */}
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground">Touch Controls</label>
+                  <button
+                    onClick={() => setHoldToAdjust(!room.settings.enableHoldToAdjust)}
+                    className={cn(
+                      'w-full py-2 px-3 rounded-xl text-sm font-medium transition-all flex items-center justify-between',
+                      room.settings.enableHoldToAdjust
+                        ? 'bg-foreground text-background'
+                        : 'bg-secondary text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    <span>Press & Hold to Auto-Adjust</span>
+                    <span className="text-xs opacity-70">
+                      {room.settings.enableHoldToAdjust ? 'ON' : 'OFF'}
+                    </span>
+                  </button>
+                  <p className="text-xs text-muted-foreground">
+                    Hold +/− buttons to keep adjusting life totals.
+                  </p>
+                </div>
+
                 {/* Overlay tip */}
                 <div className="text-xs text-muted-foreground p-2 bg-secondary/50 rounded-lg text-center">
-                  💡 Open the overlay URL to drag & arrange elements for OBS
+                  💡 Use /room/{room.id}/overlay to arrange elements, and /overlay for OBS.
                 </div>
               </>
             )}
