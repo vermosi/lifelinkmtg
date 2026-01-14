@@ -25,13 +25,21 @@ export function useCloudRoomState(roomId: string | undefined) {
 
     const loadRoom = async () => {
       setLoading(true);
-      const cloudRoom = await getCloudRoom(roomId);
-      if (cloudRoom) {
-        setRoom(cloudRoom);
-        addToRecentRooms(roomId);
-        lastUpdateRef.current = JSON.stringify(cloudRoom);
+      try {
+        const cloudRoom = await getCloudRoom(roomId);
+        if (cloudRoom) {
+          setRoom(cloudRoom);
+          addToRecentRooms(roomId);
+          lastUpdateRef.current = JSON.stringify(cloudRoom);
+        } else {
+          setRoom(null);
+        }
+      } catch (error) {
+        console.error('Failed to load room.', error);
+        setRoom(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     loadRoom();
@@ -84,9 +92,14 @@ export function useCloudRoomState(roomId: string | undefined) {
 
     setSyncing(true);
     updateTimeoutRef.current = setTimeout(async () => {
-      lastUpdateRef.current = JSON.stringify(updatedRoom);
-      await updateCloudRoom(updatedRoom, adminKey);
-      setSyncing(false);
+      try {
+        lastUpdateRef.current = JSON.stringify(updatedRoom);
+        await updateCloudRoom(updatedRoom, adminKey);
+      } catch (error) {
+        console.error('Failed to sync room to cloud.', error);
+      } finally {
+        setSyncing(false);
+      }
     }, 100); // Debounce by 100ms
   }, [adminKey]);
 

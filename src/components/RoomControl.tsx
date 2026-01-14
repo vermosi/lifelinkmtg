@@ -6,6 +6,7 @@ import { getControlUrl, getOverlayUrl, PLAYER_COLORS, formatTimestamp, HistoryEn
 import { FullScreenPlayerPanel } from './FullScreenPlayerPanel';
 import { DiceRoller } from './DiceRoller';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 
 function HistoryIcon({ type }: { type: HistoryEntry['type'] }) {
   switch (type) {
@@ -134,16 +135,35 @@ export function RoomControl() {
 
   const isAdmin = adminKey === room.adminKey;
 
-  const copyUrl = (type: 'control' | 'overlay') => {
+  const copyUrl = async (type: 'control' | 'overlay') => {
     const url = type === 'control' ? getControlUrl(room) : getOverlayUrl(room);
-    navigator.clipboard.writeText(url);
-    setCopiedUrl(type);
-    setTimeout(() => setCopiedUrl(null), 2000);
+    if (!navigator.clipboard) {
+      toast({
+        title: 'Copy failed',
+        description: 'Clipboard access is unavailable in this browser.',
+      });
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedUrl(type);
+      setTimeout(() => setCopiedUrl(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy URL to clipboard.', error);
+      toast({
+        title: 'Copy failed',
+        description: 'Unable to copy the URL. Please try again.',
+      });
+    }
   };
 
   const randomizeFirstPlayer = () => {
-    const randomIndex = Math.floor(Math.random() * room.playerCount);
-    setHighlightedPlayer(room.players[randomIndex].id);
+    const players = room.players;
+    const randomIndex = Math.floor(Math.random() * players.length);
+    const selectedPlayer = players[randomIndex];
+    if (!selectedPlayer) return;
+    setHighlightedPlayer(selectedPlayer.id);
     setTimeout(() => setHighlightedPlayer(null), 3000);
     setMenuOpen(false);
   };
