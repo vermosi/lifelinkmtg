@@ -216,6 +216,54 @@ export function createRoom(playerCount: 2 | 3 | 4 = 4): Room {
   };
 }
 
+export function normalizeRoom(room: Room): Room {
+  const validPlayerCounts: Array<Room['playerCount']> = [2, 3, 4];
+  const basePlayers = Array.isArray(room.players) ? room.players : [];
+  const inferredCount = validPlayerCounts.includes(room.playerCount)
+    ? room.playerCount
+    : (validPlayerCounts.includes(basePlayers.length as Room['playerCount'])
+      ? (basePlayers.length as Room['playerCount'])
+      : 4);
+  const normalizedPlayers = basePlayers.length
+    ? basePlayers.map((player, index) => ({
+        id: player.id ?? index + 1,
+        name: player.name ?? `Player ${index + 1}`,
+        life: player.life ?? room.settings?.startingLife ?? 40,
+        color: player.color ?? PLAYER_COLORS[index]?.value ?? '0 0% 50%',
+        poison: player.poison ?? 0,
+        experience: player.experience ?? 0,
+        energy: player.energy ?? 0,
+        commanderDamage: player.commanderDamage ?? {},
+        deckName: player.deckName,
+      }))
+    : createDefaultPlayers(inferredCount, room.settings?.startingLife ?? 40);
+  const normalizedSettings = {
+    theme: room.settings?.theme ?? 'dark',
+    startingLife: room.settings?.startingLife ?? 40,
+    overlayFontSize: room.settings?.overlayFontSize ?? 'medium',
+    showNamesOnOverlay: room.settings?.showNamesOnOverlay ?? true,
+    showBackgroundCards: room.settings?.showBackgroundCards ?? true,
+    overlayLayout: room.settings?.overlayLayout ?? 'horizontal',
+    simpleTextStyle: room.settings?.simpleTextStyle ?? false,
+    enableHoldToAdjust: room.settings?.enableHoldToAdjust ?? false,
+  };
+
+  return {
+    ...room,
+    playerCount: inferredCount,
+    players: normalizedPlayers,
+    settings: normalizedSettings,
+    monarchId: room.monarchId ?? null,
+    initiativeId: room.initiativeId ?? null,
+    dungeonProgress: room.dungeonProgress ?? 0,
+    isDay: room.isDay ?? true,
+    history: room.history ?? [],
+    overlayLayout: room.overlayLayout ?? createDefaultOverlayLayout(inferredCount),
+    createdAt: room.createdAt ?? Date.now(),
+    lastUpdated: room.lastUpdated ?? Date.now(),
+  };
+}
+
 export function getControlUrl(room: Room): string {
   return `${window.location.origin}/room/${room.id}?adminKey=${room.adminKey}`;
 }
