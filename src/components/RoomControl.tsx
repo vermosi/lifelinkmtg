@@ -792,7 +792,7 @@ export function RoomControl() {
 
                 {/* Overlay tip */}
                 <div className="text-xs text-muted-foreground p-2 bg-secondary/50 rounded-lg text-center">
-                  💡 Use /room/{room.id}/overlay to arrange elements, and /overlay for OBS.
+                  💡 Use /room/{room.id}/overlay (Edit Layout) to arrange elements. /overlay is view-only for OBS.
                 </div>
               </>
             )}
