@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Player, DUNGEON_ROOMS } from '@/lib/roomUtils';
 import { cn } from '@/lib/utils';
-import { Skull, ChevronLeft, ChevronRight, X, Crown, Zap, Sparkles, Shield } from 'lucide-react';
+import { Skull, ChevronLeft, ChevronRight, X, Crown, Zap, Sparkles, Shield, Swords } from 'lucide-react';
 
 interface FullScreenPlayerPanelProps {
   player: Player;
@@ -448,9 +448,20 @@ export function FullScreenPlayerPanel({
           </button>
         )}
 
-        {/* Counter indicators */}
+        {/* Counter indicators + Counters button */}
         {overlayMode === 'none' && (
           <div className="absolute bottom-16 sm:bottom-20 left-2 sm:left-4 flex flex-col gap-1">
+            {/* Counters quick-access button for mobile */}
+            {isAdmin && (
+              <button
+                onClick={() => setOverlayMode('counters')}
+                className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-black/50 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/60 transition-colors"
+                aria-label="Open counters menu"
+              >
+                <Skull className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="text-[10px] sm:text-xs font-medium">Counters</span>
+              </button>
+            )}
             {player.poison > 0 && (
               <div className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg bg-black/50 backdrop-blur-sm" aria-label={`Poison: ${player.poison}`}>
                 <Skull className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
@@ -506,21 +517,21 @@ export function FullScreenPlayerPanel({
       {/* Counters Overlay - WCAG compliant with solid background */}
       {overlayMode === 'counters' && (
         <div 
-          className="absolute inset-0 flex flex-col items-center justify-center z-20 p-4 bg-gray-900/95 backdrop-blur-md"
+          className="absolute inset-0 flex flex-col items-center justify-center z-20 p-3 sm:p-4 bg-gray-900/95 backdrop-blur-md"
           style={{ transform: `rotate(${rotation}deg)` }}
           role="dialog"
           aria-label="Counter overlay"
         >
           <button
             onClick={closeOverlay}
-            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+            className="absolute top-2 right-2 sm:top-4 sm:right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
             aria-label="Close overlay"
           >
-            <X className="w-5 h-5 text-white" />
+            <X className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </button>
 
-          {/* Tab selector */}
-          <div className="flex gap-2 mb-6" role="tablist">
+          {/* Tab selector - more compact on mobile */}
+          <div className="flex gap-1 sm:gap-2 mb-4 sm:mb-6" role="tablist">
             {(['poison', 'experience', 'energy'] as const).map(tab => {
               const Icon = tab === 'poison' ? Skull : tab === 'experience' ? Sparkles : Zap;
               const color = tab === 'poison' ? 'text-green-400' : tab === 'experience' ? 'text-yellow-400' : 'text-blue-400';
@@ -531,15 +542,15 @@ export function FullScreenPlayerPanel({
                   key={tab}
                   onClick={() => setCounterTab(tab)}
                   className={cn(
-                    'px-4 py-2 rounded-xl flex items-center gap-2 transition-all font-medium',
+                    'px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl flex items-center gap-1 sm:gap-2 transition-all font-medium',
                     isActive ? bgColor : 'bg-white/10 hover:bg-white/20'
                   )}
                   role="tab"
                   aria-selected={isActive}
                   aria-label={`${tab} counter`}
                 >
-                  <Icon className={cn('w-5 h-5', isActive ? color : 'text-white/60')} />
-                  <span className={cn('capitalize', isActive ? color : 'text-white/60')}>
+                  <Icon className={cn('w-4 h-4 sm:w-5 sm:h-5', isActive ? color : 'text-white/60')} />
+                  <span className={cn('capitalize text-xs sm:text-sm', isActive ? color : 'text-white/60')}>
                     {tab}
                   </span>
                 </button>
@@ -548,52 +559,59 @@ export function FullScreenPlayerPanel({
           </div>
 
           {/* Counter value */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 sm:gap-6">
             <button
               onClick={() => handleCounterChange(-1)}
-              className="w-16 h-16 rounded-full flex items-center justify-center text-4xl font-light bg-white/20 hover:bg-white/30 text-white transition-colors"
+              className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-3xl sm:text-4xl font-light bg-white/20 hover:bg-white/30 text-white transition-colors"
               aria-label={`Decrease ${counterTab}`}
             >
               −
             </button>
             <div className="flex flex-col items-center">
-              <CounterIcon className={cn('w-10 h-10 mb-2', counterColor)} />
-              <span className={cn('font-display text-[14vmin] leading-none', counterColor)}>
+              <CounterIcon className={cn('w-8 h-8 sm:w-10 sm:h-10 mb-1 sm:mb-2', counterColor)} />
+              <span className={cn('font-display text-[12vmin] sm:text-[14vmin] leading-none', counterColor)}>
                 {getCounterValue()}
               </span>
             </div>
             <button
               onClick={() => handleCounterChange(1)}
-              className="w-16 h-16 rounded-full flex items-center justify-center text-4xl font-light bg-white/20 hover:bg-white/30 text-white transition-colors"
+              className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-3xl sm:text-4xl font-light bg-white/20 hover:bg-white/30 text-white transition-colors"
               aria-label={`Increase ${counterTab}`}
             >
               +
             </button>
           </div>
 
-          {/* Status toggles */}
-          <div className="flex flex-wrap gap-3 mt-8 justify-center">
+          {/* Status toggles - more compact on mobile */}
+          <div className="flex flex-wrap gap-2 sm:gap-3 mt-4 sm:mt-8 justify-center">
             <button
               onClick={onToggleMonarch}
               className={cn(
-                'px-5 py-3 rounded-xl font-medium flex items-center gap-2 transition-all',
+                'px-3 py-2 sm:px-5 sm:py-3 rounded-lg sm:rounded-xl font-medium flex items-center gap-1.5 sm:gap-2 transition-all text-sm sm:text-base',
                 isMonarch ? 'bg-yellow-500/40 text-yellow-300' : 'bg-white/10 hover:bg-white/20 text-white'
               )}
               aria-pressed={isMonarch}
             >
-              <Crown className="w-5 h-5" fill={isMonarch ? 'currentColor' : 'none'} />
-              {isMonarch ? 'Monarch' : 'Make Monarch'}
+              <Crown className="w-4 h-4 sm:w-5 sm:h-5" fill={isMonarch ? 'currentColor' : 'none'} />
+              {isMonarch ? 'Monarch' : 'Monarch'}
             </button>
             <button
               onClick={onToggleInitiative}
               className={cn(
-                'px-5 py-3 rounded-xl font-medium flex items-center gap-2 transition-all',
+                'px-3 py-2 sm:px-5 sm:py-3 rounded-lg sm:rounded-xl font-medium flex items-center gap-1.5 sm:gap-2 transition-all text-sm sm:text-base',
                 hasInitiative ? 'bg-purple-500/40 text-purple-300' : 'bg-white/10 hover:bg-white/20 text-white'
               )}
               aria-pressed={hasInitiative}
             >
-              <Shield className="w-5 h-5" fill={hasInitiative ? 'currentColor' : 'none'} />
-              {hasInitiative ? 'Has Initiative' : 'Take Initiative'}
+              <Shield className="w-4 h-4 sm:w-5 sm:h-5" fill={hasInitiative ? 'currentColor' : 'none'} />
+              {hasInitiative ? 'Initiative' : 'Initiative'}
+            </button>
+            <button
+              onClick={switchToCommander}
+              className="px-3 py-2 sm:px-5 sm:py-3 rounded-lg sm:rounded-xl font-medium flex items-center gap-1.5 sm:gap-2 transition-all text-sm sm:text-base bg-white/10 hover:bg-white/20 text-white"
+            >
+              <Swords className="w-4 h-4 sm:w-5 sm:h-5" />
+              Cmd Dmg
             </button>
           </div>
 
