@@ -85,7 +85,7 @@
   }
 
   .life-button {
-    @apply absolute flex items-center justify-center text-4xl font-light select-none w-16 h-16 md:w-20 md:h-20 rounded-full bg-black/10;
+    @apply absolute flex items-center justify-center text-3xl sm:text-4xl font-light select-none w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full bg-black/10;
     color: rgba(0, 0, 0, 0.3);
     transition: color 0.15s, transform 0.1s;
   }

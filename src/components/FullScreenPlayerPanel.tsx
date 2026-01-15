@@ -358,7 +358,7 @@ export function FullScreenPlayerPanel({
         {isAdmin && overlayMode === 'none' && (
           <button
             onClick={() => handleLifeChange(-1)}
-            className="life-button top-12"
+            className="life-button top-8 sm:top-12"
             aria-label="Decrease life by 1"
             onPointerDown={() => startHoldToAdjust(-1)}
             onPointerUp={stopHoldToAdjust}
@@ -437,7 +437,7 @@ export function FullScreenPlayerPanel({
         {isAdmin && overlayMode === 'none' && (
           <button
             onClick={() => handleLifeChange(1)}
-            className="life-button bottom-12"
+            className="life-button bottom-8 sm:bottom-12"
             aria-label="Increase life by 1"
             onPointerDown={() => startHoldToAdjust(1)}
             onPointerUp={stopHoldToAdjust}
@@ -450,23 +450,23 @@ export function FullScreenPlayerPanel({
 
         {/* Counter indicators */}
         {overlayMode === 'none' && (
-          <div className="absolute bottom-20 left-4 flex flex-col gap-1">
+          <div className="absolute bottom-16 sm:bottom-20 left-2 sm:left-4 flex flex-col gap-1">
             {player.poison > 0 && (
-              <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-black/50 backdrop-blur-sm" aria-label={`Poison: ${player.poison}`}>
-                <Skull className="w-4 h-4 text-green-400" />
-                <span className="font-display text-sm text-green-400 font-bold">{player.poison}</span>
+              <div className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg bg-black/50 backdrop-blur-sm" aria-label={`Poison: ${player.poison}`}>
+                <Skull className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
+                <span className="font-display text-xs sm:text-sm text-green-400 font-bold">{player.poison}</span>
               </div>
             )}
             {player.experience > 0 && (
-              <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-black/50 backdrop-blur-sm" aria-label={`Experience: ${player.experience}`}>
-                <Sparkles className="w-4 h-4 text-yellow-400" />
-                <span className="font-display text-sm text-yellow-400 font-bold">{player.experience}</span>
+              <div className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg bg-black/50 backdrop-blur-sm" aria-label={`Experience: ${player.experience}`}>
+                <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400" />
+                <span className="font-display text-xs sm:text-sm text-yellow-400 font-bold">{player.experience}</span>
               </div>
             )}
             {player.energy > 0 && (
-              <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-black/50 backdrop-blur-sm" aria-label={`Energy: ${player.energy}`}>
-                <Zap className="w-4 h-4 text-blue-400" />
-                <span className="font-display text-sm text-blue-400 font-bold">{player.energy}</span>
+              <div className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg bg-black/50 backdrop-blur-sm" aria-label={`Energy: ${player.energy}`}>
+                <Zap className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400" />
+                <span className="font-display text-xs sm:text-sm text-blue-400 font-bold">{player.energy}</span>
               </div>
             )}
           </div>
@@ -474,14 +474,14 @@ export function FullScreenPlayerPanel({
 
         {/* Commander damage indicators */}
         {overlayMode === 'none' && Object.keys(player.commanderDamage).length > 0 && (
-          <div className="absolute bottom-20 right-4 flex gap-1">
+          <div className="absolute bottom-16 sm:bottom-20 right-2 sm:right-4 flex gap-1">
             {opponents.map(opp => {
               const dmg = player.commanderDamage[opp.id];
               if (!dmg) return null;
               return (
                 <div
                   key={opp.id}
-                  className="px-2 py-1 rounded-lg text-xs font-display font-bold"
+                  className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg text-[10px] sm:text-xs font-display font-bold"
                   style={{ backgroundColor: `hsl(${opp.color})`, color: 'rgba(0,0,0,0.8)' }}
                   aria-label={`Commander damage from ${opp.name}: ${dmg}`}
                 >
