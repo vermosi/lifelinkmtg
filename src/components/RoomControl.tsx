@@ -339,6 +339,7 @@ export function RoomControl() {
             <FullScreenPlayerPanel
               player={player}
               allPlayers={room.players}
+              playerCount={room.playerCount}
               isMonarch={room.monarchId === player.id}
               hasInitiative={room.initiativeId === player.id}
               dungeonProgress={room.dungeonProgress}
