@@ -553,21 +553,27 @@ export function FullScreenPlayerPanel({
       {/* Counters Overlay - WCAG compliant with solid background */}
       {overlayMode === 'counters' && (
         <div 
-          className="absolute inset-0 flex flex-col items-center justify-center z-20 p-3 sm:p-4 bg-gray-900/95 backdrop-blur-md"
+          className={cn(
+            "absolute inset-0 flex flex-col items-center justify-center z-20 bg-gray-900/95 backdrop-blur-md",
+            isCompact ? "p-1 gap-1" : "p-3 sm:p-4"
+          )}
           style={{ transform: `rotate(${rotation}deg)` }}
           role="dialog"
           aria-label="Counter overlay"
         >
           <button
             onClick={closeOverlay}
-            className="absolute top-2 right-2 sm:top-4 sm:right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+            className={cn(
+              "absolute rounded-full bg-white/10 hover:bg-white/20 transition-colors",
+              isCompact ? "top-1 right-1 p-1" : "top-2 right-2 sm:top-4 sm:right-4 p-2"
+            )}
             aria-label="Close overlay"
           >
-            <X className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            <X className={cn("text-white", isCompact ? "w-3 h-3" : "w-4 h-4 sm:w-5 sm:h-5")} />
           </button>
 
           {/* Tab selector - more compact on mobile */}
-          <div className="flex gap-1 sm:gap-2 mb-4 sm:mb-6" role="tablist">
+          <div className={cn("flex role='tablist'", isCompact ? "gap-0.5 mb-1" : "gap-1 sm:gap-2 mb-4 sm:mb-6")}>
             {(['poison', 'experience', 'energy'] as const).map(tab => {
               const Icon = tab === 'poison' ? Skull : tab === 'experience' ? Sparkles : Zap;
               const color = tab === 'poison' ? 'text-green-400' : tab === 'experience' ? 'text-yellow-400' : 'text-blue-400';
@@ -578,15 +584,18 @@ export function FullScreenPlayerPanel({
                   key={tab}
                   onClick={() => setCounterTab(tab)}
                   className={cn(
-                    'px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl flex items-center gap-1 sm:gap-2 transition-all font-medium',
+                    'flex items-center transition-all font-medium',
+                    isCompact 
+                      ? 'px-1.5 py-1 rounded gap-0.5 text-[10px]' 
+                      : 'px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl gap-1 sm:gap-2',
                     isActive ? bgColor : 'bg-white/10 hover:bg-white/20'
                   )}
                   role="tab"
                   aria-selected={isActive}
                   aria-label={`${tab} counter`}
                 >
-                  <Icon className={cn('w-4 h-4 sm:w-5 sm:h-5', isActive ? color : 'text-white/60')} />
-                  <span className={cn('capitalize text-xs sm:text-sm', isActive ? color : 'text-white/60')}>
+                  <Icon className={cn(isCompact ? 'w-3 h-3' : 'w-4 h-4 sm:w-5 sm:h-5', isActive ? color : 'text-white/60')} />
+                  <span className={cn('capitalize', isCompact ? 'text-[10px]' : 'text-xs sm:text-sm', isActive ? color : 'text-white/60')}>
                     {tab}
                   </span>
                 </button>
@@ -595,23 +604,29 @@ export function FullScreenPlayerPanel({
           </div>
 
           {/* Counter value */}
-          <div className="flex items-center gap-4 sm:gap-6">
+          <div className={cn("flex items-center", isCompact ? "gap-2" : "gap-4 sm:gap-6")}>
             <button
               onClick={() => handleCounterChange(-1)}
-              className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-3xl sm:text-4xl font-light bg-white/20 hover:bg-white/30 text-white transition-colors"
+              className={cn(
+                "rounded-full flex items-center justify-center font-light bg-white/20 hover:bg-white/30 text-white transition-colors",
+                isCompact ? "w-8 h-8 text-xl" : "w-12 h-12 sm:w-16 sm:h-16 text-3xl sm:text-4xl"
+              )}
               aria-label={`Decrease ${counterTab}`}
             >
               −
             </button>
             <div className="flex flex-col items-center">
-              <CounterIcon className={cn('w-8 h-8 sm:w-10 sm:h-10 mb-1 sm:mb-2', counterColor)} />
-              <span className={cn('font-display text-[12vmin] sm:text-[14vmin] leading-none', counterColor)}>
+              <CounterIcon className={cn(isCompact ? 'w-5 h-5' : 'w-8 h-8 sm:w-10 sm:h-10 mb-1 sm:mb-2', counterColor)} />
+              <span className={cn('font-display leading-none', isCompact ? 'text-4xl' : 'text-[12vmin] sm:text-[14vmin]', counterColor)}>
                 {getCounterValue()}
               </span>
             </div>
             <button
               onClick={() => handleCounterChange(1)}
-              className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-3xl sm:text-4xl font-light bg-white/20 hover:bg-white/30 text-white transition-colors"
+              className={cn(
+                "rounded-full flex items-center justify-center font-light bg-white/20 hover:bg-white/30 text-white transition-colors",
+                isCompact ? "w-8 h-8 text-xl" : "w-12 h-12 sm:w-16 sm:h-16 text-3xl sm:text-4xl"
+              )}
               aria-label={`Increase ${counterTab}`}
             >
               +
@@ -619,40 +634,51 @@ export function FullScreenPlayerPanel({
           </div>
 
           {/* Status toggles - more compact on mobile */}
-          <div className="flex flex-wrap gap-2 sm:gap-3 mt-4 sm:mt-8 justify-center">
+          <div className={cn("flex flex-wrap justify-center", isCompact ? "gap-1 mt-1" : "gap-2 sm:gap-3 mt-4 sm:mt-8")}>
             <button
               onClick={onToggleMonarch}
               className={cn(
-                'px-3 py-2 sm:px-5 sm:py-3 rounded-lg sm:rounded-xl font-medium flex items-center gap-1.5 sm:gap-2 transition-all text-sm sm:text-base',
+                'font-medium flex items-center transition-all',
+                isCompact 
+                  ? 'px-2 py-1 rounded text-[10px] gap-1' 
+                  : 'px-3 py-2 sm:px-5 sm:py-3 rounded-lg sm:rounded-xl gap-1.5 sm:gap-2 text-sm sm:text-base',
                 isMonarch ? 'bg-yellow-500/40 text-yellow-300' : 'bg-white/10 hover:bg-white/20 text-white'
               )}
               aria-pressed={isMonarch}
             >
-              <Crown className="w-4 h-4 sm:w-5 sm:h-5" fill={isMonarch ? 'currentColor' : 'none'} />
-              {isMonarch ? 'Monarch' : 'Monarch'}
+              <Crown className={cn(isCompact ? "w-3 h-3" : "w-4 h-4 sm:w-5 sm:h-5")} fill={isMonarch ? 'currentColor' : 'none'} />
+              Monarch
             </button>
             <button
               onClick={onToggleInitiative}
               className={cn(
-                'px-3 py-2 sm:px-5 sm:py-3 rounded-lg sm:rounded-xl font-medium flex items-center gap-1.5 sm:gap-2 transition-all text-sm sm:text-base',
+                'font-medium flex items-center transition-all',
+                isCompact 
+                  ? 'px-2 py-1 rounded text-[10px] gap-1' 
+                  : 'px-3 py-2 sm:px-5 sm:py-3 rounded-lg sm:rounded-xl gap-1.5 sm:gap-2 text-sm sm:text-base',
                 hasInitiative ? 'bg-purple-500/40 text-purple-300' : 'bg-white/10 hover:bg-white/20 text-white'
               )}
               aria-pressed={hasInitiative}
             >
-              <Shield className="w-4 h-4 sm:w-5 sm:h-5" fill={hasInitiative ? 'currentColor' : 'none'} />
-              {hasInitiative ? 'Initiative' : 'Initiative'}
+              <Shield className={cn(isCompact ? "w-3 h-3" : "w-4 h-4 sm:w-5 sm:h-5")} fill={hasInitiative ? 'currentColor' : 'none'} />
+              Initiative
             </button>
             <button
               onClick={switchToCommander}
-              className="px-3 py-2 sm:px-5 sm:py-3 rounded-lg sm:rounded-xl font-medium flex items-center gap-1.5 sm:gap-2 transition-all text-sm sm:text-base bg-white/10 hover:bg-white/20 text-white"
+              className={cn(
+                'font-medium flex items-center bg-white/10 hover:bg-white/20 text-white transition-all',
+                isCompact 
+                  ? 'px-2 py-1 rounded text-[10px] gap-1' 
+                  : 'px-3 py-2 sm:px-5 sm:py-3 rounded-lg sm:rounded-xl gap-1.5 sm:gap-2 text-sm sm:text-base'
+              )}
             >
-              <Swords className="w-4 h-4 sm:w-5 sm:h-5" />
+              <Swords className={cn(isCompact ? "w-3 h-3" : "w-4 h-4 sm:w-5 sm:h-5")} />
               Cmd Dmg
             </button>
           </div>
 
-          {/* Dungeon progress (only show if has initiative) */}
-          {hasInitiative && (
+          {/* Dungeon progress (only show if has initiative and not compact) */}
+          {hasInitiative && !isCompact && (
             <div className="mt-4 flex flex-col items-center">
               <div className="text-sm text-purple-300 mb-2">Undercity: {DUNGEON_ROOMS[dungeonProgress]}</div>
               <div className="flex gap-2 items-center">
@@ -686,65 +712,83 @@ export function FullScreenPlayerPanel({
             </div>
           )}
 
-          <button
-            onClick={switchToCommander}
-            className="mt-6 px-5 py-3 rounded-xl font-medium bg-white/10 hover:bg-white/20 text-white transition-colors"
-          >
-            Commander Damage →
-          </button>
+          {!isCompact && (
+            <button
+              onClick={switchToCommander}
+              className="mt-6 px-5 py-3 rounded-xl font-medium bg-white/10 hover:bg-white/20 text-white transition-colors"
+            >
+              Commander Damage →
+            </button>
+          )}
         </div>
       )}
 
       {/* Commander Damage Overlay - WCAG compliant */}
       {overlayMode === 'commander' && currentOpponent && (
         <div 
-          className="absolute inset-0 flex flex-col items-center justify-center z-20 p-4 bg-gray-900/95 backdrop-blur-md"
+          className={cn(
+            "absolute inset-0 flex flex-col items-center justify-center z-20 bg-gray-900/95 backdrop-blur-md",
+            isCompact ? "p-1" : "p-4"
+          )}
           style={{ transform: `rotate(${rotation}deg)` }}
           role="dialog"
           aria-label="Commander damage overlay"
         >
           <button
             onClick={closeOverlay}
-            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+            className={cn(
+              "absolute rounded-full bg-white/10 hover:bg-white/20 transition-colors",
+              isCompact ? "top-1 right-1 p-1" : "top-4 right-4 p-2"
+            )}
             aria-label="Close overlay"
           >
-            <X className="w-5 h-5 text-white" />
+            <X className={cn("text-white", isCompact ? "w-3 h-3" : "w-5 h-5")} />
           </button>
 
-          <div className="text-center mb-4">
-            <span className="font-display text-xl text-white uppercase tracking-wider">Commander Damage</span>
-            <div className="text-sm text-white/70 mt-1">from {currentOpponent.name}</div>
+          <div className={cn("text-center", isCompact ? "mb-1" : "mb-4")}>
+            <span className={cn("font-display text-white uppercase tracking-wider", isCompact ? "text-xs" : "text-xl")}>
+              Cmd Dmg
+            </span>
+            <div className={cn("text-white/70", isCompact ? "text-[10px]" : "text-sm mt-1")}>
+              from {currentOpponent.name}
+            </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className={cn("flex items-center", isCompact ? "gap-2" : "gap-4")}>
             {opponents.length > 1 && (
               <button
                 onClick={() => setCommanderIndex(prev => (prev - 1 + opponents.length) % opponents.length)}
-                className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                className={cn("rounded-full bg-white/10 hover:bg-white/20 transition-colors", isCompact ? "p-1" : "p-3")}
                 aria-label="Previous opponent"
               >
-                <ChevronLeft className="w-6 h-6 text-white" />
+                <ChevronLeft className={cn("text-white", isCompact ? "w-4 h-4" : "w-6 h-6")} />
               </button>
             )}
 
             <div 
-              className="px-10 py-6 rounded-2xl flex flex-col items-center"
+              className={cn("rounded-2xl flex flex-col items-center", isCompact ? "px-4 py-2 rounded-lg" : "px-10 py-6")}
               style={{ backgroundColor: `hsl(${currentOpponent.color})` }}
             >
-              <div className="flex items-center gap-8">
+              <div className={cn("flex items-center", isCompact ? "gap-3" : "gap-8")}>
                 <button
                   onClick={() => onCommanderDamageChange(currentOpponent.id, -1)}
-                  className="w-14 h-14 rounded-full flex items-center justify-center text-3xl font-light bg-black/30 hover:bg-black/40 text-white transition-colors"
+                  className={cn(
+                    "rounded-full flex items-center justify-center font-light bg-black/30 hover:bg-black/40 text-white transition-colors",
+                    isCompact ? "w-8 h-8 text-xl" : "w-14 h-14 text-3xl"
+                  )}
                   aria-label="Decrease commander damage"
                 >
                   −
                 </button>
-                <span className="font-display text-[12vmin] leading-none" style={{ color: 'rgba(0,0,0,0.8)' }}>
+                <span className={cn("font-display leading-none", isCompact ? "text-4xl" : "text-[12vmin]")} style={{ color: 'rgba(0,0,0,0.8)' }}>
                   {commanderDamage}
                 </span>
                 <button
                   onClick={() => onCommanderDamageChange(currentOpponent.id, 1)}
-                  className="w-14 h-14 rounded-full flex items-center justify-center text-3xl font-light bg-black/30 hover:bg-black/40 text-white transition-colors"
+                  className={cn(
+                    "rounded-full flex items-center justify-center font-light bg-black/30 hover:bg-black/40 text-white transition-colors",
+                    isCompact ? "w-8 h-8 text-xl" : "w-14 h-14 text-3xl"
+                  )}
                   aria-label="Increase commander damage"
                 >
                   +
@@ -755,21 +799,21 @@ export function FullScreenPlayerPanel({
             {opponents.length > 1 && (
               <button
                 onClick={() => setCommanderIndex(prev => (prev + 1) % opponents.length)}
-                className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                className={cn("rounded-full bg-white/10 hover:bg-white/20 transition-colors", isCompact ? "p-1" : "p-3")}
                 aria-label="Next opponent"
               >
-                <ChevronRight className="w-6 h-6 text-white" />
+                <ChevronRight className={cn("text-white", isCompact ? "w-4 h-4" : "w-6 h-6")} />
               </button>
             )}
           </div>
 
           {opponents.length > 1 && (
-            <div className="flex gap-2 mt-4" role="tablist">
+            <div className={cn("flex role='tablist'", isCompact ? "gap-1 mt-1" : "gap-2 mt-4")}>
               {opponents.map((opp, idx) => (
                 <button
                   key={opp.id}
                   onClick={() => setCommanderIndex(idx)}
-                  className="w-4 h-4 rounded-full transition-all"
+                  className={cn("rounded-full transition-all", isCompact ? "w-2.5 h-2.5" : "w-4 h-4")}
                   style={{ 
                     backgroundColor: idx === commanderIndex ? `hsl(${opp.color})` : 'rgba(255,255,255,0.3)',
                     transform: idx === commanderIndex ? 'scale(1.3)' : 'scale(1)',
@@ -783,9 +827,12 @@ export function FullScreenPlayerPanel({
 
           <button
             onClick={() => setOverlayMode('counters')}
-            className="mt-6 px-4 py-2 rounded-lg text-white/70 hover:text-white text-sm transition-colors"
+            className={cn(
+              "rounded-lg text-white/70 hover:text-white transition-colors",
+              isCompact ? "mt-1 px-2 py-1 text-[10px]" : "mt-6 px-4 py-2 text-sm"
+            )}
           >
-            ← Back to Counters
+            ← Back
           </button>
         </div>
       )}
