@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Player, DUNGEON_ROOMS } from '@/lib/roomUtils';
 import { cn } from '@/lib/utils';
+import { haptics } from '@/lib/haptics';
 import { Skull, ChevronLeft, ChevronRight, X, Crown, Zap, Sparkles, Shield, Swords } from 'lucide-react';
 
 interface FullScreenPlayerPanelProps {
@@ -148,6 +149,8 @@ export function FullScreenPlayerPanel({
       if (now - lastLifeActionRef.current < 120) return;
       lastLifeActionRef.current = now;
     }
+    // Trigger haptic feedback
+    haptics.light();
     onLifeChange(delta);
     setAnimating(true);
     setTimeout(() => setAnimating(false), 200);
