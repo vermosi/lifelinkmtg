@@ -7,6 +7,7 @@ import { Skull, ChevronLeft, ChevronRight, X, Crown, Zap, Sparkles, Shield, Swor
 interface FullScreenPlayerPanelProps {
   player: Player;
   allPlayers: Player[];
+  playerCount: number;
   isMonarch: boolean;
   hasInitiative: boolean;
   dungeonProgress: number;
@@ -33,6 +34,7 @@ type CounterTab = 'poison' | 'experience' | 'energy';
 export function FullScreenPlayerPanel({
   player,
   allPlayers,
+  playerCount,
   isMonarch,
   hasInitiative,
   dungeonProgress,
@@ -52,6 +54,8 @@ export function FullScreenPlayerPanel({
   enableHoldToAdjust,
   onSelect,
 }: FullScreenPlayerPanelProps) {
+  // Compact mode for 3+ players
+  const isCompact = playerCount >= 3;
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(player.life.toString());
   const [isEditingDeck, setIsEditingDeck] = useState(false);
@@ -334,18 +338,21 @@ export function FullScreenPlayerPanel({
     >
       {/* Status badges - top */}
       <div 
-        className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex gap-2"
+        className={cn(
+          "absolute left-1/2 -translate-x-1/2 z-10 flex",
+          isCompact ? "top-1 gap-1" : "top-3 gap-2"
+        )}
         style={{ transform: `translateX(-50%) rotate(${rotation}deg)` }}
       >
         {isMonarch && (
-          <div className="p-1.5 rounded-full bg-black/40" title="Monarch">
-            <Crown className="w-5 h-5 text-yellow-400" fill="currentColor" />
+          <div className={cn("rounded-full bg-black/40", isCompact ? "p-0.5" : "p-1.5")} title="Monarch">
+            <Crown className={cn("text-yellow-400", isCompact ? "w-3 h-3" : "w-5 h-5")} fill="currentColor" />
           </div>
         )}
         {hasInitiative && (
-          <div className="p-1.5 rounded-full bg-black/40 flex items-center gap-1" title={`Initiative: ${DUNGEON_ROOMS[dungeonProgress]}`}>
-            <Shield className="w-5 h-5 text-purple-400" fill="currentColor" />
-            <span className="text-xs font-bold text-purple-300 pr-1">{dungeonProgress + 1}/4</span>
+          <div className={cn("rounded-full bg-black/40 flex items-center", isCompact ? "p-0.5 gap-0.5" : "p-1.5 gap-1")} title={`Initiative: ${DUNGEON_ROOMS[dungeonProgress]}`}>
+            <Shield className={cn("text-purple-400", isCompact ? "w-3 h-3" : "w-5 h-5")} fill="currentColor" />
+            <span className={cn("font-bold text-purple-300", isCompact ? "text-[8px] pr-0.5" : "text-xs pr-1")}>{dungeonProgress + 1}/4</span>
           </div>
         )}
       </div>
@@ -361,7 +368,7 @@ export function FullScreenPlayerPanel({
         {isAdmin && overlayMode === 'none' && (
           <button
             onClick={() => handleLifeChange(-1)}
-            className="life-button top-8 sm:top-12"
+            className={cn("life-button", isCompact ? "top-4" : "top-8 sm:top-12")}
             aria-label="Decrease life by 1"
             onPointerDown={() => startHoldToAdjust(-1)}
             onPointerUp={stopHoldToAdjust}
@@ -388,7 +395,8 @@ export function FullScreenPlayerPanel({
             onClick={handleLifeClick}
             disabled={!isAdmin || overlayMode !== 'none'}
             className={cn(
-              'life-number text-[22vmin] leading-none transition-transform',
+              'life-number leading-none transition-transform',
+              isCompact ? 'text-[16vmin]' : 'text-[22vmin]',
               animating && 'animate-pulse-scale',
               isAdmin && overlayMode === 'none' && 'cursor-pointer active:scale-95'
             )}
@@ -425,7 +433,8 @@ export function FullScreenPlayerPanel({
             onClick={handleDeckClick}
             disabled={!isAdmin || overlayMode !== 'none'}
             className={cn(
-              'mt-1 px-3 py-1 rounded-lg text-sm transition-all',
+              'mt-1 rounded-lg transition-all',
+              isCompact ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm',
               player.deckName 
                 ? 'bg-black/30 text-white/90' 
                 : 'bg-black/20 text-white/50 italic',
@@ -433,14 +442,14 @@ export function FullScreenPlayerPanel({
             )}
             aria-label={player.deckName ? `Deck: ${player.deckName}. Click to edit.` : 'Click to add deck name'}
           >
-            {player.deckName || 'Add deck/commander'}
+            {player.deckName || (isCompact ? 'Add deck' : 'Add deck/commander')}
           </button>
         )}
 
         {isAdmin && overlayMode === 'none' && (
           <button
             onClick={() => handleLifeChange(1)}
-            className="life-button bottom-8 sm:bottom-12"
+            className={cn("life-button", isCompact ? "bottom-4" : "bottom-8 sm:bottom-12")}
             aria-label="Increase life by 1"
             onPointerDown={() => startHoldToAdjust(1)}
             onPointerUp={stopHoldToAdjust}
@@ -453,34 +462,51 @@ export function FullScreenPlayerPanel({
 
         {/* Counter indicators + Counters button */}
         {overlayMode === 'none' && (
-          <div className="absolute bottom-16 sm:bottom-20 left-2 sm:left-4 flex flex-col gap-1">
+          <div className={cn(
+            "absolute left-1 flex flex-col gap-0.5",
+            isCompact ? "bottom-8" : "bottom-16 sm:bottom-20 left-2 sm:left-4 gap-1"
+          )}>
             {/* Counters quick-access button for mobile */}
             {isAdmin && (
               <button
                 onClick={() => setOverlayMode('counters')}
-                className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-black/50 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/60 transition-colors"
+                className={cn(
+                  "flex items-center gap-0.5 rounded-md bg-black/50 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/60 transition-colors",
+                  isCompact ? "px-1 py-0.5" : "px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg gap-1"
+                )}
                 aria-label="Open counters menu"
               >
-                <Skull className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="text-[10px] sm:text-xs font-medium">Counters</span>
+                <Skull className={cn(isCompact ? "w-2.5 h-2.5" : "w-3 h-3 sm:w-4 sm:h-4")} />
+                <span className={cn("font-medium", isCompact ? "text-[8px]" : "text-[10px] sm:text-xs")}>
+                  {isCompact ? "•••" : "Counters"}
+                </span>
               </button>
             )}
             {player.poison > 0 && (
-              <div className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg bg-black/50 backdrop-blur-sm" aria-label={`Poison: ${player.poison}`}>
-                <Skull className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
-                <span className="font-display text-xs sm:text-sm text-green-400 font-bold">{player.poison}</span>
+              <div className={cn(
+                "flex items-center gap-0.5 rounded-md bg-black/50 backdrop-blur-sm",
+                isCompact ? "px-1 py-0.5" : "px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg gap-1"
+              )} aria-label={`Poison: ${player.poison}`}>
+                <Skull className={cn("text-green-400", isCompact ? "w-2.5 h-2.5" : "w-3 h-3 sm:w-4 sm:h-4")} />
+                <span className={cn("font-display text-green-400 font-bold", isCompact ? "text-[10px]" : "text-xs sm:text-sm")}>{player.poison}</span>
               </div>
             )}
             {player.experience > 0 && (
-              <div className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg bg-black/50 backdrop-blur-sm" aria-label={`Experience: ${player.experience}`}>
-                <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400" />
-                <span className="font-display text-xs sm:text-sm text-yellow-400 font-bold">{player.experience}</span>
+              <div className={cn(
+                "flex items-center gap-0.5 rounded-md bg-black/50 backdrop-blur-sm",
+                isCompact ? "px-1 py-0.5" : "px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg gap-1"
+              )} aria-label={`Experience: ${player.experience}`}>
+                <Sparkles className={cn("text-yellow-400", isCompact ? "w-2.5 h-2.5" : "w-3 h-3 sm:w-4 sm:h-4")} />
+                <span className={cn("font-display text-yellow-400 font-bold", isCompact ? "text-[10px]" : "text-xs sm:text-sm")}>{player.experience}</span>
               </div>
             )}
             {player.energy > 0 && (
-              <div className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg bg-black/50 backdrop-blur-sm" aria-label={`Energy: ${player.energy}`}>
-                <Zap className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400" />
-                <span className="font-display text-xs sm:text-sm text-blue-400 font-bold">{player.energy}</span>
+              <div className={cn(
+                "flex items-center gap-0.5 rounded-md bg-black/50 backdrop-blur-sm",
+                isCompact ? "px-1 py-0.5" : "px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg gap-1"
+              )} aria-label={`Energy: ${player.energy}`}>
+                <Zap className={cn("text-blue-400", isCompact ? "w-2.5 h-2.5" : "w-3 h-3 sm:w-4 sm:h-4")} />
+                <span className={cn("font-display text-blue-400 font-bold", isCompact ? "text-[10px]" : "text-xs sm:text-sm")}>{player.energy}</span>
               </div>
             )}
           </div>
@@ -488,14 +514,20 @@ export function FullScreenPlayerPanel({
 
         {/* Commander damage indicators */}
         {overlayMode === 'none' && Object.keys(player.commanderDamage).length > 0 && (
-          <div className="absolute bottom-16 sm:bottom-20 right-2 sm:right-4 flex gap-1">
+          <div className={cn(
+            "absolute flex gap-0.5",
+            isCompact ? "bottom-8 right-1" : "bottom-16 sm:bottom-20 right-2 sm:right-4 gap-1"
+          )}>
             {opponents.map(opp => {
               const dmg = player.commanderDamage[opp.id];
               if (!dmg) return null;
               return (
                 <div
                   key={opp.id}
-                  className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg text-[10px] sm:text-xs font-display font-bold"
+                  className={cn(
+                    "rounded-md font-display font-bold",
+                    isCompact ? "px-1 py-0.5 text-[8px]" : "px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg text-[10px] sm:text-xs"
+                  )}
                   style={{ backgroundColor: `hsl(${opp.color})`, color: 'rgba(0,0,0,0.8)' }}
                   aria-label={`Commander damage from ${opp.name}: ${dmg}`}
                 >
