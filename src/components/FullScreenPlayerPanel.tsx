@@ -368,7 +368,7 @@ export function FullScreenPlayerPanel({
         {isAdmin && overlayMode === 'none' && (
           <button
             onClick={() => handleLifeChange(-1)}
-            className={cn("life-button", isCompact ? "top-4" : "top-8 sm:top-12")}
+            className={cn("life-button", isCompact && "compact", isCompact ? "top-2" : "top-8 sm:top-12")}
             aria-label="Decrease life by 1"
             onPointerDown={() => startHoldToAdjust(-1)}
             onPointerUp={stopHoldToAdjust}
@@ -406,50 +406,51 @@ export function FullScreenPlayerPanel({
           </button>
         )}
 
-        {/* Deck name / Commander - below life total */}
-        {isEditingDeck ? (
-          <div className="flex flex-col items-center mt-2">
-            <input
-              type="text"
-              value={deckEditValue}
-              onChange={(e) => setDeckEditValue(e.target.value)}
-              onBlur={handleDeckSubmit}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleDeckSubmit();
-                if (e.key === 'Escape') {
-                  setDeckEditValue(player.deckName || '');
-                  setIsEditingDeck(false);
-                }
-              }}
-              placeholder="Deck / Commander..."
-              className="px-3 py-1.5 rounded-lg bg-black/30 text-white text-sm text-center outline-none border border-white/20 focus:border-white/50 max-w-[80%]"
-              autoFocus
-              aria-label="Edit deck name"
-            />
-            <span className="mt-1 text-[10px] text-white/50">Enter to save · Esc to cancel</span>
-          </div>
-        ) : (
-          <button
-            onClick={handleDeckClick}
-            disabled={!isAdmin || overlayMode !== 'none'}
-            className={cn(
-              'mt-1 rounded-lg transition-all',
-              isCompact ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm',
-              player.deckName 
-                ? 'bg-black/30 text-white/90' 
-                : 'bg-black/20 text-white/50 italic',
-              isAdmin && overlayMode === 'none' && 'cursor-pointer hover:bg-black/40'
-            )}
-            aria-label={player.deckName ? `Deck: ${player.deckName}. Click to edit.` : 'Click to add deck name'}
-          >
-            {player.deckName || (isCompact ? 'Add deck' : 'Add deck/commander')}
-          </button>
+        {/* Deck name / Commander - hidden in compact mode, show only if set */}
+        {!isCompact && (
+          isEditingDeck ? (
+            <div className="flex flex-col items-center mt-2">
+              <input
+                type="text"
+                value={deckEditValue}
+                onChange={(e) => setDeckEditValue(e.target.value)}
+                onBlur={handleDeckSubmit}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleDeckSubmit();
+                  if (e.key === 'Escape') {
+                    setDeckEditValue(player.deckName || '');
+                    setIsEditingDeck(false);
+                  }
+                }}
+                placeholder="Deck / Commander..."
+                className="px-3 py-1.5 rounded-lg bg-black/30 text-white text-sm text-center outline-none border border-white/20 focus:border-white/50 max-w-[80%]"
+                autoFocus
+                aria-label="Edit deck name"
+              />
+              <span className="mt-1 text-[10px] text-white/50">Enter to save · Esc to cancel</span>
+            </div>
+          ) : (
+            <button
+              onClick={handleDeckClick}
+              disabled={!isAdmin || overlayMode !== 'none'}
+              className={cn(
+                'mt-1 px-3 py-1 rounded-lg text-sm transition-all',
+                player.deckName 
+                  ? 'bg-black/30 text-white/90' 
+                  : 'bg-black/20 text-white/50 italic',
+                isAdmin && overlayMode === 'none' && 'cursor-pointer hover:bg-black/40'
+              )}
+              aria-label={player.deckName ? `Deck: ${player.deckName}. Click to edit.` : 'Click to add deck name'}
+            >
+              {player.deckName || 'Add deck/commander'}
+            </button>
+          )
         )}
 
         {isAdmin && overlayMode === 'none' && (
           <button
             onClick={() => handleLifeChange(1)}
-            className={cn("life-button", isCompact ? "bottom-4" : "bottom-8 sm:bottom-12")}
+            className={cn("life-button", isCompact && "compact", isCompact ? "bottom-2" : "bottom-8 sm:bottom-12")}
             aria-label="Increase life by 1"
             onPointerDown={() => startHoldToAdjust(1)}
             onPointerUp={stopHoldToAdjust}

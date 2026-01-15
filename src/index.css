@@ -90,6 +90,10 @@
     transition: color 0.15s, transform 0.1s;
   }
 
+  .life-button.compact {
+    @apply w-8 h-8 text-xl;
+  }
+
   .life-button:hover {
     color: rgba(0, 0, 0, 0.5);
   }
