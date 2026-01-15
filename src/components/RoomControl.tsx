@@ -151,10 +151,36 @@ export function RoomControl() {
   };
 
   const getPlayerLayout = (index: number, total: number) => {
+    // Phone placed in center of table - each player's text should face them
     if (total === 2) {
+      // 2 players: top player rotated 180°, bottom player normal
       return { rotation: index === 0 ? 180 : 0 };
     }
-    return { rotation: index < 2 ? 180 : 0 };
+    if (total === 3) {
+      if (isPortrait) {
+        // Portrait 3-player: top row (indices 0,1) face away, bottom (index 2) faces user
+        // Top-left (0): rotated 180°, Top-right (1): rotated 180°, Bottom (2): normal
+        return { rotation: index < 2 ? 180 : 0 };
+      } else {
+        // Landscape 3-player: left player faces left, middle faces up, right faces right
+        // For a phone in center: left (0): 90°, center (1): 180°, right (2): -90°
+        if (index === 0) return { rotation: 90 };
+        if (index === 1) return { rotation: 180 };
+        return { rotation: -90 };
+      }
+    }
+    // 4 players: 2x2 grid
+    // Top row (indices 0,1) face away from person holding phone at bottom
+    // Bottom row (indices 2,3) face the person holding phone
+    if (isPortrait) {
+      // Portrait: top row rotated 180°
+      return { rotation: index < 2 ? 180 : 0 };
+    } else {
+      // Landscape 4-player: 
+      // Top-left (0): 180°, Top-right (1): 180°
+      // Bottom-left (2): 0°, Bottom-right (3): 0°
+      return { rotation: index < 2 ? 180 : 0 };
+    }
   };
 
   const getGridStyle = () => {
