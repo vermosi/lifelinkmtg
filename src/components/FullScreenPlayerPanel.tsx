@@ -541,8 +541,8 @@ export function FullScreenPlayerPanel({
           </div>
         )}
 
-        {/* Keyboard hint */}
-        {isAdmin && overlayMode === 'none' && isFocused && (
+        {/* Keyboard hint - hidden on mobile */}
+        {isAdmin && overlayMode === 'none' && isFocused && !isMobile && (
           <div 
             className="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs px-2 py-1 rounded bg-black/50 backdrop-blur-sm"
             style={{ color: 'white' }}
