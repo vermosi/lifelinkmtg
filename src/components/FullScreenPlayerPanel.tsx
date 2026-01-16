@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Player, DUNGEON_ROOMS } from '@/lib/roomUtils';
 import { cn } from '@/lib/utils';
 import { haptics } from '@/lib/haptics';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Skull, ChevronLeft, ChevronRight, X, Crown, Zap, Sparkles, Shield, Swords } from 'lucide-react';
 
 interface FullScreenPlayerPanelProps {
@@ -56,6 +57,7 @@ export function FullScreenPlayerPanel({
 }: FullScreenPlayerPanelProps) {
   // Compact mode for 3+ players
   const isCompact = playerCount >= 3;
+  const isMobile = useIsMobile();
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(player.life.toString());
   const [isEditingDeck, setIsEditingDeck] = useState(false);
@@ -84,9 +86,9 @@ export function FullScreenPlayerPanel({
     }
   }, [isEditing]);
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts - disabled on mobile
   useEffect(() => {
-    if (!isFocused || !isAdmin || overlayMode !== 'none') return;
+    if (!isFocused || !isAdmin || overlayMode !== 'none' || isMobile) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't intercept keyboard shortcuts when user is typing in an input
@@ -144,7 +146,7 @@ export function FullScreenPlayerPanel({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isFocused, isAdmin, overlayMode, player.life, onToggleMonarch, onToggleInitiative]);
+  }, [isFocused, isAdmin, overlayMode, player.life, onToggleMonarch, onToggleInitiative, isMobile]);
 
   const handleLifeChange = (delta: number, fromHold = false) => {
     if (!isAdmin) return;
