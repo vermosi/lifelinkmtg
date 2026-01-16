@@ -303,7 +303,7 @@ export function RoomControl() {
   }
 
   return (
-    <div className="h-screen w-screen overflow-hidden relative">
+    <div className="h-screen w-screen overflow-hidden relative" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}>
       {/* Day/Night indicator */}
       <div className="absolute top-4 left-4 z-30">
         <button
