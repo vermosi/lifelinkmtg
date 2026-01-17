@@ -270,6 +270,21 @@ export function useCloudRoomState(roomId: string | undefined) {
     });
   }, [updateRoom, addHistoryEntry]);
 
+  const updatePartnerLife = useCallback((playerId: number, delta: number) => {
+    updateRoom(prev => {
+      const player = prev.players.find(p => p.id === playerId);
+      const oldValue = player?.partnerLife ?? prev.settings.startingLife;
+      const newValue = oldValue + delta;
+      return {
+        ...prev,
+        players: prev.players.map(p =>
+          p.id === playerId ? { ...p, partnerLife: newValue } : p
+        ),
+        history: addHistoryEntry(prev, playerId, 'partner', oldValue, newValue),
+      };
+    });
+  }, [updateRoom, addHistoryEntry]);
+
   const setMonarch = useCallback((playerId: number | null) => {
     updateRoom(prev => {
       let history = prev.history;
@@ -490,6 +505,7 @@ export function useCloudRoomState(roomId: string | undefined) {
     updatePlayerExperience,
     updatePlayerEnergy,
     updateCommanderDamage,
+    updatePartnerLife,
     setMonarch,
     setInitiative,
     advanceDungeon,

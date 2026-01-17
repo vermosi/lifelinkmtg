@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Room, Player, HistoryEntry, RoomSettings, OverlayLayout, generateId, createDefaultPlayers, createDefaultOverlayLayout } from './roomUtils';
+import { Room, Player, HistoryEntry, RoomSettings, OverlayLayout, generateId, createDefaultPlayers, createDefaultOverlayLayout, PlayerCount, LAYOUTS, getDefaultLayout } from './roomUtils';
 import type { Json } from '@/integrations/supabase/types';
 
 // Convert Room to database format
@@ -41,16 +41,19 @@ export function dbToRoom(dbRoom: {
   // Try to get admin key from local storage if not provided
   const storedAdminKey = getStoredAdminKey(dbRoom.id);
   
+  const playerCount = players.length as PlayerCount;
+  
   return {
     id: dbRoom.id,
     adminKey: dbRoom.admin_key || storedAdminKey || '',
-    playerCount: players.length as 2 | 3 | 4,
+    playerCount,
     players: players.map(p => ({
       ...p,
       poison: p.poison ?? 0,
       experience: p.experience ?? 0,
       energy: p.energy ?? 0,
       commanderDamage: p.commanderDamage ?? {},
+      partnerLife: p.partnerLife,
     })),
     settings: {
       theme: settings?.theme ?? 'dark',
@@ -61,13 +64,15 @@ export function dbToRoom(dbRoom: {
       overlayLayout: settings?.overlayLayout ?? 'horizontal',
       simpleTextStyle: settings?.simpleTextStyle ?? false,
       enableHoldToAdjust: settings?.enableHoldToAdjust ?? false,
+      enablePartnerTracking: settings?.enablePartnerTracking ?? false,
     },
     monarchId: dbRoom.monarch ? parseInt(dbRoom.monarch) : null,
     initiativeId: dbRoom.initiative ? parseInt(dbRoom.initiative) : null,
     dungeonProgress: dbRoom.dungeon_progress ?? 0,
     isDay: dbRoom.day_night !== 'night',
     history,
-    overlayLayout: overlayLayout ?? createDefaultOverlayLayout(players.length || 4),
+    overlayLayout: overlayLayout ?? createDefaultOverlayLayout(playerCount || 4),
+    layoutId: (dbRoom as any).layout_id ?? getDefaultLayout(playerCount || 4).id,
     createdAt: new Date(dbRoom.created_at).getTime(),
     lastUpdated: new Date(dbRoom.last_updated).getTime(),
   };
@@ -111,13 +116,18 @@ export function removeStoredAdminKey(roomId: string): void {
 }
 
 // Create a new room in the cloud
-export async function createCloudRoom(playerCount: 2 | 3 | 4 = 4): Promise<Room | null> {
+export async function createCloudRoom(playerCount: PlayerCount = 4, layoutId?: string): Promise<Room | null> {
   const startingLife = 40;
+  const layout = layoutId 
+    ? LAYOUTS.find(l => l.id === layoutId) || getDefaultLayout(playerCount)
+    : getDefaultLayout(playerCount);
+  const enablePartner = layout.hasPartner;
+  
   const room: Room = {
     id: generateId(6),
     adminKey: generateId(12),
     playerCount,
-    players: createDefaultPlayers(playerCount, startingLife),
+    players: createDefaultPlayers(playerCount, startingLife, enablePartner),
     settings: {
       theme: 'dark',
       startingLife,
@@ -127,6 +137,7 @@ export async function createCloudRoom(playerCount: 2 | 3 | 4 = 4): Promise<Room 
       overlayLayout: 'horizontal',
       simpleTextStyle: false,
       enableHoldToAdjust: false,
+      enablePartnerTracking: enablePartner,
     },
     monarchId: null,
     initiativeId: null,
@@ -134,6 +145,7 @@ export async function createCloudRoom(playerCount: 2 | 3 | 4 = 4): Promise<Room 
     isDay: true,
     history: [],
     overlayLayout: createDefaultOverlayLayout(playerCount),
+    layoutId: layout.id,
     createdAt: Date.now(),
     lastUpdated: Date.now(),
   };
@@ -217,16 +229,18 @@ export async function verifyRoomAdmin(roomId: string, adminKey: string): Promise
 
   // Parse room_data from JSONB
   const roomData = result.room_data;
+  const playerCount = (roomData.players?.length || 4) as PlayerCount;
   const room: Room = {
     id: roomData.id,
     adminKey: '', // Never expose admin key
-    playerCount: (roomData.players?.length || 4) as 2 | 3 | 4,
+    playerCount,
     players: (roomData.players || []).map((p: Player) => ({
       ...p,
       poison: p.poison ?? 0,
       experience: p.experience ?? 0,
       energy: p.energy ?? 0,
       commanderDamage: p.commanderDamage ?? {},
+      partnerLife: p.partnerLife,
     })),
     settings: {
       theme: roomData.settings?.theme ?? 'dark',
@@ -237,13 +251,15 @@ export async function verifyRoomAdmin(roomId: string, adminKey: string): Promise
       overlayLayout: roomData.settings?.overlayLayout ?? 'horizontal',
       simpleTextStyle: roomData.settings?.simpleTextStyle ?? false,
       enableHoldToAdjust: roomData.settings?.enableHoldToAdjust ?? false,
+      enablePartnerTracking: roomData.settings?.enablePartnerTracking ?? false,
     },
     monarchId: roomData.monarch ? parseInt(roomData.monarch) : null,
     initiativeId: roomData.initiative ? parseInt(roomData.initiative) : null,
     dungeonProgress: roomData.dungeon_progress ?? 0,
     isDay: roomData.day_night !== 'night',
     history: roomData.history || [],
-    overlayLayout: roomData.overlay_layout ?? createDefaultOverlayLayout(roomData.players?.length || 4),
+    overlayLayout: roomData.overlay_layout ?? createDefaultOverlayLayout(playerCount),
+    layoutId: (roomData as any).layout_id ?? getDefaultLayout(playerCount).id,
     createdAt: new Date(roomData.created_at).getTime(),
     lastUpdated: new Date(roomData.last_updated).getTime(),
   };

@@ -2,7 +2,7 @@ import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown, Shield, Sun, Moon, Dices, Save, FolderOpen, Plus, Cloud, Loader2 } from 'lucide-react';
 import { useCloudRoomState } from '@/hooks/useCloudRoomState';
-import { getControlUrl, getOverlayUrl, PLAYER_COLORS, formatTimestamp, HistoryEntry, DUNGEON_ROOMS, loadPresets, savePreset, deletePreset, createPresetFromRoom, GamePreset } from '@/lib/roomUtils';
+import { getControlUrl, getOverlayUrl, PLAYER_COLORS, formatTimestamp, HistoryEntry, DUNGEON_ROOMS, loadPresets, savePreset, deletePreset, createPresetFromRoom, GamePreset, LAYOUTS } from '@/lib/roomUtils';
 import { FullScreenPlayerPanel } from './FullScreenPlayerPanel';
 import { DiceRoller } from './DiceRoller';
 import { cn } from '@/lib/utils';
@@ -19,6 +19,7 @@ function HistoryIcon({ type }: { type: HistoryEntry['type'] }) {
     case 'monarch': return <Crown className="w-3 h-3 text-yellow-400" />;
     case 'initiative': return <Shield className="w-3 h-3 text-purple-400" />;
     case 'daynight': return <Sun className="w-3 h-3 text-amber-400" />;
+    case 'partner': return <Heart className="w-3 h-3 text-pink-400" />;
     default: return null;
   }
 }
@@ -42,6 +43,7 @@ export function RoomControl() {
     updatePlayerExperience,
     updatePlayerEnergy,
     updateCommanderDamage,
+    updatePartnerLife,
     setMonarch,
     setInitiative,
     advanceDungeon,
@@ -150,56 +152,62 @@ export function RoomControl() {
     setMenuOpen(false);
   };
 
+  // Get the current layout configuration
+  const currentLayout = LAYOUTS.find(l => l.id === room?.layoutId) || LAYOUTS[0];
+
   const getPlayerLayout = (index: number, total: number) => {
     // Phone placed in center of table - each player's text should face them
+    const { rows } = currentLayout;
+    
     if (total === 2) {
-      // 2 players: top player rotated 180°, bottom player normal
       return { rotation: index === 0 ? 180 : 0 };
     }
     if (total === 3) {
       if (isPortrait) {
-        // Portrait 3-player: top row (indices 0,1) face away, bottom (index 2) faces user
-        // Top-left (0): rotated 180°, Top-right (1): rotated 180°, Bottom (2): normal
         return { rotation: index < 2 ? 180 : 0 };
       } else {
-        // Landscape 3-player: left player faces left, middle faces up, right faces right
-        // For a phone in center: left (0): 90°, center (1): 180°, right (2): -90°
         if (index === 0) return { rotation: 90 };
         if (index === 1) return { rotation: 180 };
         return { rotation: -90 };
       }
     }
-    // 4 players: 2x2 grid
-    // Top row (indices 0,1) face away from person holding phone at bottom
-    // Bottom row (indices 2,3) face the person holding phone
+    // For 4+ players, use row-based rotation
+    // Calculate which row this player is in based on layout
+    const cols = currentLayout.cols;
+    const playerRow = Math.floor(index / cols);
+    const topHalf = playerRow < rows / 2;
+    
     if (isPortrait) {
-      // Portrait: top row rotated 180°
-      return { rotation: index < 2 ? 180 : 0 };
+      return { rotation: topHalf ? 180 : 0 };
     } else {
-      // Landscape 4-player: 
-      // Top-left (0): 180°, Top-right (1): 180°
-      // Bottom-left (2): 0°, Bottom-right (3): 0°
-      return { rotation: index < 2 ? 180 : 0 };
+      return { rotation: topHalf ? 180 : 0 };
     }
   };
 
   const getGridStyle = () => {
-    if (room.playerCount === 2) {
-      return isPortrait
-        ? { display: 'grid', gridTemplateRows: '1fr 1fr', gridTemplateColumns: '1fr' }
-        : { display: 'grid', gridTemplateRows: '1fr', gridTemplateColumns: '1fr 1fr' };
-    }
-    if (room.playerCount === 3 && !isPortrait) {
-      return { display: 'grid', gridTemplateRows: '1fr', gridTemplateColumns: '1fr 1fr 1fr' };
-    }
-    return { display: 'grid', gridTemplateRows: '1fr 1fr', gridTemplateColumns: '1fr 1fr' };
+    const { rows, cols } = currentLayout;
+    return {
+      display: 'grid',
+      gridTemplateRows: `repeat(${rows}, 1fr)`,
+      gridTemplateColumns: `repeat(${cols}, 1fr)`,
+    };
   };
 
   const getPlayerGridArea = (index: number, total: number) => {
-    if (total === 3 && isPortrait && index === 2) {
-      return { gridColumn: '1 / -1' };
-    }
-    return {};
+    const cells = currentLayout.playerCells[index];
+    if (!cells || cells.length <= 1) return {};
+    
+    // Calculate grid area from cells
+    const { cols } = currentLayout;
+    const minRow = Math.floor(Math.min(...cells) / cols);
+    const maxRow = Math.floor(Math.max(...cells) / cols);
+    const minCol = Math.min(...cells.map(c => c % cols));
+    const maxCol = Math.max(...cells.map(c => c % cols));
+    
+    return {
+      gridRow: `${minRow + 1} / ${maxRow + 2}`,
+      gridColumn: `${minCol + 1} / ${maxCol + 2}`,
+    };
   };
 
   const formatHistoryChange = (entry: HistoryEntry) => {
