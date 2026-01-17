@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Dices, Timer, RotateCcw, Users, PlayCircle, PauseCircle, 
-  SkipForward, SkipBack, Coins, Trophy, Shuffle, X, ChevronDown
+  SkipForward, SkipBack, Coins, Trophy, Shuffle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Room, Player, PlayerCount } from '@/lib/roomUtils';
+import { Room, PlayerCount } from '@/lib/roomUtils';
 import { DiceRoller } from './DiceRoller';
 
 interface ToolsDrawerProps {
@@ -12,20 +12,23 @@ interface ToolsDrawerProps {
   onClose: () => void;
   room: Room;
   isAdmin: boolean;
-  // Turn/timer controls
   onNextTurn: () => void;
   onPreviousTurn: () => void;
   onSetActivePlayer: (index: number) => void;
   onToggleGameTimer: () => void;
   onResetGameTimer: () => void;
-  // Game actions
   onResetGame: () => void;
   onSetPlayerCount: (count: PlayerCount) => void;
 }
 
 type DrawerTab = 'dice' | 'timer' | 'actions';
 
-export function ToolsDrawer({
+interface HighRollResult {
+  playerId: number;
+  roll: number;
+}
+
+function ToolsDrawerContent({
   isOpen,
   onClose,
   room,
@@ -41,9 +44,20 @@ export function ToolsDrawer({
   const [activeTab, setActiveTab] = useState<DrawerTab>('dice');
   const [coinResult, setCoinResult] = useState<'heads' | 'tails' | null>(null);
   const [coinFlipping, setCoinFlipping] = useState(false);
-  const [highRollResults, setHighRollResults] = useState<{ playerId: number; roll: number }[]>([]);
+  const [highRollResults, setHighRollResults] = useState<HighRollResult[]>([]);
   const [highRollWinner, setHighRollWinner] = useState<number | null>(null);
   const [isRollingHigh, setIsRollingHigh] = useState(false);
+  
+  const coinIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const highRollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (coinIntervalRef.current) clearInterval(coinIntervalRef.current);
+      if (highRollTimeoutRef.current) clearTimeout(highRollTimeoutRef.current);
+    };
+  }, []);
 
   // Format elapsed time
   const formatTime = (ms: number) => {
@@ -80,21 +94,23 @@ export function ToolsDrawer({
   }, [room.gameTimer.running, room.gameTimer.elapsedMs, getElapsedTime]);
 
   // Coin flip
-  const flipCoin = () => {
+  const flipCoin = useCallback(() => {
+    if (coinIntervalRef.current) clearInterval(coinIntervalRef.current);
     setCoinFlipping(true);
     setCoinResult(null);
     
     let count = 0;
-    const interval = setInterval(() => {
+    coinIntervalRef.current = setInterval(() => {
       setCoinResult(Math.random() > 0.5 ? 'heads' : 'tails');
       count++;
       if (count > 10) {
-        clearInterval(interval);
+        if (coinIntervalRef.current) clearInterval(coinIntervalRef.current);
+        coinIntervalRef.current = null;
         setCoinResult(Math.random() > 0.5 ? 'heads' : 'tails');
         setCoinFlipping(false);
       }
     }, 80);
-  };
+  }, []);
 
   // High roll for starting player
   const highRoll = () => {
@@ -141,7 +157,7 @@ export function ToolsDrawer({
     rollNext();
   };
 
-  if (!isOpen) return null;
+  
 
   const activePlayer = room.players[room.activePlayerIndex];
 
@@ -419,4 +435,10 @@ export function ToolsDrawer({
       </div>
     </>
   );
+}
+
+// Wrapper to avoid HMR issues
+export function ToolsDrawer(props: ToolsDrawerProps) {
+  if (!props.isOpen) return null;
+  return <ToolsDrawerContent {...props} />;
 }
