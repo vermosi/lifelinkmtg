@@ -6,41 +6,41 @@
 
 @layer base {
   :root {
-    --background: 0 0% 8%;
+    --background: 0 0% 6%;
     --foreground: 0 0% 98%;
 
-    --card: 0 0% 12%;
+    --card: 0 0% 10%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 10%;
+    --popover: 0 0% 8%;
     --popover-foreground: 0 0% 98%;
 
     --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 8%;
+    --primary-foreground: 0 0% 6%;
 
-    --secondary: 0 0% 18%;
+    --secondary: 0 0% 14%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 0 0% 20%;
-    --muted-foreground: 0 0% 60%;
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 55%;
 
-    --accent: 210 100% 60%;
+    --accent: 210 100% 55%;
     --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 70% 50%;
+    --destructive: 0 65% 50%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
     --ring: 0 0% 98%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
     /* Player colors - vibrant, saturated */
-    --player-1: 45 90% 45%;
-    --player-2: 345 75% 40%;
-    --player-3: 270 40% 30%;
-    --player-4: 220 60% 30%;
+    --player-1: 45 85% 50%;
+    --player-2: 345 70% 45%;
+    --player-3: 270 45% 35%;
+    --player-4: 200 60% 35%;
 
     /* Font families */
     --font-display: 'Bebas Neue', sans-serif;
@@ -55,7 +55,6 @@
 
   html, body, #root {
     @apply h-full w-full m-0 p-0 overflow-hidden;
-    /* Safe area insets for iPhone notch and home indicator */
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
@@ -65,6 +64,7 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-body);
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
@@ -77,31 +77,58 @@
     font-family: var(--font-body);
   }
 
+  /* Clean player panel */
   .player-panel {
-    @apply relative flex items-center justify-center overflow-hidden select-none;
+    @apply relative flex items-center justify-center overflow-hidden;
     touch-action: manipulation;
+    user-select: none;
   }
 
-  .life-number {
+  /* Life total styling */
+  .life-total {
     font-family: var(--font-display);
-    @apply font-normal tracking-tight;
-    color: rgba(0, 0, 0, 0.7);
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    letter-spacing: -0.02em;
   }
 
+  .life-input {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+
+  /* Life adjustment buttons - clean, minimal circles */
+  .life-btn {
+    @apply absolute flex items-center justify-center rounded-full;
+    @apply w-14 h-14 sm:w-16 sm:h-16;
+    @apply bg-black/15 active:bg-black/30;
+    @apply transition-all duration-150;
+    z-index: 10;
+  }
+
+  .life-btn:active {
+    transform: scale(0.92);
+  }
+
+  .life-btn-icon {
+    @apply text-3xl sm:text-4xl font-light;
+    color: rgba(0, 0, 0, 0.45);
+    line-height: 1;
+  }
+
+  .life-btn:active .life-btn-icon {
+    color: rgba(0, 0, 0, 0.65);
+  }
+
+  /* Legacy life-button for FullScreenPlayerPanel */
   .life-button {
-    @apply absolute flex items-center justify-center text-3xl sm:text-4xl font-light select-none w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full bg-black/20 active:bg-black/40;
+    @apply absolute flex items-center justify-center text-3xl sm:text-4xl font-light select-none w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-black/20 active:bg-black/40;
     color: rgba(0, 0, 0, 0.5);
     transition: color 0.15s, transform 0.1s;
     z-index: 10;
   }
 
   .life-button.compact {
-    @apply w-10 h-10 text-2xl;
-  }
-
-  .life-button:hover {
-    color: rgba(0, 0, 0, 0.5);
+    @apply w-12 h-12 text-2xl;
   }
 
   .life-button:active {
@@ -109,14 +136,125 @@
     color: rgba(0, 0, 0, 0.7);
   }
 
+  /* Center menu button */
   .menu-button {
     @apply absolute z-50 flex items-center justify-center rounded-full;
-    @apply bg-background/90 backdrop-blur-sm border-4 border-background;
-    @apply shadow-xl;
+    @apply bg-background/95 backdrop-blur-md;
+    @apply shadow-2xl border border-white/10;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .menu-button:hover {
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+
+  .menu-button:active {
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+
+  /* Tools button - floating action button */
+  .tools-fab {
+    @apply fixed z-50 flex items-center justify-center rounded-full;
+    @apply w-14 h-14 bg-background/95 backdrop-blur-md;
+    @apply shadow-2xl border border-white/10;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .tools-fab:hover {
+    transform: scale(1.08);
+  }
+
+  .tools-fab:active {
+    transform: scale(0.95);
+  }
+
+  /* Life number for overlay views */
+  .life-number {
+    font-family: var(--font-display);
+    @apply font-normal tracking-tight;
+    color: rgba(0, 0, 0, 0.7);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 }
 
 @layer utilities {
+  /* Life change animation */
+  .animate-life-change {
+    animation: life-pulse 0.2s ease-out;
+  }
+
+  @keyframes life-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+
+  /* Delta fade animation */
+  .animate-delta-fade {
+    animation: delta-fade 0.4s ease-out forwards;
+  }
+
+  @keyframes delta-fade {
+    0% { 
+      opacity: 1; 
+      transform: translateY(-50%) translateX(0);
+    }
+    100% { 
+      opacity: 0; 
+      transform: translateY(-50%) translateX(10px);
+    }
+  }
+
+  /* Subtle glow for special states */
+  .animate-subtle-glow {
+    animation: subtle-glow 2.5s ease-in-out infinite;
+  }
+
+  @keyframes subtle-glow {
+    0%, 100% { 
+      filter: drop-shadow(0 0 0 transparent);
+    }
+    50% { 
+      filter: drop-shadow(0 0 8px currentColor);
+    }
+  }
+
+  /* Smooth slide up for drawers */
+  .animate-slide-up {
+    animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes slide-up {
+    from { 
+      transform: translateY(100%);
+      opacity: 0.8;
+    }
+    to { 
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  /* Flash animations for life changes */
+  .animate-flash-green {
+    animation: flash-green 0.3s ease-out;
+  }
+
+  @keyframes flash-green {
+    0% { background-color: rgba(34, 197, 94, 0.3); }
+    100% { background-color: transparent; }
+  }
+
+  .animate-flash-red {
+    animation: flash-red 0.3s ease-out;
+  }
+
+  @keyframes flash-red {
+    0% { background-color: rgba(239, 68, 68, 0.3); }
+    100% { background-color: transparent; }
+  }
+
+  /* Pulse scale */
   .animate-pulse-scale {
     animation: pulse-scale 0.2s ease-out;
   }
@@ -127,6 +265,7 @@
     100% { transform: scale(1); }
   }
 
+  /* Infinity glow for special elements */
   .animate-infinity-glow {
     animation: infinity-glow 3s ease-in-out infinite;
   }
