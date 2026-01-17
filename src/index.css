@@ -90,13 +90,14 @@
   }
 
   .life-button {
-    @apply absolute flex items-center justify-center text-3xl sm:text-4xl font-light select-none w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full bg-black/10;
-    color: rgba(0, 0, 0, 0.3);
+    @apply absolute flex items-center justify-center text-3xl sm:text-4xl font-light select-none w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full bg-black/20 active:bg-black/40;
+    color: rgba(0, 0, 0, 0.5);
     transition: color 0.15s, transform 0.1s;
+    z-index: 10;
   }
 
   .life-button.compact {
-    @apply w-8 h-8 text-xl;
+    @apply w-10 h-10 text-2xl;
   }
 
   .life-button:hover {
