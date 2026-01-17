@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Room, Player, HistoryEntry, RoomSettings, OverlayLayout, generateId, createDefaultPlayers, createDefaultOverlayLayout, PlayerCount, LAYOUTS, getDefaultLayout } from './roomUtils';
+import { Room, Player, HistoryEntry, RoomSettings, OverlayLayout, generateId, createDefaultPlayers, createDefaultOverlayLayout, PlayerCount, LAYOUTS, getDefaultLayout, normalizeRoom, createDefaultPlayer } from './roomUtils';
 import type { Json } from '@/integrations/supabase/types';
 
 // Convert Room to database format
@@ -18,10 +18,10 @@ export function roomToDbFormat(room: Room) {
   };
 }
 
-// Convert database format to Room (from rooms_public view - no admin_key)
+// Convert database format to Room
 export function dbToRoom(dbRoom: {
   id: string;
-  admin_key?: string; // Optional - not present when querying from rooms_public view
+  admin_key?: string;
   settings: unknown;
   players: unknown;
   day_night: string | null;
@@ -33,49 +33,36 @@ export function dbToRoom(dbRoom: {
   created_at: string;
   last_updated: string;
 }): Room {
-  const settings = dbRoom.settings as RoomSettings;
-  const players = (dbRoom.players as unknown as Player[]) || [];
+  const settings = dbRoom.settings as any;
+  const players = (dbRoom.players as unknown as any[]) || [];
   const history = (dbRoom.history as unknown as HistoryEntry[]) || [];
   const overlayLayout = dbRoom.overlay_layout as OverlayLayout | null;
-  
-  // Try to get admin key from local storage if not provided
+
   const storedAdminKey = getStoredAdminKey(dbRoom.id);
-  
-  const playerCount = players.length as PlayerCount;
-  
-  return {
+  const playerCount = (players.length || 4) as PlayerCount;
+
+  // Create a raw room object and normalize it
+  const rawRoom: Room = {
     id: dbRoom.id,
     adminKey: dbRoom.admin_key || storedAdminKey || '',
     playerCount,
-    players: players.map(p => ({
-      ...p,
-      poison: p.poison ?? 0,
-      experience: p.experience ?? 0,
-      energy: p.energy ?? 0,
-      commanderDamage: p.commanderDamage ?? {},
-      partnerLife: p.partnerLife,
-    })),
-    settings: {
-      theme: settings?.theme ?? 'dark',
-      startingLife: settings?.startingLife ?? 40,
-      overlayFontSize: settings?.overlayFontSize ?? 'medium',
-      showNamesOnOverlay: settings?.showNamesOnOverlay ?? true,
-      showBackgroundCards: settings?.showBackgroundCards ?? true,
-      overlayLayout: settings?.overlayLayout ?? 'horizontal',
-      simpleTextStyle: settings?.simpleTextStyle ?? false,
-      enableHoldToAdjust: settings?.enableHoldToAdjust ?? false,
-      enablePartnerTracking: settings?.enablePartnerTracking ?? false,
-    },
+    players: players as Player[],
+    settings: settings as RoomSettings,
+    activePlayerIndex: (settings as any)?.activePlayerIndex ?? 0,
+    turnNumber: (settings as any)?.turnNumber ?? 1,
+    gameTimer: (settings as any)?.gameTimer ?? { running: false, elapsedMs: 0, startedAt: null },
     monarchId: dbRoom.monarch ? parseInt(dbRoom.monarch) : null,
     initiativeId: dbRoom.initiative ? parseInt(dbRoom.initiative) : null,
     dungeonProgress: dbRoom.dungeon_progress ?? 0,
     isDay: dbRoom.day_night !== 'night',
     history,
-    overlayLayout: overlayLayout ?? createDefaultOverlayLayout(playerCount || 4),
-    layoutId: (dbRoom as any).layout_id ?? getDefaultLayout(playerCount || 4).id,
+    overlayLayout: overlayLayout ?? createDefaultOverlayLayout(playerCount),
+    layoutId: (dbRoom as any).layout_id ?? getDefaultLayout(playerCount).id,
     createdAt: new Date(dbRoom.created_at).getTime(),
     lastUpdated: new Date(dbRoom.last_updated).getTime(),
   };
+
+  return normalizeRoom(rawRoom);
 }
 
 // Store admin key locally for a room
@@ -118,16 +105,15 @@ export function removeStoredAdminKey(roomId: string): void {
 // Create a new room in the cloud
 export async function createCloudRoom(playerCount: PlayerCount = 4, layoutId?: string): Promise<Room | null> {
   const startingLife = 40;
-  const layout = layoutId 
+  const layout = layoutId
     ? LAYOUTS.find(l => l.id === layoutId) || getDefaultLayout(playerCount)
     : getDefaultLayout(playerCount);
-  const enablePartner = layout.hasPartner;
-  
+
   const room: Room = {
     id: generateId(6),
     adminKey: generateId(12),
     playerCount,
-    players: createDefaultPlayers(playerCount, startingLife, enablePartner),
+    players: createDefaultPlayers(playerCount, startingLife),
     settings: {
       theme: 'dark',
       startingLife,
@@ -136,9 +122,15 @@ export async function createCloudRoom(playerCount: PlayerCount = 4, layoutId?: s
       showBackgroundCards: true,
       overlayLayout: 'horizontal',
       simpleTextStyle: false,
-      enableHoldToAdjust: false,
-      enablePartnerTracking: enablePartner,
+      enableHoldToAdjust: true,
+      enablePartnerTracking: layout.hasPartner,
+      textScale: 'normal',
+      streamerMode: false,
+      enableSwipeLife: false,
     },
+    activePlayerIndex: 0,
+    turnNumber: 1,
+    gameTimer: { running: false, elapsedMs: 0, startedAt: null },
     monarchId: null,
     initiativeId: null,
     dungeonProgress: 0,
@@ -159,13 +151,11 @@ export async function createCloudRoom(playerCount: PlayerCount = 4, layoutId?: s
     return null;
   }
 
-  // Store admin key locally for future access
   storeAdminKey(room.id, room.adminKey);
-
   return room;
 }
 
-// Get a room from the cloud (using RPC function - no admin_key exposed)
+// Get a room from the cloud
 export async function getCloudRoom(roomId: string): Promise<Room | null> {
   const { data, error } = await supabase
     .rpc('get_room_public', { room_id_param: roomId });
@@ -193,21 +183,6 @@ export async function getCloudRoom(roomId: string): Promise<Room | null> {
   });
 }
 
-// Type for the room data returned by verify_room_admin RPC
-interface RoomDataFromRpc {
-  id: string;
-  players: Player[];
-  settings: RoomSettings;
-  day_night: string;
-  monarch: string | null;
-  initiative: string | null;
-  dungeon_progress: number;
-  overlay_layout: OverlayLayout | null;
-  history: HistoryEntry[];
-  created_at: string;
-  last_updated: string;
-}
-
 // Verify admin key server-side and get room data
 export async function verifyRoomAdmin(roomId: string, adminKey: string): Promise<{ isAdmin: boolean; room: Room | null }> {
   const { data, error } = await supabase
@@ -222,52 +197,38 @@ export async function verifyRoomAdmin(roomId: string, adminKey: string): Promise
     return { isAdmin: false, room: null };
   }
 
-  const result = data[0] as unknown as { is_admin: boolean; room_data: RoomDataFromRpc | null };
+  const result = data[0] as unknown as { is_admin: boolean; room_data: any | null };
   if (!result.room_data) {
     return { isAdmin: false, room: null };
   }
 
-  // Parse room_data from JSONB
   const roomData = result.room_data;
   const playerCount = (roomData.players?.length || 4) as PlayerCount;
-  const room: Room = {
+
+  const rawRoom: Room = {
     id: roomData.id,
-    adminKey: '', // Never expose admin key
+    adminKey: '',
     playerCount,
-    players: (roomData.players || []).map((p: Player) => ({
-      ...p,
-      poison: p.poison ?? 0,
-      experience: p.experience ?? 0,
-      energy: p.energy ?? 0,
-      commanderDamage: p.commanderDamage ?? {},
-      partnerLife: p.partnerLife,
-    })),
-    settings: {
-      theme: roomData.settings?.theme ?? 'dark',
-      startingLife: roomData.settings?.startingLife ?? 40,
-      overlayFontSize: roomData.settings?.overlayFontSize ?? 'medium',
-      showNamesOnOverlay: roomData.settings?.showNamesOnOverlay ?? true,
-      showBackgroundCards: roomData.settings?.showBackgroundCards ?? true,
-      overlayLayout: roomData.settings?.overlayLayout ?? 'horizontal',
-      simpleTextStyle: roomData.settings?.simpleTextStyle ?? false,
-      enableHoldToAdjust: roomData.settings?.enableHoldToAdjust ?? false,
-      enablePartnerTracking: roomData.settings?.enablePartnerTracking ?? false,
-    },
+    players: roomData.players || [],
+    settings: roomData.settings,
+    activePlayerIndex: roomData.activePlayerIndex ?? 0,
+    turnNumber: roomData.turnNumber ?? 1,
+    gameTimer: roomData.gameTimer ?? { running: false, elapsedMs: 0, startedAt: null },
     monarchId: roomData.monarch ? parseInt(roomData.monarch) : null,
     initiativeId: roomData.initiative ? parseInt(roomData.initiative) : null,
     dungeonProgress: roomData.dungeon_progress ?? 0,
     isDay: roomData.day_night !== 'night',
     history: roomData.history || [],
     overlayLayout: roomData.overlay_layout ?? createDefaultOverlayLayout(playerCount),
-    layoutId: (roomData as any).layout_id ?? getDefaultLayout(playerCount).id,
+    layoutId: roomData.layout_id ?? getDefaultLayout(playerCount).id,
     createdAt: new Date(roomData.created_at).getTime(),
     lastUpdated: new Date(roomData.last_updated).getTime(),
   };
 
-  return { isAdmin: result.is_admin, room };
+  return { isAdmin: result.is_admin, room: normalizeRoom(rawRoom) };
 }
 
-// Update a room in the cloud (requires admin key verification)
+// Update a room in the cloud
 export async function updateCloudRoom(room: Room, adminKey: string): Promise<boolean> {
   const roomData = {
     players: JSON.stringify(room.players),
@@ -281,8 +242,8 @@ export async function updateCloudRoom(room: Room, adminKey: string): Promise<boo
   };
 
   const { data, error } = await supabase
-    .rpc('update_room_as_admin', { 
-      room_id: room.id, 
+    .rpc('update_room_as_admin', {
+      room_id: room.id,
       provided_admin_key: adminKey,
       room_data: roomData as unknown as Json
     });
@@ -295,7 +256,7 @@ export async function updateCloudRoom(room: Room, adminKey: string): Promise<boo
   return data === true;
 }
 
-// Delete a room from the cloud (requires admin key verification)
+// Delete a room from the cloud
 export async function deleteCloudRoom(roomId: string, adminKey: string): Promise<boolean> {
   const { data, error } = await supabase
     .rpc('delete_room_as_admin', { room_id: roomId, provided_admin_key: adminKey });
@@ -305,29 +266,24 @@ export async function deleteCloudRoom(roomId: string, adminKey: string): Promise
     return false;
   }
 
-  // Also remove the stored admin key
   removeStoredAdminKey(roomId);
-
   return data === true;
 }
 
-
-// Get recent rooms (from localStorage cache for now - could be extended with user accounts)
+// Get recent rooms
 export async function getRecentCloudRooms(): Promise<Room[]> {
   try {
     const stored = localStorage.getItem('lifeTrackerRecentRooms');
     if (!stored) return [];
-    
+
     const recentIds: string[] = JSON.parse(stored);
-    
-    // Fetch each room individually using RPC (since we can't use IN with RPC)
     const rooms: Room[] = [];
+
     for (const roomId of recentIds) {
       const room = await getCloudRoom(roomId);
       if (room) rooms.push(room);
     }
-    
-    // Sort by last updated
+
     return rooms.sort((a, b) => b.lastUpdated - a.lastUpdated);
   } catch {
     return [];
@@ -339,7 +295,7 @@ export function addToRecentRooms(roomId: string): void {
   try {
     const stored = localStorage.getItem('lifeTrackerRecentRooms');
     let recentIds: string[] = stored ? JSON.parse(stored) : [];
-    
+
     recentIds = [roomId, ...recentIds.filter(id => id !== roomId)].slice(0, 10);
     localStorage.setItem('lifeTrackerRecentRooms', JSON.stringify(recentIds));
   } catch {
@@ -352,7 +308,7 @@ export function removeFromRecentRooms(roomId: string): void {
   try {
     const stored = localStorage.getItem('lifeTrackerRecentRooms');
     if (!stored) return;
-    
+
     let recentIds: string[] = JSON.parse(stored);
     recentIds = recentIds.filter(id => id !== roomId);
     localStorage.setItem('lifeTrackerRecentRooms', JSON.stringify(recentIds));
@@ -361,14 +317,14 @@ export function removeFromRecentRooms(roomId: string): void {
   }
 }
 
-// Poll for room updates (realtime requires SELECT access which would expose admin_key)
+// Poll for room updates
 export function subscribeToRoom(roomId: string, onUpdate: (room: Room) => void) {
   let lastUpdated: number | null = null;
   let isActive = true;
-  
+
   const pollRoom = async () => {
     if (!isActive) return;
-    
+
     try {
       const room = await getCloudRoom(roomId);
       if (room && room.lastUpdated !== lastUpdated) {
@@ -378,16 +334,14 @@ export function subscribeToRoom(roomId: string, onUpdate: (room: Room) => void) 
     } catch (error) {
       console.error('Error polling room:', error);
     }
-    
+
     if (isActive) {
-      setTimeout(pollRoom, 2000); // Poll every 2 seconds
+      setTimeout(pollRoom, 2000);
     }
   };
-  
-  // Start polling
+
   pollRoom();
 
-  // Return unsubscribe function
   return () => {
     isActive = false;
   };
