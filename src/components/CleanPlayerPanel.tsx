@@ -120,16 +120,19 @@ export function CleanPlayerPanel({
   }, [isAdmin, onOpenCounters]);
 
   // Calculate dynamic font size based on life total digits and player count
+  // Mobile-first: use smaller base sizes that work on 5" screens
   const getLifeFontSize = () => {
     const digits = Math.abs(player.life).toString().length + (player.life < 0 ? 1 : 0);
     if (isCompact) {
-      if (digits <= 2) return 'text-[20vmin]';
-      if (digits <= 3) return 'text-[16vmin]';
-      return 'text-[12vmin]';
+      // 3-4 players: smaller panels
+      if (digits <= 2) return 'text-[min(18vmin,80px)]';
+      if (digits <= 3) return 'text-[min(14vmin,60px)]';
+      return 'text-[min(10vmin,48px)]';
     }
-    if (digits <= 2) return 'text-[28vmin]';
-    if (digits <= 3) return 'text-[22vmin]';
-    return 'text-[16vmin]';
+    // 1-2 players: larger panels
+    if (digits <= 2) return 'text-[min(24vmin,120px)]';
+    if (digits <= 3) return 'text-[min(18vmin,90px)]';
+    return 'text-[min(14vmin,72px)]';
   };
 
   return (
@@ -173,7 +176,7 @@ export function CleanPlayerPanel({
           </div>
         )}
 
-        {/* Plus button - top */}
+        {/* Plus button - top half tap zone */}
         {isAdmin && (
           <button
             onClick={() => handleLifeChange(1)}
@@ -181,18 +184,18 @@ export function CleanPlayerPanel({
             onPointerUp={stopHoldToAdjust}
             onPointerLeave={stopHoldToAdjust}
             onPointerCancel={stopHoldToAdjust}
-            className={cn(
-              "life-btn life-btn-plus",
-              isCompact ? "top-[12%]" : "top-[10%]"
-            )}
+            className="life-btn-zone life-btn-zone-plus"
             aria-label="Increase life"
           >
-            <span className="life-btn-icon">+</span>
+            <span className={cn(
+              "life-btn-icon-circle",
+              isCompact ? "w-10 h-10 text-xl" : "w-12 h-12 text-2xl"
+            )}>+</span>
           </button>
         )}
 
-        {/* Life total - center */}
-        <div className="relative flex items-center justify-center">
+        {/* Life total - center (tap to edit) */}
+        <div className="relative flex items-center justify-center z-20 pointer-events-none">
           {isEditing ? (
             <input
               ref={inputRef}
@@ -206,8 +209,8 @@ export function CleanPlayerPanel({
                 if (e.key === 'Escape') setIsEditing(false);
               }}
               className={cn(
-                "life-input font-display text-center bg-black/20 rounded-2xl outline-none",
-                isCompact ? "w-24 text-[16vmin] px-2 py-1" : "w-40 text-[24vmin] px-4 py-2"
+                "life-input font-display text-center bg-black/20 rounded-2xl outline-none pointer-events-auto",
+                isCompact ? "w-20 text-[min(14vmin,56px)] px-2 py-1" : "w-32 text-[min(20vmin,96px)] px-3 py-2"
               )}
               style={{ color: 'rgba(0,0,0,0.8)' }}
             />
@@ -216,7 +219,7 @@ export function CleanPlayerPanel({
               onClick={handleLifeClick}
               disabled={!isAdmin}
               className={cn(
-                "life-total font-display leading-none transition-all relative",
+                "life-total font-display leading-none transition-all relative pointer-events-auto",
                 getLifeFontSize(),
                 animating && "animate-life-change",
                 isAdmin && "cursor-pointer active:scale-95"
@@ -230,7 +233,8 @@ export function CleanPlayerPanel({
               {lastDelta !== null && (
                 <span 
                   className={cn(
-                    "absolute -right-8 top-1/2 -translate-y-1/2 font-display text-[6vmin] animate-delta-fade",
+                    "absolute -right-6 top-1/2 -translate-y-1/2 font-display animate-delta-fade",
+                    isCompact ? "text-[min(5vmin,20px)]" : "text-[min(6vmin,28px)]",
                     lastDelta > 0 ? "text-green-900/60" : "text-red-900/60"
                   )}
                 >
@@ -241,23 +245,23 @@ export function CleanPlayerPanel({
           )}
         </div>
 
-        {/* Player name - below life */}
+        {/* Player name - fixed position at bottom */}
         <div className={cn(
-          "absolute text-center",
-          isCompact ? "bottom-[20%]" : "bottom-[18%]"
+          "absolute left-0 right-0 text-center z-10",
+          isCompact ? "bottom-2" : "bottom-3"
         )}>
           <span 
             className={cn(
-              "font-medium tracking-wide uppercase",
-              isCompact ? "text-xs" : "text-sm"
+              "font-medium tracking-wide uppercase px-2 py-0.5 rounded bg-black/10",
+              isCompact ? "text-[10px]" : "text-xs"
             )}
-            style={{ color: 'rgba(0,0,0,0.5)' }}
+            style={{ color: 'rgba(0,0,0,0.6)' }}
           >
             {player.name}
           </span>
         </div>
 
-        {/* Minus button - bottom */}
+        {/* Minus button - bottom half tap zone */}
         {isAdmin && (
           <button
             onClick={() => handleLifeChange(-1)}
@@ -265,68 +269,61 @@ export function CleanPlayerPanel({
             onPointerUp={stopHoldToAdjust}
             onPointerLeave={stopHoldToAdjust}
             onPointerCancel={stopHoldToAdjust}
-            className={cn(
-              "life-btn life-btn-minus",
-              isCompact ? "bottom-[12%]" : "bottom-[10%]"
-            )}
+            className="life-btn-zone life-btn-zone-minus"
             aria-label="Decrease life"
           >
-            <span className="life-btn-icon">−</span>
+            <span className={cn(
+              "life-btn-icon-circle",
+              isCompact ? "w-10 h-10 text-xl" : "w-12 h-12 text-2xl"
+            )}>−</span>
           </button>
         )}
 
-        {/* Counter indicators - bottom left */}
+        {/* Counter indicators - top left, always visible */}
         {(player.poison > 0 || player.experience > 0 || player.energy > 0) && (
           <button
             onClick={onOpenCounters}
             disabled={!isAdmin}
             className={cn(
-              "absolute flex gap-1 rounded-lg bg-black/30 backdrop-blur-sm",
-              isCompact ? "bottom-3 left-2 px-1.5 py-1" : "bottom-4 left-3 px-2 py-1.5",
-              isAdmin && "cursor-pointer hover:bg-black/40"
+              "absolute z-30 flex gap-1 rounded-md bg-black/40 backdrop-blur-sm",
+              isCompact ? "top-1 left-1 px-1 py-0.5" : "top-2 left-2 px-1.5 py-1",
+              isAdmin && "active:bg-black/50"
             )}
           >
             {player.poison > 0 && (
-              <span className={cn("font-display text-green-300", isCompact ? "text-xs" : "text-sm")}>
-                ☠️ {player.poison}
+              <span className={cn("font-display text-green-300", isCompact ? "text-[10px]" : "text-xs")}>
+                ☠️{player.poison}
               </span>
             )}
             {player.experience > 0 && (
-              <span className={cn("font-display text-yellow-300", isCompact ? "text-xs" : "text-sm")}>
-                ✨ {player.experience}
+              <span className={cn("font-display text-yellow-300", isCompact ? "text-[10px]" : "text-xs")}>
+                ✨{player.experience}
               </span>
             )}
             {player.energy > 0 && (
-              <span className={cn("font-display text-blue-300", isCompact ? "text-xs" : "text-sm")}>
-                ⚡ {player.energy}
+              <span className={cn("font-display text-blue-300", isCompact ? "text-[10px]" : "text-xs")}>
+                ⚡{player.energy}
               </span>
             )}
           </button>
         )}
 
-        {/* Commander damage indicators - bottom right */}
-        {Object.keys(player.commanderDamage).length > 0 && (
+        {/* Commander damage indicators - top right */}
+        {Object.values(player.commanderDamage).some(d => d > 0) && (
           <button
             onClick={onOpenCounters}
             disabled={!isAdmin}
             className={cn(
-              "absolute flex gap-1 rounded-lg bg-black/30 backdrop-blur-sm",
-              isCompact ? "bottom-3 right-2 px-1.5 py-1" : "bottom-4 right-3 px-2 py-1.5",
-              isAdmin && "cursor-pointer hover:bg-black/40"
+              "absolute z-30 flex gap-1 rounded-md bg-black/40 backdrop-blur-sm",
+              isCompact ? "top-1 right-1 px-1 py-0.5" : "top-2 right-2 px-1.5 py-1",
+              isAdmin && "active:bg-black/50"
             )}
           >
-            {Object.entries(player.commanderDamage).map(([oppId, dmg]) => {
-              if (!dmg) return null;
-              return (
-                <span 
-                  key={oppId} 
-                  className={cn("font-display", isCompact ? "text-xs" : "text-sm")}
-                  style={{ color: 'rgba(255,255,255,0.9)' }}
-                >
-                  ⚔️ {dmg}
-                </span>
-              );
-            })}
+            <span 
+              className={cn("font-display text-orange-300", isCompact ? "text-[10px]" : "text-xs")}
+            >
+              ⚔️{Object.values(player.commanderDamage).reduce((a, b) => a + b, 0)}
+            </span>
           </button>
         )}
       </div>

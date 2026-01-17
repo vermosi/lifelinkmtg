@@ -184,17 +184,19 @@ export function FullScreenPlayerPanel({
     return () => stopHoldToAdjust();
   }, [stopHoldToAdjust]);
 
-  // Calculate font size based on digits
+  // Calculate font size based on digits - mobile-first with max sizes
   const getLifeFontSize = () => {
     const digits = Math.abs(player.life).toString().length + (player.life < 0 ? 1 : 0);
     if (isCompact) {
-      if (digits <= 2) return 'text-[18vmin]';
-      if (digits <= 3) return 'text-[14vmin]';
-      return 'text-[10vmin]';
+      // 3-4 players: smaller panels, optimized for 5" screens
+      if (digits <= 2) return 'text-[min(16vmin,72px)]';
+      if (digits <= 3) return 'text-[min(12vmin,56px)]';
+      return 'text-[min(9vmin,44px)]';
     }
-    if (digits <= 2) return 'text-[24vmin]';
-    if (digits <= 3) return 'text-[18vmin]';
-    return 'text-[14vmin]';
+    // 1-2 players: larger panels
+    if (digits <= 2) return 'text-[min(22vmin,100px)]';
+    if (digits <= 3) return 'text-[min(16vmin,76px)]';
+    return 'text-[min(12vmin,60px)]';
   };
 
   return (
@@ -218,33 +220,33 @@ export function FullScreenPlayerPanel({
         className="absolute inset-0 flex flex-col items-center justify-center"
         style={{ transform: `rotate(${rotation}deg)` }}
       >
-        {/* Status badges - Monarch & Initiative */}
+        {/* Status badges - Monarch & Initiative - mobile optimized */}
         {(isMonarch || hasInitiative) && (
           <div className={cn(
-            "absolute flex gap-1.5 z-10",
-            isCompact ? "top-2" : "top-4"
+            "absolute flex gap-1 z-10",
+            isCompact ? "top-1" : "top-2"
           )}>
             {isMonarch && (
               <div className={cn(
-                "rounded-full bg-black/30 backdrop-blur-sm",
-                isCompact ? "p-1" : "p-2"
+                "rounded-full bg-black/40 backdrop-blur-sm",
+                isCompact ? "p-1" : "p-1.5"
               )}>
                 <Crown 
-                  className={cn("text-yellow-300", isCompact ? "w-4 h-4" : "w-5 h-5")} 
+                  className={cn("text-yellow-300", isCompact ? "w-3.5 h-3.5" : "w-4 h-4")} 
                   fill="currentColor" 
                 />
               </div>
             )}
             {hasInitiative && (
               <div className={cn(
-                "rounded-full bg-black/30 backdrop-blur-sm flex items-center gap-1",
-                isCompact ? "px-1.5 py-1" : "px-2 py-1.5"
+                "rounded-full bg-black/40 backdrop-blur-sm flex items-center gap-0.5",
+                isCompact ? "px-1 py-0.5" : "px-1.5 py-1"
               )}>
                 <Shield 
-                  className={cn("text-purple-300", isCompact ? "w-4 h-4" : "w-5 h-5")} 
+                  className={cn("text-purple-300", isCompact ? "w-3.5 h-3.5" : "w-4 h-4")} 
                   fill="currentColor" 
                 />
-                <span className={cn("text-purple-300 font-bold", isCompact ? "text-xs" : "text-sm")}>
+                <span className={cn("text-purple-300 font-bold", isCompact ? "text-[10px]" : "text-xs")}>
                   {dungeonProgress + 1}/4
                 </span>
               </div>
@@ -252,7 +254,7 @@ export function FullScreenPlayerPanel({
           </div>
         )}
 
-        {/* Plus button */}
+        {/* Plus button - large tap zone for mobile */}
         {isAdmin && !showCounters && (
           <button
             onClick={() => handleLifeChange(1)}
@@ -260,69 +262,70 @@ export function FullScreenPlayerPanel({
             onPointerUp={stopHoldToAdjust}
             onPointerLeave={stopHoldToAdjust}
             onPointerCancel={stopHoldToAdjust}
-            className={cn(
-              "life-button",
-              isCompact && "compact",
-              isCompact ? "top-12" : "top-10 sm:top-14"
-            )}
+            className="life-btn-zone life-btn-zone-plus"
             aria-label="Increase life"
           >
-            +
+            <span className={cn(
+              "life-btn-icon-circle",
+              isCompact ? "w-9 h-9 text-lg" : "w-11 h-11 text-xl"
+            )}>+</span>
           </button>
         )}
 
-        {/* Life total */}
-        {isEditing ? (
-          <input
-            ref={inputRef}
-            type="number"
-            inputMode="numeric"
-            value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
-            onBlur={handleEditSubmit}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleEditSubmit();
-              if (e.key === 'Escape') setIsEditing(false);
-            }}
-            className={cn(
-              "life-number text-center bg-black/20 rounded-2xl outline-none",
-              isCompact ? "w-24 text-[14vmin] px-2 py-1" : "w-36 text-[20vmin] px-3 py-2"
-            )}
-            aria-label="Edit life total"
-          />
-        ) : (
-          <button
-            onClick={handleLifeClick}
-            disabled={!isAdmin || showCounters}
-            className={cn(
-              'life-number leading-none transition-transform',
-              getLifeFontSize(),
-              animating && 'animate-pulse-scale',
-              isAdmin && !showCounters && 'cursor-pointer active:scale-95'
-            )}
-            aria-label={`Life: ${player.life}. Tap to edit.`}
-          >
-            {player.life}
-          </button>
-        )}
+        {/* Life total - centered with pointer-events for tap-to-edit */}
+        <div className="relative z-20 pointer-events-none">
+          {isEditing ? (
+            <input
+              ref={inputRef}
+              type="number"
+              inputMode="numeric"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onBlur={handleEditSubmit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleEditSubmit();
+                if (e.key === 'Escape') setIsEditing(false);
+              }}
+              className={cn(
+                "life-number text-center bg-black/20 rounded-xl outline-none pointer-events-auto",
+                isCompact ? "w-20 text-[min(12vmin,52px)] px-2 py-1" : "w-28 text-[min(18vmin,80px)] px-3 py-2"
+              )}
+              aria-label="Edit life total"
+            />
+          ) : (
+            <button
+              onClick={handleLifeClick}
+              disabled={!isAdmin || showCounters}
+              className={cn(
+                'life-number leading-none transition-transform pointer-events-auto',
+                getLifeFontSize(),
+                animating && 'animate-pulse-scale',
+                isAdmin && !showCounters && 'cursor-pointer active:scale-95'
+              )}
+              aria-label={`Life: ${player.life}. Tap to edit.`}
+            >
+              {player.life}
+            </button>
+          )}
+        </div>
 
-        {/* Player name */}
+        {/* Player name - fixed at bottom */}
         <div className={cn(
-          "absolute text-center",
-          isCompact ? "bottom-[22%]" : "bottom-[20%]"
+          "absolute left-0 right-0 text-center z-10",
+          isCompact ? "bottom-1" : "bottom-2"
         )}>
           <span 
             className={cn(
-              "font-medium tracking-wide uppercase",
-              isCompact ? "text-[10px]" : "text-xs sm:text-sm"
+              "font-medium tracking-wide uppercase px-2 py-0.5 rounded bg-black/15",
+              isCompact ? "text-[9px]" : "text-[10px]"
             )}
-            style={{ color: 'rgba(0,0,0,0.45)' }}
+            style={{ color: 'rgba(0,0,0,0.55)' }}
           >
             {player.name}
           </span>
         </div>
 
-        {/* Minus button */}
+        {/* Minus button - large tap zone for mobile */}
         {isAdmin && !showCounters && (
           <button
             onClick={() => handleLifeChange(-1)}
@@ -330,51 +333,47 @@ export function FullScreenPlayerPanel({
             onPointerUp={stopHoldToAdjust}
             onPointerLeave={stopHoldToAdjust}
             onPointerCancel={stopHoldToAdjust}
-            className={cn(
-              "life-button",
-              isCompact && "compact",
-              isCompact ? "bottom-12" : "bottom-10 sm:bottom-14"
-            )}
+            className="life-btn-zone life-btn-zone-minus"
             aria-label="Decrease life"
           >
-            −
+            <span className={cn(
+              "life-btn-icon-circle",
+              isCompact ? "w-9 h-9 text-lg" : "w-11 h-11 text-xl"
+            )}>−</span>
           </button>
         )}
 
-        {/* Counter badges - tappable to open counter sheet */}
+        {/* Counter badges - top left, compact for mobile */}
         {!showCounters && (
           <div className={cn(
-            "absolute flex flex-wrap gap-1",
-            isCompact ? "bottom-3 left-2" : "bottom-5 left-3 gap-1.5"
+            "absolute flex flex-wrap gap-0.5 z-30",
+            isCompact ? "top-1 left-1" : "top-2 left-2 gap-1"
           )}>
-            {/* Always show counters button when admin */}
+            {/* Counters button when admin */}
             {isAdmin && (
               <button
                 onClick={() => setShowCounters(true)}
                 className={cn(
-                  "flex items-center gap-1 rounded-lg bg-black/40 backdrop-blur-sm transition-all hover:bg-black/50",
-                  isCompact ? "px-2 py-1" : "px-2.5 py-1.5"
+                  "flex items-center gap-0.5 rounded-md bg-black/40 backdrop-blur-sm active:bg-black/50",
+                  isCompact ? "px-1.5 py-0.5" : "px-2 py-1"
                 )}
                 aria-label="Open counters"
               >
-                <Skull className={cn("text-white/70", isCompact ? "w-3 h-3" : "w-4 h-4")} />
-                {!isCompact && (
-                  <span className="text-white/70 text-xs font-medium">Counters</span>
-                )}
+                <Skull className={cn("text-white/70", isCompact ? "w-3 h-3" : "w-3.5 h-3.5")} />
               </button>
             )}
 
-            {/* Show individual counter badges when they have values */}
+            {/* Show counter badges when they have values */}
             {player.poison > 0 && (
               <button
                 onClick={() => isAdmin && setShowCounters(true)}
                 className={cn(
-                  "flex items-center gap-1 rounded-lg bg-green-900/60 backdrop-blur-sm",
-                  isCompact ? "px-1.5 py-0.5" : "px-2 py-1"
+                  "flex items-center gap-0.5 rounded-md bg-green-900/60 backdrop-blur-sm",
+                  isCompact ? "px-1 py-0.5" : "px-1.5 py-0.5"
                 )}
               >
-                <Skull className={cn("text-green-400", isCompact ? "w-3 h-3" : "w-4 h-4")} />
-                <span className={cn("font-display text-green-400", isCompact ? "text-xs" : "text-sm")}>
+                <Skull className={cn("text-green-400", isCompact ? "w-2.5 h-2.5" : "w-3 h-3")} />
+                <span className={cn("font-display text-green-400", isCompact ? "text-[10px]" : "text-xs")}>
                   {player.poison}
                 </span>
               </button>
@@ -383,12 +382,12 @@ export function FullScreenPlayerPanel({
               <button
                 onClick={() => isAdmin && setShowCounters(true)}
                 className={cn(
-                  "flex items-center gap-1 rounded-lg bg-yellow-900/60 backdrop-blur-sm",
-                  isCompact ? "px-1.5 py-0.5" : "px-2 py-1"
+                  "flex items-center gap-0.5 rounded-md bg-yellow-900/60 backdrop-blur-sm",
+                  isCompact ? "px-1 py-0.5" : "px-1.5 py-0.5"
                 )}
               >
-                <Sparkles className={cn("text-yellow-400", isCompact ? "w-3 h-3" : "w-4 h-4")} />
-                <span className={cn("font-display text-yellow-400", isCompact ? "text-xs" : "text-sm")}>
+                <Sparkles className={cn("text-yellow-400", isCompact ? "w-2.5 h-2.5" : "w-3 h-3")} />
+                <span className={cn("font-display text-yellow-400", isCompact ? "text-[10px]" : "text-xs")}>
                   {player.experience}
                 </span>
               </button>
@@ -397,12 +396,12 @@ export function FullScreenPlayerPanel({
               <button
                 onClick={() => isAdmin && setShowCounters(true)}
                 className={cn(
-                  "flex items-center gap-1 rounded-lg bg-blue-900/60 backdrop-blur-sm",
-                  isCompact ? "px-1.5 py-0.5" : "px-2 py-1"
+                  "flex items-center gap-0.5 rounded-md bg-blue-900/60 backdrop-blur-sm",
+                  isCompact ? "px-1 py-0.5" : "px-1.5 py-0.5"
                 )}
               >
-                <Zap className={cn("text-blue-400", isCompact ? "w-3 h-3" : "w-4 h-4")} />
-                <span className={cn("font-display text-blue-400", isCompact ? "text-xs" : "text-sm")}>
+                <Zap className={cn("text-blue-400", isCompact ? "w-2.5 h-2.5" : "w-3 h-3")} />
+                <span className={cn("font-display text-blue-400", isCompact ? "text-[10px]" : "text-xs")}>
                   {player.energy}
                 </span>
               </button>
@@ -410,17 +409,17 @@ export function FullScreenPlayerPanel({
           </div>
         )}
 
-        {/* Commander damage badges - right side */}
+        {/* Commander damage badge - top right */}
         {!showCounters && hasCommanderDamage && (
           <button
             onClick={() => isAdmin && setShowCounters(true)}
             className={cn(
-              "absolute flex items-center gap-1 rounded-lg bg-orange-900/60 backdrop-blur-sm",
-              isCompact ? "bottom-3 right-2 px-1.5 py-0.5" : "bottom-5 right-3 px-2 py-1"
+              "absolute z-30 flex items-center gap-0.5 rounded-md bg-orange-900/60 backdrop-blur-sm",
+              isCompact ? "top-1 right-1 px-1 py-0.5" : "top-2 right-2 px-1.5 py-0.5"
             )}
           >
-            <Swords className={cn("text-orange-400", isCompact ? "w-3 h-3" : "w-4 h-4")} />
-            <span className={cn("font-display text-orange-400", isCompact ? "text-xs" : "text-sm")}>
+            <Swords className={cn("text-orange-400", isCompact ? "w-2.5 h-2.5" : "w-3 h-3")} />
+            <span className={cn("font-display text-orange-400", isCompact ? "text-[10px]" : "text-xs")}>
               {totalCommanderDamage}
             </span>
           </button>

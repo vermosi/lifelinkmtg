@@ -96,39 +96,53 @@
     letter-spacing: -0.02em;
   }
 
-  /* Life adjustment buttons - clean, minimal circles */
-  .life-btn {
-    @apply absolute flex items-center justify-center rounded-full;
-    @apply w-14 h-14 sm:w-16 sm:h-16;
+  /* Life adjustment buttons - half-panel tap zones */
+  .life-btn-zone {
+    @apply absolute left-0 right-0 flex items-center justify-center;
+    z-index: 5;
+    touch-action: manipulation;
+  }
+
+  .life-btn-zone-plus {
+    top: 0;
+    height: 40%;
+    padding-top: 8%;
+  }
+
+  .life-btn-zone-minus {
+    bottom: 0;
+    height: 40%;
+    padding-bottom: 8%;
+  }
+
+  .life-btn-zone:active {
+    background: rgba(0, 0, 0, 0.08);
+  }
+
+  /* Icon circle inside tap zone */
+  .life-btn-icon-circle {
+    @apply flex items-center justify-center rounded-full;
     @apply bg-black/15 active:bg-black/30;
-    @apply transition-all duration-150;
-    z-index: 10;
+    color: rgba(0, 0, 0, 0.5);
+    font-weight: 300;
+    transition: transform 0.1s, background 0.1s;
   }
 
-  .life-btn:active {
-    transform: scale(0.92);
-  }
-
-  .life-btn-icon {
-    @apply text-3xl sm:text-4xl font-light;
-    color: rgba(0, 0, 0, 0.45);
-    line-height: 1;
-  }
-
-  .life-btn:active .life-btn-icon {
-    color: rgba(0, 0, 0, 0.65);
+  .life-btn-zone:active .life-btn-icon-circle {
+    transform: scale(0.9);
+    background: rgba(0, 0, 0, 0.3);
   }
 
   /* Legacy life-button for FullScreenPlayerPanel */
   .life-button {
-    @apply absolute flex items-center justify-center text-3xl sm:text-4xl font-light select-none w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-black/20 active:bg-black/40;
+    @apply absolute flex items-center justify-center text-2xl font-light select-none w-11 h-11 rounded-full bg-black/20 active:bg-black/40;
     color: rgba(0, 0, 0, 0.5);
     transition: color 0.15s, transform 0.1s;
     z-index: 10;
   }
 
   .life-button.compact {
-    @apply w-12 h-12 text-2xl;
+    @apply w-9 h-9 text-xl;
   }
 
   .life-button:active {
