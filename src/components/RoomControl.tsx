@@ -315,26 +315,7 @@ export function RoomControl() {
   }
 
   return (
-    <div className="h-screen w-screen overflow-hidden relative" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}>
-      {/* Day/Night indicator */}
-      <div className="absolute top-4 left-4 z-30">
-        <button
-          onClick={() => isAdmin && toggleDayNight()}
-          disabled={!isAdmin}
-          className={cn(
-            'p-3 rounded-full transition-all shadow-lg',
-            room.isDay 
-              ? 'bg-amber-400 text-amber-900' 
-              : 'bg-indigo-900 text-indigo-200',
-            isAdmin && 'hover:scale-110 cursor-pointer'
-          )}
-          title={room.isDay ? 'Day (click to change)' : 'Night (click to change)'}
-          aria-label={room.isDay ? 'Currently Day. Click to switch to Night.' : 'Currently Night. Click to switch to Day.'}
-        >
-          {room.isDay ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
-        </button>
-      </div>
-
+    <div className="h-screen w-screen overflow-hidden relative bg-background" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}>
       {/* Player grid */}
       <div className="h-full w-full" style={getGridStyle()}>
         {room.players.map((player, index) => {
@@ -352,17 +333,17 @@ export function RoomControl() {
               player={player}
               allPlayers={room.players}
               playerCount={room.playerCount}
-              isMonarch={room.players[index]?.counters?.isMonarch || false}
-              hasInitiative={room.players[index]?.counters?.hasInitiative || false}
+              isMonarch={room.monarchId === player.id}
+              hasInitiative={room.initiativeId === player.id}
               dungeonProgress={room.dungeonProgress}
-                onLifeChange={(delta) => updatePlayerLife(player.id, delta)}
-                onLifeSet={(life) => setPlayerLife(player.id, life)}
-                onPoisonChange={(delta) => updateCounter(player.id, 'poison', delta)}
-                onExperienceChange={(delta) => updateCounter(player.id, 'experience', delta)}
-                onEnergyChange={(delta) => updateCounter(player.id, 'energy', delta)}
-                onCommanderDamageChange={(fromId, delta) => updateCommanderDamage(player.id, fromId, 0, delta)}
-                onToggleMonarch={() => toggleMonarch(player.id)}
-                onToggleInitiative={() => toggleInitiative(player.id)}
+              onLifeChange={(delta) => updatePlayerLife(player.id, delta)}
+              onLifeSet={(life) => setPlayerLife(player.id, life)}
+              onPoisonChange={(delta) => updateCounter(player.id, 'poison', delta)}
+              onExperienceChange={(delta) => updateCounter(player.id, 'experience', delta)}
+              onEnergyChange={(delta) => updateCounter(player.id, 'energy', delta)}
+              onCommanderDamageChange={(fromId, delta) => updateCommanderDamage(player.id, fromId, 0, delta)}
+              onToggleMonarch={() => toggleMonarch(player.id)}
+              onToggleInitiative={() => toggleInitiative(player.id)}
               onAdvanceDungeon={advanceDungeon}
               onDeckNameChange={(deckName) => setPlayerCommanders(player.id, deckName ? [deckName] : [])}
               isAdmin={isAdmin}
@@ -376,14 +357,14 @@ export function RoomControl() {
         })}
       </div>
 
-      {/* Center menu button */}
+      {/* Center menu button - clean, minimal */}
       {!menuOpen && (
         <button
           onClick={() => setMenuOpen(true)}
-          className="menu-button w-14 h-14 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+          className="menu-button w-12 h-12 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
           aria-label="Open menu"
         >
-          <Menu className="w-6 h-6 text-foreground" />
+          <Menu className="w-5 h-5 text-foreground" />
         </button>
       )}
 
@@ -896,13 +877,14 @@ export function RoomControl() {
         </div>
       )}
 
-      {/* Tools Drawer FAB */}
-      {!menuOpen && room && (
+      {/* Tools Drawer FAB - bottom right */}
+      {!menuOpen && room && isAdmin && (
         <button
           onClick={() => setToolsDrawerOpen(true)}
-          className="fixed bottom-6 right-6 z-30 w-14 h-14 bg-accent text-accent-foreground rounded-full shadow-lg flex items-center justify-center hover:bg-accent/90 transition-all hover:scale-105 active:scale-95"
+          className="tools-fab bottom-6 right-6"
+          aria-label="Open tools"
         >
-          <Wrench className="w-6 h-6" />
+          <Dices className="w-6 h-6 text-foreground" />
         </button>
       )}
 
