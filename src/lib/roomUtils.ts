@@ -349,6 +349,31 @@ export function normalizeRoom(room: Room): Room {
       custom: [],
     };
 
+    // Merge legacy commanderDamage into commanderDamageReceived
+    const legacyDamage = player.commanderDamage ?? {};
+    const newDamage = player.commanderDamageReceived ?? {};
+    const commanderDamageReceived: Record<string, number> = { ...newDamage };
+    
+    // Convert legacy format (numeric keys) to new format if needed
+    for (const [key, value] of Object.entries(legacyDamage)) {
+      if (typeof value === 'number' && value > 0) {
+        // Legacy key is just playerId, convert to "playerId-0" format
+        const newKey = key.includes('-') ? key : `${key}-0`;
+        if (!commanderDamageReceived[newKey]) {
+          commanderDamageReceived[newKey] = value;
+        }
+      }
+    }
+
+    // Also maintain legacy commanderDamage for backward compatibility
+    const commanderDamage: Record<number, number> = {};
+    for (const [key, value] of Object.entries(commanderDamageReceived)) {
+      const playerId = parseInt(key.split('-')[0], 10);
+      if (!isNaN(playerId) && typeof value === 'number') {
+        commanderDamage[playerId] = (commanderDamage[playerId] ?? 0) + value;
+      }
+    }
+
     return {
       id: player.id ?? index + 1,
       name: player.name ?? `Player ${index + 1}`,
@@ -356,7 +381,12 @@ export function normalizeRoom(room: Room): Room {
       color: player.color ?? PLAYER_COLORS[index]?.value ?? '0 0% 50%',
       commanders: player.commanders ?? (player.deckName ? [player.deckName] : []),
       counters,
-      commanderDamageReceived: player.commanderDamageReceived ?? {},
+      commanderDamageReceived,
+      // Legacy fields for compatibility
+      poison: counters.poison,
+      energy: counters.energy,
+      experience: counters.experience,
+      commanderDamage,
     };
   });
 
