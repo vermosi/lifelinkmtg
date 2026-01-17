@@ -53,6 +53,12 @@ export default {
           3: "hsl(var(--player-3))",
           4: "hsl(var(--player-4))",
         },
+        counter: {
+          poison: "hsl(var(--counter-poison))",
+          experience: "hsl(var(--counter-experience))",
+          energy: "hsl(var(--counter-energy))",
+          commander: "hsl(var(--counter-commander))",
+        },
       },
       fontFamily: {
         display: ["Bebas Neue", "sans-serif"],

@@ -42,6 +42,12 @@
     --player-3: 270 45% 35%;
     --player-4: 200 60% 35%;
 
+    /* Counter colors */
+    --counter-poison: 142 69% 58%;
+    --counter-experience: 48 96% 53%;
+    --counter-energy: 217 91% 60%;
+    --counter-commander: 25 95% 53%;
+
     /* Font families */
     --font-display: 'Bebas Neue', sans-serif;
     --font-body: 'Inter', sans-serif;
