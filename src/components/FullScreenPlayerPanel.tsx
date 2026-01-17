@@ -556,7 +556,7 @@ export function FullScreenPlayerPanel({
       {overlayMode === 'counters' && (
         <div 
           className={cn(
-            "absolute inset-0 flex flex-col items-center justify-center z-20 bg-gray-900/95 backdrop-blur-md",
+            "absolute inset-0 flex flex-col items-center justify-center z-40 bg-gray-900/95 backdrop-blur-md",
             isCompact ? "p-1 gap-1" : "p-3 sm:p-4"
           )}
           style={{ transform: `rotate(${rotation}deg)` }}
@@ -566,12 +566,12 @@ export function FullScreenPlayerPanel({
           <button
             onClick={closeOverlay}
             className={cn(
-              "absolute rounded-full bg-white/10 hover:bg-white/20 transition-colors",
-              isCompact ? "top-1 right-1 p-1" : "top-2 right-2 sm:top-4 sm:right-4 p-2"
+              "absolute rounded-full bg-white/20 hover:bg-white/30 transition-colors z-50",
+              isCompact ? "top-1 right-1 p-1.5" : "top-3 right-3 sm:top-4 sm:right-4 p-2"
             )}
             aria-label="Close overlay"
           >
-            <X className={cn("text-white", isCompact ? "w-3 h-3" : "w-4 h-4 sm:w-5 sm:h-5")} />
+            <X className={cn("text-white", isCompact ? "w-4 h-4" : "w-5 h-5 sm:w-6 sm:h-6")} />
           </button>
 
           {/* Tab selector - more compact on mobile */}
@@ -729,7 +729,7 @@ export function FullScreenPlayerPanel({
       {overlayMode === 'commander' && currentOpponent && (
         <div 
           className={cn(
-            "absolute inset-0 flex flex-col items-center justify-center z-20 bg-gray-900/95 backdrop-blur-md",
+            "absolute inset-0 flex flex-col items-center justify-center z-40 bg-gray-900/95 backdrop-blur-md",
             isCompact ? "p-1" : "p-4"
           )}
           style={{ transform: `rotate(${rotation}deg)` }}
@@ -739,12 +739,12 @@ export function FullScreenPlayerPanel({
           <button
             onClick={closeOverlay}
             className={cn(
-              "absolute rounded-full bg-white/10 hover:bg-white/20 transition-colors",
-              isCompact ? "top-1 right-1 p-1" : "top-4 right-4 p-2"
+              "absolute rounded-full bg-white/20 hover:bg-white/30 transition-colors z-50",
+              isCompact ? "top-1 right-1 p-1.5" : "top-3 right-3 sm:top-4 sm:right-4 p-2"
             )}
             aria-label="Close overlay"
           >
-            <X className={cn("text-white", isCompact ? "w-3 h-3" : "w-5 h-5")} />
+            <X className={cn("text-white", isCompact ? "w-4 h-4" : "w-5 h-5 sm:w-6 sm:h-6")} />
           </button>
 
           <div className={cn("text-center", isCompact ? "mb-1" : "mb-4")}>
