@@ -8,6 +8,7 @@ export interface Player {
   energy: number;
   commanderDamage: Record<number, number>;
   deckName?: string;
+  partnerLife?: number; // Partner commander life tracking
 }
 
 export interface HistoryEntry {
@@ -15,7 +16,7 @@ export interface HistoryEntry {
   timestamp: number;
   playerId: number;
   playerName: string;
-  type: 'life' | 'poison' | 'commander' | 'experience' | 'energy' | 'monarch' | 'initiative' | 'daynight';
+  type: 'life' | 'poison' | 'commander' | 'experience' | 'energy' | 'monarch' | 'initiative' | 'daynight' | 'partner';
   oldValue: number;
   newValue: number;
   fromPlayerName?: string;
@@ -30,6 +31,7 @@ export interface RoomSettings {
   overlayLayout: 'horizontal' | 'vertical';
   simpleTextStyle: boolean;
   enableHoldToAdjust: boolean;
+  enablePartnerTracking: boolean; // Partner commander mode
 }
 
 export interface OverlayPosition {
@@ -50,10 +52,65 @@ export const DUNGEON_ROOMS = [
   'Throne',
 ] as const;
 
+// Layout configuration for player arrangement
+export type PlayerCount = 2 | 3 | 4 | 5 | 6;
+
+export interface LayoutConfig {
+  id: string;
+  name: string;
+  playerCount: PlayerCount;
+  // Grid configuration: rows x cols, with player positions
+  rows: number;
+  cols: number;
+  // Which cells each player occupies (0-indexed, row-major order)
+  // Each player can span multiple cells for asymmetric layouts
+  playerCells: number[][]; // Array of cell indices for each player
+  hasPartner: boolean; // If true, shows partner life split
+}
+
+// Predefined layouts matching the Lotus app style
+export const LAYOUTS: LayoutConfig[] = [
+  // 2 Players
+  { id: '2-vertical', name: '2 Vertical', playerCount: 2, rows: 2, cols: 1, playerCells: [[0], [1]], hasPartner: false },
+  { id: '2-vertical-partner', name: '2 Vertical Partner', playerCount: 2, rows: 2, cols: 2, playerCells: [[0, 1], [2, 3]], hasPartner: true },
+  { id: '2-horizontal', name: '2 Horizontal', playerCount: 2, rows: 1, cols: 2, playerCells: [[0], [1]], hasPartner: false },
+  
+  // 3 Players
+  { id: '3-top2', name: '3 Top 2', playerCount: 3, rows: 2, cols: 2, playerCells: [[0], [1], [2, 3]], hasPartner: false },
+  { id: '3-bottom2', name: '3 Bottom 2', playerCount: 3, rows: 2, cols: 2, playerCells: [[0, 1], [2], [3]], hasPartner: false },
+  { id: '3-horizontal', name: '3 Horizontal', playerCount: 3, rows: 1, cols: 3, playerCells: [[0], [1], [2]], hasPartner: false },
+  { id: '3-partner', name: '3 Partner', playerCount: 3, rows: 2, cols: 4, playerCells: [[0, 1], [2, 3], [4, 5, 6, 7]], hasPartner: true },
+  
+  // 4 Players
+  { id: '4-grid', name: '4 Grid', playerCount: 4, rows: 2, cols: 2, playerCells: [[0], [1], [2], [3]], hasPartner: false },
+  { id: '4-partner', name: '4 Partner', playerCount: 4, rows: 2, cols: 4, playerCells: [[0, 1], [2, 3], [4, 5], [6, 7]], hasPartner: true },
+  { id: '4-horizontal', name: '4 Horizontal', playerCount: 4, rows: 1, cols: 4, playerCells: [[0], [1], [2], [3]], hasPartner: false },
+  { id: '4-vertical', name: '4 Vertical', playerCount: 4, rows: 4, cols: 1, playerCells: [[0], [1], [2], [3]], hasPartner: false },
+  
+  // 5 Players
+  { id: '5-top3', name: '5 Top 3', playerCount: 5, rows: 2, cols: 3, playerCells: [[0], [1], [2], [3], [4, 5]], hasPartner: false },
+  { id: '5-bottom3', name: '5 Bottom 3', playerCount: 5, rows: 2, cols: 3, playerCells: [[0, 1], [2], [3], [4], [5]], hasPartner: false },
+  { id: '5-partner', name: '5 Partner', playerCount: 5, rows: 2, cols: 6, playerCells: [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9, 10, 11]], hasPartner: true },
+  
+  // 6 Players
+  { id: '6-grid', name: '6 Grid', playerCount: 6, rows: 2, cols: 3, playerCells: [[0], [1], [2], [3], [4], [5]], hasPartner: false },
+  { id: '6-grid-alt', name: '6 Grid Alt', playerCount: 6, rows: 3, cols: 2, playerCells: [[0], [1], [2], [3], [4], [5]], hasPartner: false },
+  { id: '6-partner', name: '6 Partner', playerCount: 6, rows: 2, cols: 6, playerCells: [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9], [10, 11]], hasPartner: true },
+];
+
+export function getLayoutsForPlayerCount(count: PlayerCount): LayoutConfig[] {
+  return LAYOUTS.filter(l => l.playerCount === count);
+}
+
+export function getDefaultLayout(count: PlayerCount): LayoutConfig {
+  const layouts = getLayoutsForPlayerCount(count);
+  return layouts[0] || LAYOUTS[0];
+}
+
 export interface Room {
   id: string;
   adminKey: string;
-  playerCount: 2 | 3 | 4;
+  playerCount: PlayerCount;
   players: Player[];
   settings: RoomSettings;
   monarchId: number | null;
@@ -62,6 +119,7 @@ export interface Room {
   isDay: boolean;
   history: HistoryEntry[];
   overlayLayout: OverlayLayout | null;
+  layoutId: string; // Which layout configuration to use
   createdAt: number;
   lastUpdated: number;
 }
@@ -80,7 +138,7 @@ export interface GamePreset {
   id: string;
   name: string;
   players: PlayerPreset[];
-  playerCount: 2 | 3 | 4;
+  playerCount: PlayerCount;
   startingLife: 20 | 40;
   createdAt: number;
 }
@@ -152,23 +210,26 @@ export function generateId(length: number = 6): string {
   return result;
 }
 
-export function createDefaultPlayers(count: 2 | 3 | 4, startingLife: number): Player[] {
+export function createDefaultPlayers(count: PlayerCount, startingLife: number, enablePartner: boolean = false): Player[] {
   const defaultColors = [
     '45 90% 45%',
     '345 75% 40%',
     '270 40% 35%',
     '220 60% 30%',
+    '140 50% 30%',
+    '25 90% 45%',
   ];
   
   return Array.from({ length: count }, (_, i) => ({
     id: i + 1,
     name: `Player ${i + 1}`,
     life: startingLife,
-    color: defaultColors[i],
+    color: defaultColors[i] || '0 0% 50%',
     poison: 0,
     experience: 0,
     energy: 0,
     commanderDamage: {},
+    partnerLife: enablePartner ? startingLife : undefined,
   }));
 }
 
@@ -188,13 +249,18 @@ export function createDefaultOverlayLayout(playerCount: number): OverlayLayout {
   };
 }
 
-export function createRoom(playerCount: 2 | 3 | 4 = 4): Room {
+export function createRoom(playerCount: PlayerCount = 4, layoutId?: string): Room {
   const startingLife = 40;
+  const layout = layoutId 
+    ? LAYOUTS.find(l => l.id === layoutId) || getDefaultLayout(playerCount)
+    : getDefaultLayout(playerCount);
+  const enablePartner = layout.hasPartner;
+  
   return {
     id: generateId(6),
     adminKey: generateId(12),
     playerCount,
-    players: createDefaultPlayers(playerCount, startingLife),
+    players: createDefaultPlayers(playerCount, startingLife, enablePartner),
     settings: {
       theme: 'dark',
       startingLife,
@@ -204,6 +270,7 @@ export function createRoom(playerCount: 2 | 3 | 4 = 4): Room {
       overlayLayout: 'horizontal',
       simpleTextStyle: false,
       enableHoldToAdjust: false,
+      enablePartnerTracking: enablePartner,
     },
     monarchId: null,
     initiativeId: null,
@@ -211,18 +278,19 @@ export function createRoom(playerCount: 2 | 3 | 4 = 4): Room {
     isDay: true,
     history: [],
     overlayLayout: createDefaultOverlayLayout(playerCount),
+    layoutId: layout.id,
     createdAt: Date.now(),
     lastUpdated: Date.now(),
   };
 }
 
 export function normalizeRoom(room: Room): Room {
-  const validPlayerCounts: Array<Room['playerCount']> = [2, 3, 4];
+  const validPlayerCounts: Array<PlayerCount> = [2, 3, 4, 5, 6];
   const basePlayers = Array.isArray(room.players) ? room.players : [];
-  const inferredCount = validPlayerCounts.includes(room.playerCount)
+  const inferredCount = validPlayerCounts.includes(room.playerCount as PlayerCount)
     ? room.playerCount
-    : (validPlayerCounts.includes(basePlayers.length as Room['playerCount'])
-      ? (basePlayers.length as Room['playerCount'])
+    : (validPlayerCounts.includes(basePlayers.length as PlayerCount)
+      ? (basePlayers.length as PlayerCount)
       : 4);
   const normalizedPlayers = basePlayers.length
     ? basePlayers.map((player, index) => ({
@@ -235,6 +303,7 @@ export function normalizeRoom(room: Room): Room {
         energy: player.energy ?? 0,
         commanderDamage: player.commanderDamage ?? {},
         deckName: player.deckName,
+        partnerLife: player.partnerLife,
       }))
     : createDefaultPlayers(inferredCount, room.settings?.startingLife ?? 40);
   const normalizedSettings = {
@@ -246,6 +315,7 @@ export function normalizeRoom(room: Room): Room {
     overlayLayout: room.settings?.overlayLayout ?? 'horizontal',
     simpleTextStyle: room.settings?.simpleTextStyle ?? false,
     enableHoldToAdjust: room.settings?.enableHoldToAdjust ?? false,
+    enablePartnerTracking: room.settings?.enablePartnerTracking ?? false,
   };
 
   return {
@@ -259,6 +329,7 @@ export function normalizeRoom(room: Room): Room {
     isDay: room.isDay ?? true,
     history: room.history ?? [],
     overlayLayout: room.overlayLayout ?? createDefaultOverlayLayout(inferredCount),
+    layoutId: room.layoutId ?? getDefaultLayout(inferredCount).id,
     createdAt: room.createdAt ?? Date.now(),
     lastUpdated: room.lastUpdated ?? Date.now(),
   };
@@ -285,6 +356,7 @@ export function loadRoomsState(): RoomsState {
           experience: p.experience ?? 0,
           energy: p.energy ?? 0,
           commanderDamage: p.commanderDamage ?? {},
+          partnerLife: p.partnerLife,
         }));
         room.monarchId = room.monarchId ?? null;
         room.initiativeId = room.initiativeId ?? null;
@@ -294,9 +366,13 @@ export function loadRoomsState(): RoomsState {
         room.settings = {
           ...(room.settings || {}),
           enableHoldToAdjust: room.settings?.enableHoldToAdjust ?? false,
+          enablePartnerTracking: room.settings?.enablePartnerTracking ?? false,
         };
         if (!room.overlayLayout) {
           room.overlayLayout = createDefaultOverlayLayout(room.playerCount);
+        }
+        if (!room.layoutId) {
+          room.layoutId = getDefaultLayout(room.playerCount).id;
         }
       }
       return state;

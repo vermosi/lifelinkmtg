@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Users, Cloud, Loader2, Infinity } from 'lucide-react';
-import { Room } from '@/lib/roomUtils';
+import { Cloud, Loader2, Infinity, Grid3X3 } from 'lucide-react';
+import { Room, PlayerCount } from '@/lib/roomUtils';
 import { createCloudRoom, getRecentCloudRooms, deleteCloudRoom, removeFromRecentRooms } from '@/lib/cloudRoomUtils';
-import { cn } from '@/lib/utils';
+import { LayoutPicker } from './LayoutPicker';
 
 export function RoomSelector() {
   const navigate = useNavigate();
   const [recentRooms, setRecentRooms] = useState<Room[]>([]);
-  const [selectedPlayerCount, setSelectedPlayerCount] = useState<2 | 3 | 4>(4);
   const [isCreating, setIsCreating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showLayoutPicker, setShowLayoutPicker] = useState(false);
 
   useEffect(() => {
     const loadRecentRooms = async () => {
@@ -22,9 +22,10 @@ export function RoomSelector() {
     loadRecentRooms();
   }, []);
 
-  const handleCreateRoom = async () => {
+  const handleCreateRoom = async (playerCount: PlayerCount, layoutId: string) => {
     setIsCreating(true);
-    const room = await createCloudRoom(selectedPlayerCount);
+    setShowLayoutPicker(false);
+    const room = await createCloudRoom(playerCount, layoutId);
     if (room) {
       navigate(`/room/${room.id}?adminKey=${room.adminKey}`);
     }
@@ -46,6 +47,15 @@ export function RoomSelector() {
     }
   };
 
+  if (showLayoutPicker) {
+    return (
+      <LayoutPicker 
+        onSelect={handleCreateRoom}
+        onClose={() => setShowLayoutPicker(false)}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-sm space-y-6 sm:space-y-10">
@@ -64,38 +74,24 @@ export function RoomSelector() {
           </p>
         </div>
 
-        {/* Player count selector */}
+        {/* New Game Button */}
         <div className="space-y-3 sm:space-y-4">
-          <div className="flex gap-2">
-            {([2, 3, 4] as const).map((count) => (
-              <button
-                key={count}
-                onClick={() => setSelectedPlayerCount(count)}
-                className={cn(
-                  'flex-1 py-4 sm:py-6 rounded-xl sm:rounded-2xl font-display text-2xl sm:text-4xl transition-all flex flex-col items-center gap-1',
-                  selectedPlayerCount === count
-                    ? 'bg-foreground text-background'
-                    : 'bg-secondary text-muted-foreground hover:text-foreground'
-                )}
-              >
-                <Users className="w-5 h-5 sm:w-6 sm:h-6" />
-                {count}
-              </button>
-            ))}
-          </div>
-
           <button
-            onClick={handleCreateRoom}
+            onClick={() => setShowLayoutPicker(true)}
             disabled={isCreating}
-            className="w-full py-4 sm:py-5 bg-accent text-accent-foreground rounded-xl sm:rounded-2xl font-display text-2xl sm:text-3xl flex items-center justify-center gap-2 sm:gap-3 hover:bg-accent/90 transition-colors disabled:opacity-50"
+            className="w-full py-5 sm:py-6 bg-accent text-accent-foreground rounded-xl sm:rounded-2xl font-display text-2xl sm:text-3xl flex items-center justify-center gap-3 hover:bg-accent/90 transition-colors disabled:opacity-50"
           >
             {isCreating ? (
-              <Loader2 className="w-5 h-5 sm:w-7 sm:h-7 animate-spin" />
+              <Loader2 className="w-6 h-6 sm:w-7 sm:h-7 animate-spin" />
             ) : (
-              <Plus className="w-5 h-5 sm:w-7 sm:h-7" />
+              <Grid3X3 className="w-6 h-6 sm:w-7 sm:h-7" />
             )}
             {isCreating ? 'CREATING...' : 'NEW GAME'}
           </button>
+          
+          <p className="text-center text-xs text-muted-foreground">
+            2-6 players · Partner commanders · Multiple layouts
+          </p>
         </div>
 
         {/* Recent rooms */}
@@ -122,6 +118,7 @@ export function RoomSelector() {
                     </div>
                     <div className="text-xs sm:text-sm text-muted-foreground">
                       {room.playerCount}P · {room.settings.startingLife}
+                      {room.settings.enablePartnerTracking && ' · Partner'}
                     </div>
                   </div>
                   <button
