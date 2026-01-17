@@ -370,7 +370,7 @@ export function FullScreenPlayerPanel({
         {isAdmin && overlayMode === 'none' && (
           <button
             onClick={() => handleLifeChange(1)}
-            className={cn("life-button", isCompact && "compact", isCompact ? "top-4" : "top-8 sm:top-12")}
+            className={cn("life-button", isCompact && "compact", isCompact ? "top-10" : "top-8 sm:top-12")}
             aria-label="Increase life by 1"
             onPointerDown={() => startHoldToAdjust(1)}
             onPointerUp={stopHoldToAdjust}
@@ -452,7 +452,7 @@ export function FullScreenPlayerPanel({
         {isAdmin && overlayMode === 'none' && (
           <button
             onClick={() => handleLifeChange(-1)}
-            className={cn("life-button", isCompact && "compact", isCompact ? "bottom-4" : "bottom-8 sm:bottom-12")}
+            className={cn("life-button", isCompact && "compact", isCompact ? "bottom-10" : "bottom-8 sm:bottom-12")}
             aria-label="Decrease life by 1"
             onPointerDown={() => startHoldToAdjust(-1)}
             onPointerUp={stopHoldToAdjust}
