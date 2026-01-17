@@ -1,17 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Room, HistoryEntry, OverlayLayout, generateId, createDefaultOverlayLayout, GamePreset } from '@/lib/roomUtils';
+import { Room, HistoryEntry, OverlayLayout, generateId, createDefaultOverlayLayout, GamePreset, Player, PlayerCount, createDefaultPlayer, normalizeRoom } from '@/lib/roomUtils';
 import { getCloudRoom, updateCloudRoom, subscribeToRoom, addToRecentRooms, getStoredAdminKey } from '@/lib/cloudRoomUtils';
 import { loadPersistedRoom, savePersistedRoom } from '@/lib/roomPersistence';
 import { trackEvent } from '@/lib/analytics';
 
 export function useCloudRoomState(roomId: string | undefined) {
   const [searchParams] = useSearchParams();
-  // Get admin key from URL first, fall back to locally stored key
   const urlAdminKey = searchParams.get('adminKey') || '';
   const storedAdminKey = roomId ? getStoredAdminKey(roomId) : null;
   const adminKey = urlAdminKey || storedAdminKey || '';
-  
+
   const [room, setRoom] = useState<Room | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -27,7 +26,7 @@ export function useCloudRoomState(roomId: string | undefined) {
 
     const cachedRoom = loadPersistedRoom(roomId);
     if (cachedRoom) {
-      setRoom(cachedRoom);
+      setRoom(normalizeRoom(cachedRoom));
       setLoading(false);
     }
 
@@ -41,11 +40,11 @@ export function useCloudRoomState(roomId: string | undefined) {
           lastUpdateRef.current = JSON.stringify(cloudRoom);
           savePersistedRoom(cloudRoom);
         } else {
-          setRoom(cachedRoom || null);
+          setRoom(cachedRoom ? normalizeRoom(cachedRoom) : null);
         }
       } catch (error) {
         console.error('Failed to load room.', error);
-        setRoom(cachedRoom || null);
+        setRoom(cachedRoom ? normalizeRoom(cachedRoom) : null);
       } finally {
         setLoading(false);
       }
@@ -60,7 +59,6 @@ export function useCloudRoomState(roomId: string | undefined) {
 
     const unsubscribe = subscribeToRoom(roomId, (updatedRoom) => {
       const updateStr = JSON.stringify(updatedRoom);
-      // Only update if the change came from elsewhere (not our own update)
       if (updateStr !== lastUpdateRef.current) {
         lastUpdateRef.current = updateStr;
         setRoom(updatedRoom);
@@ -77,7 +75,8 @@ export function useCloudRoomState(roomId: string | undefined) {
     type: HistoryEntry['type'],
     oldValue: number,
     newValue: number,
-    fromPlayerName?: string
+    fromPlayerName?: string,
+    counterName?: string
   ): HistoryEntry[] => {
     if (oldValue === newValue) return prev.history;
     const player = prev.players.find(p => p.id === playerId);
@@ -90,11 +89,11 @@ export function useCloudRoomState(roomId: string | undefined) {
       oldValue,
       newValue,
       fromPlayerName,
+      counterName,
     };
     return [...prev.history.slice(-49), entry];
   }, []);
 
-  // Debounced cloud sync (uses adminKey from URL for secure server-side verification)
   const syncToCloud = useCallback((updatedRoom: Room) => {
     if (updateTimeoutRef.current) {
       clearTimeout(updateTimeoutRef.current);
@@ -110,7 +109,7 @@ export function useCloudRoomState(roomId: string | undefined) {
       } finally {
         setSyncing(false);
       }
-    }, 100); // Debounce by 100ms
+    }, 100);
   }, [adminKey]);
 
   const updateRoom = useCallback((updater: (prev: Room) => Room) => {
@@ -122,6 +121,8 @@ export function useCloudRoomState(roomId: string | undefined) {
       return updated;
     });
   }, [syncToCloud]);
+
+  // ============= LIFE MANAGEMENT =============
 
   const updatePlayerLife = useCallback((playerId: number, delta: number) => {
     updateRoom(prev => {
@@ -135,6 +136,21 @@ export function useCloudRoomState(roomId: string | undefined) {
           p.id === playerId ? { ...p, life: newValue } : p
         ),
         history: addHistoryEntry(prev, playerId, 'life', oldValue, newValue),
+      };
+    });
+  }, [updateRoom, addHistoryEntry]);
+
+  const setPlayerLife = useCallback((playerId: number, life: number) => {
+    updateRoom(prev => {
+      const player = prev.players.find(p => p.id === playerId);
+      const oldValue = player?.life || 0;
+      trackEvent('life_changed', { roomId: prev.id, playerId, delta: life - oldValue, newValue: life });
+      return {
+        ...prev,
+        players: prev.players.map(p =>
+          p.id === playerId ? { ...p, life } : p
+        ),
+        history: addHistoryEntry(prev, playerId, 'life', oldValue, life),
       };
     });
   }, [updateRoom, addHistoryEntry]);
@@ -160,20 +176,7 @@ export function useCloudRoomState(roomId: string | undefined) {
     });
   }, [updateRoom]);
 
-  const setPlayerLife = useCallback((playerId: number, life: number) => {
-    updateRoom(prev => {
-      const player = prev.players.find(p => p.id === playerId);
-      const oldValue = player?.life || 0;
-      trackEvent('life_changed', { roomId: prev.id, playerId, delta: life - oldValue, newValue: life });
-      return {
-        ...prev,
-        players: prev.players.map(p =>
-          p.id === playerId ? { ...p, life } : p
-        ),
-        history: addHistoryEntry(prev, playerId, 'life', oldValue, life),
-      };
-    });
-  }, [updateRoom, addHistoryEntry]);
+  // ============= PLAYER MANAGEMENT =============
 
   const setPlayerName = useCallback((playerId: number, name: string) => {
     updateRoom(prev => ({
@@ -193,75 +196,113 @@ export function useCloudRoomState(roomId: string | undefined) {
     }));
   }, [updateRoom]);
 
-  const setPlayerDeckName = useCallback((playerId: number, deckName: string) => {
+  const setPlayerCommanders = useCallback((playerId: number, commanders: string[]) => {
     updateRoom(prev => ({
       ...prev,
       players: prev.players.map(p =>
-        p.id === playerId ? { ...p, deckName } : p
+        p.id === playerId ? { ...p, commanders: commanders.slice(0, 2) } : p
       ),
     }));
   }, [updateRoom]);
 
-  const updatePlayerPoison = useCallback((playerId: number, delta: number) => {
+  // ============= COUNTER MANAGEMENT =============
+
+  const updateCounter = useCallback((playerId: number, counterType: keyof Player['counters'], delta: number) => {
     updateRoom(prev => {
       const player = prev.players.find(p => p.id === playerId);
-      const oldValue = player?.poison || 0;
+      if (!player) return prev;
+
+      const currentValue = player.counters[counterType];
+      if (typeof currentValue === 'boolean') return prev;
+
+      const oldValue = currentValue as number;
       const newValue = Math.max(0, oldValue + delta);
+
       return {
         ...prev,
         players: prev.players.map(p =>
-          p.id === playerId ? { ...p, poison: newValue } : p
+          p.id === playerId ? {
+            ...p,
+            counters: { ...p.counters, [counterType]: newValue }
+          } : p
         ),
-        history: addHistoryEntry(prev, playerId, 'poison', oldValue, newValue),
+        history: addHistoryEntry(prev, playerId, counterType as HistoryEntry['type'], oldValue, newValue),
       };
     });
   }, [updateRoom, addHistoryEntry]);
 
-  const updatePlayerExperience = useCallback((playerId: number, delta: number) => {
+  const setCounter = useCallback((playerId: number, counterType: keyof Player['counters'], value: number | boolean) => {
+    updateRoom(prev => ({
+      ...prev,
+      players: prev.players.map(p =>
+        p.id === playerId ? {
+          ...p,
+          counters: { ...p.counters, [counterType]: value }
+        } : p
+      ),
+    }));
+  }, [updateRoom]);
+
+  const toggleMonarch = useCallback((playerId: number) => {
     updateRoom(prev => {
-      const player = prev.players.find(p => p.id === playerId);
-      const oldValue = player?.experience || 0;
-      const newValue = Math.max(0, oldValue + delta);
+      const isCurrentlyMonarch = prev.players.find(p => p.id === playerId)?.counters.isMonarch;
       return {
         ...prev,
-        players: prev.players.map(p =>
-          p.id === playerId ? { ...p, experience: newValue } : p
-        ),
-        history: addHistoryEntry(prev, playerId, 'experience', oldValue, newValue),
+        players: prev.players.map(p => ({
+          ...p,
+          counters: {
+            ...p.counters,
+            isMonarch: p.id === playerId ? !isCurrentlyMonarch : false
+          }
+        })),
+        monarchId: isCurrentlyMonarch ? null : playerId,
+        history: !isCurrentlyMonarch
+          ? addHistoryEntry(prev, playerId, 'monarch', 0, 1)
+          : prev.history,
       };
     });
   }, [updateRoom, addHistoryEntry]);
 
-  const updatePlayerEnergy = useCallback((playerId: number, delta: number) => {
+  const toggleInitiative = useCallback((playerId: number) => {
     updateRoom(prev => {
-      const player = prev.players.find(p => p.id === playerId);
-      const oldValue = player?.energy || 0;
-      const newValue = Math.max(0, oldValue + delta);
+      const hasInitiative = prev.players.find(p => p.id === playerId)?.counters.hasInitiative;
       return {
         ...prev,
-        players: prev.players.map(p =>
-          p.id === playerId ? { ...p, energy: newValue } : p
-        ),
-        history: addHistoryEntry(prev, playerId, 'energy', oldValue, newValue),
+        players: prev.players.map(p => ({
+          ...p,
+          counters: {
+            ...p.counters,
+            hasInitiative: p.id === playerId ? !hasInitiative : false
+          }
+        })),
+        initiativeId: hasInitiative ? null : playerId,
+        dungeonProgress: hasInitiative ? prev.dungeonProgress : 0,
+        history: !hasInitiative
+          ? addHistoryEntry(prev, playerId, 'initiative', 0, 1)
+          : prev.history,
       };
     });
   }, [updateRoom, addHistoryEntry]);
 
-  const updateCommanderDamage = useCallback((playerId: number, fromPlayerId: number, delta: number) => {
+  // ============= COMMANDER DAMAGE =============
+
+  const updateCommanderDamage = useCallback((playerId: number, fromPlayerId: number, commanderIndex: number, delta: number) => {
     updateRoom(prev => {
       const player = prev.players.find(p => p.id === playerId);
       const fromPlayer = prev.players.find(p => p.id === fromPlayerId);
-      const oldValue = player?.commanderDamage[fromPlayerId] || 0;
+      const key = `${fromPlayerId}-${commanderIndex}`;
+      const oldValue = player?.commanderDamageReceived[key] || 0;
       const newValue = Math.max(0, oldValue + delta);
+
       return {
         ...prev,
         players: prev.players.map(p => {
           if (p.id !== playerId) return p;
           return {
             ...p,
-            commanderDamage: {
-              ...p.commanderDamage,
-              [fromPlayerId]: newValue,
+            commanderDamageReceived: {
+              ...p.commanderDamageReceived,
+              [key]: newValue,
             },
           };
         }),
@@ -270,50 +311,57 @@ export function useCloudRoomState(roomId: string | undefined) {
     });
   }, [updateRoom, addHistoryEntry]);
 
-  const updatePartnerLife = useCallback((playerId: number, delta: number) => {
-    updateRoom(prev => {
-      const player = prev.players.find(p => p.id === playerId);
-      const oldValue = player?.partnerLife ?? prev.settings.startingLife;
-      const newValue = oldValue + delta;
-      return {
-        ...prev,
-        players: prev.players.map(p =>
-          p.id === playerId ? { ...p, partnerLife: newValue } : p
-        ),
-        history: addHistoryEntry(prev, playerId, 'partner', oldValue, newValue),
-      };
-    });
-  }, [updateRoom, addHistoryEntry]);
+  // ============= TURN & TIMER MANAGEMENT =============
 
-  const setMonarch = useCallback((playerId: number | null) => {
-    updateRoom(prev => {
-      let history = prev.history;
-      if (playerId !== prev.monarchId && playerId !== null) {
-        history = addHistoryEntry(prev, playerId, 'monarch', 0, 1);
-      }
-      return {
-        ...prev,
-        monarchId: playerId,
-        history,
-      };
-    });
-  }, [updateRoom, addHistoryEntry]);
+  const nextTurn = useCallback(() => {
+    updateRoom(prev => ({
+      ...prev,
+      activePlayerIndex: (prev.activePlayerIndex + 1) % prev.players.length,
+      turnNumber: prev.activePlayerIndex === prev.players.length - 1 ? prev.turnNumber + 1 : prev.turnNumber,
+    }));
+  }, [updateRoom]);
 
-  const setInitiative = useCallback((playerId: number | null) => {
+  const previousTurn = useCallback(() => {
+    updateRoom(prev => ({
+      ...prev,
+      activePlayerIndex: prev.activePlayerIndex === 0 ? prev.players.length - 1 : prev.activePlayerIndex - 1,
+      turnNumber: prev.activePlayerIndex === 0 ? Math.max(1, prev.turnNumber - 1) : prev.turnNumber,
+    }));
+  }, [updateRoom]);
+
+  const setActivePlayer = useCallback((index: number) => {
+    updateRoom(prev => ({
+      ...prev,
+      activePlayerIndex: Math.max(0, Math.min(prev.players.length - 1, index)),
+    }));
+  }, [updateRoom]);
+
+  const toggleGameTimer = useCallback(() => {
     updateRoom(prev => {
-      let history = prev.history;
-      const isNewPlayer = playerId !== prev.initiativeId && playerId !== null;
-      if (isNewPlayer) {
-        history = addHistoryEntry(prev, playerId, 'initiative', 0, 1);
+      const timer = prev.gameTimer;
+      if (timer.running) {
+        const elapsed = timer.startedAt ? timer.elapsedMs + (Date.now() - timer.startedAt) : timer.elapsedMs;
+        return {
+          ...prev,
+          gameTimer: { running: false, elapsedMs: elapsed, startedAt: null },
+        };
+      } else {
+        return {
+          ...prev,
+          gameTimer: { running: true, elapsedMs: timer.elapsedMs, startedAt: Date.now() },
+        };
       }
-      return {
-        ...prev,
-        initiativeId: playerId,
-        dungeonProgress: isNewPlayer ? 0 : prev.dungeonProgress,
-        history,
-      };
     });
-  }, [updateRoom, addHistoryEntry]);
+  }, [updateRoom]);
+
+  const resetGameTimer = useCallback(() => {
+    updateRoom(prev => ({
+      ...prev,
+      gameTimer: { running: false, elapsedMs: 0, startedAt: null },
+    }));
+  }, [updateRoom]);
+
+  // ============= GAME MANAGEMENT =============
 
   const advanceDungeon = useCallback(() => {
     updateRoom(prev => ({
@@ -342,31 +390,27 @@ export function useCloudRoomState(roomId: string | undefined) {
     });
   }, [updateRoom]);
 
-  const updateOverlayLayout = useCallback((layout: OverlayLayout) => {
-    updateRoom(prev => ({
-      ...prev,
-      overlayLayout: layout,
-    }));
-  }, [updateRoom]);
-
-  const resetOverlayLayout = useCallback(() => {
-    updateRoom(prev => ({
-      ...prev,
-      overlayLayout: createDefaultOverlayLayout(prev.playerCount),
-    }));
-  }, [updateRoom]);
-
   const resetGame = useCallback(() => {
     updateRoom(prev => ({
       ...prev,
       players: prev.players.map(p => ({
         ...p,
         life: prev.settings.startingLife,
-        poison: 0,
-        experience: 0,
-        energy: 0,
-        commanderDamage: {},
+        counters: {
+          poison: 0,
+          energy: 0,
+          experience: 0,
+          storm: 0,
+          commanderTax: 0,
+          isMonarch: false,
+          hasInitiative: false,
+          custom: [],
+        },
+        commanderDamageReceived: {},
       })),
+      activePlayerIndex: 0,
+      turnNumber: 1,
+      gameTimer: { running: false, elapsedMs: 0, startedAt: null },
       monarchId: null,
       initiativeId: null,
       dungeonProgress: 0,
@@ -375,39 +419,24 @@ export function useCloudRoomState(roomId: string | undefined) {
     }));
   }, [updateRoom]);
 
-  const setPlayerCount = useCallback((count: 2 | 3 | 4) => {
+  const setPlayerCount = useCallback((count: PlayerCount) => {
     updateRoom(prev => {
       const currentPlayers = prev.players;
       let newPlayers = [...currentPlayers];
-      
-      const defaultColors = [
-        '45 90% 45%',
-        '345 75% 40%',
-        '270 40% 35%',
-        '220 60% 30%',
-      ];
-      
+
       if (count > currentPlayers.length) {
         for (let i = currentPlayers.length; i < count; i++) {
-          newPlayers.push({
-            id: i + 1,
-            name: `Player ${i + 1}`,
-            life: prev.settings.startingLife,
-            color: defaultColors[i],
-            poison: 0,
-            experience: 0,
-            energy: 0,
-            commanderDamage: {},
-          });
+          newPlayers.push(createDefaultPlayer(i, prev.settings.startingLife));
         }
       } else {
         newPlayers = newPlayers.slice(0, count);
       }
-      
+
       return {
         ...prev,
         playerCount: count,
         players: newPlayers,
+        activePlayerIndex: Math.min(prev.activePlayerIndex, count - 1),
         monarchId: prev.monarchId && prev.monarchId <= count ? prev.monarchId : null,
         initiativeId: prev.initiativeId && prev.initiativeId <= count ? prev.initiativeId : null,
         overlayLayout: createDefaultOverlayLayout(count),
@@ -415,23 +444,17 @@ export function useCloudRoomState(roomId: string | undefined) {
     });
   }, [updateRoom]);
 
-  const setStartingLife = useCallback((life: 40 | 20) => {
+  const setStartingLife = useCallback((life: 40 | 20 | 30 | 25) => {
     updateRoom(prev => ({
       ...prev,
       settings: { ...prev.settings, startingLife: life },
-      players: prev.players.map(p => ({ 
-        ...p, 
-        life, 
-        poison: 0, 
-        experience: 0,
-        energy: 0,
-        commanderDamage: {} 
-      })),
-      monarchId: null,
-      initiativeId: null,
-      dungeonProgress: 0,
-      isDay: true,
-      history: [],
+    }));
+  }, [updateRoom]);
+
+  const updateOverlayLayout = useCallback((layout: OverlayLayout) => {
+    updateRoom(prev => ({
+      ...prev,
+      overlayLayout: layout,
     }));
   }, [updateRoom]);
 
@@ -453,25 +476,39 @@ export function useCloudRoomState(roomId: string | undefined) {
     }));
   }, [updateRoom]);
 
+  const setStreamerMode = useCallback((enabled: boolean) => {
+    updateRoom(prev => ({
+      ...prev,
+      settings: { ...prev.settings, streamerMode: enabled },
+    }));
+  }, [updateRoom]);
+
+  const setTextScale = useCallback((scale: 'normal' | 'large' | 'extra-large') => {
+    updateRoom(prev => ({
+      ...prev,
+      settings: { ...prev.settings, textScale: scale },
+    }));
+  }, [updateRoom]);
+
   const loadPreset = useCallback((preset: GamePreset) => {
     updateRoom(prev => {
       const newPlayerCount = preset.playerCount;
       const newPlayers = preset.players.map((p, i) => ({
-        id: i + 1,
+        ...createDefaultPlayer(i, preset.startingLife),
         name: p.name,
-        life: preset.startingLife,
         color: p.color,
-        poison: 0,
-        experience: 0,
-        energy: 0,
-        commanderDamage: {},
+        commanders: p.commanders || [],
       }));
 
       return {
         ...prev,
         playerCount: newPlayerCount,
         players: newPlayers,
-        settings: { ...prev.settings, startingLife: preset.startingLife },
+        settings: { ...prev.settings, startingLife: preset.startingLife, streamerMode: preset.streamerMode },
+        layoutId: preset.layoutId,
+        activePlayerIndex: 0,
+        turnNumber: 1,
+        gameTimer: { running: false, elapsedMs: 0, startedAt: null },
         monarchId: null,
         initiativeId: null,
         dungeonProgress: 0,
@@ -496,29 +533,40 @@ export function useCloudRoomState(roomId: string | undefined) {
     loading,
     syncing,
     updateRoom,
+    // Life
     updatePlayerLife,
     setPlayerLife,
+    undoLastLifeChange,
+    // Player
     setPlayerName,
     setPlayerColor,
-    setPlayerDeckName,
-    updatePlayerPoison,
-    updatePlayerExperience,
-    updatePlayerEnergy,
+    setPlayerCommanders,
+    // Counters
+    updateCounter,
+    setCounter,
+    toggleMonarch,
+    toggleInitiative,
+    // Commander damage
     updateCommanderDamage,
-    updatePartnerLife,
-    setMonarch,
-    setInitiative,
+    // Turn/Timer
+    nextTurn,
+    previousTurn,
+    setActivePlayer,
+    toggleGameTimer,
+    resetGameTimer,
+    // Game
     advanceDungeon,
     toggleDayNight,
-    updateOverlayLayout,
-    resetOverlayLayout,
     resetGame,
     setPlayerCount,
     setStartingLife,
+    updateOverlayLayout,
     clearHistory,
-    loadPreset,
+    // Settings
     setSimpleTextStyle,
     setHoldToAdjust,
-    undoLastLifeChange,
+    setStreamerMode,
+    setTextScale,
+    loadPreset,
   };
 }
