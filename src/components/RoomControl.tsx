@@ -1,6 +1,7 @@
 import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown, Shield, Sun, Moon, Dices, Save, FolderOpen, Plus, Cloud, Loader2 } from 'lucide-react';
+import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown, Shield, Sun, Moon, Dices, Save, FolderOpen, Plus, Cloud, Loader2, Wrench } from 'lucide-react';
+import { ToolsDrawer } from './ToolsDrawer';
 import { useCloudRoomState } from '@/hooks/useCloudRoomState';
 import { getControlUrl, getOverlayUrl, PLAYER_COLORS, formatTimestamp, HistoryEntry, DUNGEON_ROOMS, loadPresets, savePreset, deletePreset, createPresetFromRoom, GamePreset, LAYOUTS } from '@/lib/roomUtils';
 import { FullScreenPlayerPanel } from './FullScreenPlayerPanel';
@@ -53,6 +54,11 @@ export function RoomControl() {
     setSimpleTextStyle,
     setHoldToAdjust,
     undoLastLifeChange,
+    nextTurn,
+    previousTurn,
+    setActivePlayer,
+    toggleGameTimer,
+    resetGameTimer,
   } = useCloudRoomState(roomId);
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -65,6 +71,7 @@ export function RoomControl() {
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [isPortrait, setIsPortrait] = useState(() => window.innerHeight >= window.innerWidth);
   const [hasTrackedStart, setHasTrackedStart] = useState(false);
+  const [toolsDrawerOpen, setToolsDrawerOpen] = useState(false);
   const isAdmin = room ? adminKey === room.adminKey : false;
 
   // Convert hex to HSL for color picker
@@ -887,6 +894,33 @@ export function RoomControl() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Tools Drawer FAB */}
+      {!menuOpen && room && (
+        <button
+          onClick={() => setToolsDrawerOpen(true)}
+          className="fixed bottom-6 right-6 z-30 w-14 h-14 bg-accent text-accent-foreground rounded-full shadow-lg flex items-center justify-center hover:bg-accent/90 transition-all hover:scale-105 active:scale-95"
+        >
+          <Wrench className="w-6 h-6" />
+        </button>
+      )}
+
+      {/* Tools Drawer */}
+      {room && (
+        <ToolsDrawer
+          isOpen={toolsDrawerOpen}
+          onClose={() => setToolsDrawerOpen(false)}
+          room={room}
+          isAdmin={isAdmin}
+          onNextTurn={nextTurn}
+          onPreviousTurn={previousTurn}
+          onSetActivePlayer={setActivePlayer}
+          onToggleGameTimer={toggleGameTimer}
+          onResetGameTimer={resetGameTimer}
+          onResetGame={resetGame}
+          onSetPlayerCount={setPlayerCount}
+        />
       )}
     </div>
   );
