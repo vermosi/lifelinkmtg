@@ -2,43 +2,63 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Player } from '@/lib/roomUtils';
 import { cn } from '@/lib/utils';
 import { haptics } from '@/lib/haptics';
-import { Crown, Shield } from 'lucide-react';
+import { Crown, Shield, Skull, Sparkles, Zap, Swords } from 'lucide-react';
 
 interface CleanPlayerPanelProps {
   player: Player;
+  allPlayers: Player[];
   playerCount: number;
   isMonarch: boolean;
   hasInitiative: boolean;
+  dungeonProgress: number;
   onLifeChange: (delta: number) => void;
   onLifeSet: (life: number) => void;
+  onPoisonChange: (delta: number) => void;
+  onExperienceChange: (delta: number) => void;
+  onEnergyChange: (delta: number) => void;
+  onCommanderDamageChange: (fromPlayerId: number, delta: number) => void;
+  onToggleMonarch: () => void;
+  onToggleInitiative: () => void;
   isAdmin: boolean;
   rotation: number;
   enableHoldToAdjust: boolean;
-  onOpenCounters: () => void;
 }
+
+type CounterMode = 'life' | 'poison' | 'experience' | 'energy' | 'commander';
 
 export function CleanPlayerPanel({
   player,
+  allPlayers,
   playerCount,
   isMonarch,
   hasInitiative,
+  dungeonProgress,
   onLifeChange,
   onLifeSet,
+  onPoisonChange,
+  onExperienceChange,
+  onEnergyChange,
+  onCommanderDamageChange,
+  onToggleMonarch,
+  onToggleInitiative,
   isAdmin,
   rotation,
   enableHoldToAdjust,
-  onOpenCounters,
 }: CleanPlayerPanelProps) {
   const isCompact = playerCount >= 3;
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(player.life.toString());
   const [animating, setAnimating] = useState(false);
   const [lastDelta, setLastDelta] = useState<number | null>(null);
+  const [counterMode, setCounterMode] = useState<CounterMode>('life');
   
   const inputRef = useRef<HTMLInputElement>(null);
   const holdTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const holdIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const lastLifeActionRef = useRef(0);
+  const lastActionRef = useRef(0);
+
+  const opponents = allPlayers.filter(p => p.id !== player.id);
+  const totalCommanderDamage = Object.values(player.commanderDamage).reduce((a, b) => a + b, 0);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -51,25 +71,43 @@ export function CleanPlayerPanel({
     return () => stopHoldToAdjust();
   }, []);
 
-  const handleLifeChange = useCallback((delta: number, fromHold = false) => {
+  // Get current value based on mode
+  const getCurrentValue = () => {
+    switch (counterMode) {
+      case 'poison': return player.poison;
+      case 'experience': return player.experience;
+      case 'energy': return player.energy;
+      case 'commander': return totalCommanderDamage;
+      default: return player.life;
+    }
+  };
+
+  const handleCounterChange = useCallback((delta: number, fromHold = false) => {
     if (!isAdmin) return;
     if (!fromHold) {
       const now = Date.now();
-      if (now - lastLifeActionRef.current < 100) return;
-      lastLifeActionRef.current = now;
+      if (now - lastActionRef.current < 100) return;
+      lastActionRef.current = now;
     }
     haptics.light();
-    onLifeChange(delta);
+    
+    switch (counterMode) {
+      case 'poison': onPoisonChange(delta); break;
+      case 'experience': onExperienceChange(delta); break;
+      case 'energy': onEnergyChange(delta); break;
+      default: onLifeChange(delta); break;
+    }
+    
     setLastDelta(delta);
     setAnimating(true);
     setTimeout(() => {
       setAnimating(false);
       setLastDelta(null);
     }, 300);
-  }, [isAdmin, onLifeChange]);
+  }, [isAdmin, counterMode, onLifeChange, onPoisonChange, onExperienceChange, onEnergyChange]);
 
-  const handleLifeClick = () => {
-    if (!isAdmin) return;
+  const handleValueClick = () => {
+    if (!isAdmin || counterMode !== 'life') return;
     setEditValue(player.life.toString());
     setIsEditing(true);
   };
@@ -96,236 +134,357 @@ export function CleanPlayerPanel({
   const startHoldToAdjust = (delta: number) => {
     if (!isAdmin || !enableHoldToAdjust) return;
     holdTimeoutRef.current = setTimeout(() => {
-      handleLifeChange(delta, true);
+      handleCounterChange(delta, true);
       let speed = 150;
       let count = 0;
       holdIntervalRef.current = setInterval(() => {
-        handleLifeChange(delta, true);
+        handleCounterChange(delta, true);
         count++;
-        // Accelerate after 5 taps
         if (count === 5 && speed > 80) {
           clearInterval(holdIntervalRef.current!);
           speed = 80;
-          holdIntervalRef.current = setInterval(() => handleLifeChange(delta, true), speed);
+          holdIntervalRef.current = setInterval(() => handleCounterChange(delta, true), speed);
         }
       }, speed);
     }, 250);
   };
 
-  const handleLongPress = useCallback(() => {
-    if (isAdmin) {
-      haptics.medium();
-      onOpenCounters();
+  // Calculate font size based on digits and mode
+  const getValueFontSize = () => {
+    const val = getCurrentValue();
+    const digits = Math.abs(val).toString().length + (val < 0 ? 1 : 0);
+    
+    if (counterMode !== 'life') {
+      if (isCompact) return 'text-[min(14vmin,56px)]';
+      return 'text-[min(18vmin,72px)]';
     }
-  }, [isAdmin, onOpenCounters]);
-
-  // Calculate dynamic font size based on life total digits and player count
-  // Mobile-first: use smaller base sizes that work on 5" screens
-  const getLifeFontSize = () => {
-    const digits = Math.abs(player.life).toString().length + (player.life < 0 ? 1 : 0);
+    
     if (isCompact) {
-      // 3-4 players: smaller panels
-      if (digits <= 2) return 'text-[min(18vmin,80px)]';
-      if (digits <= 3) return 'text-[min(14vmin,60px)]';
-      return 'text-[min(10vmin,48px)]';
+      if (digits <= 2) return 'text-[min(16vmin,72px)]';
+      if (digits <= 3) return 'text-[min(12vmin,56px)]';
+      return 'text-[min(9vmin,44px)]';
     }
-    // 1-2 players: larger panels
-    if (digits <= 2) return 'text-[min(24vmin,120px)]';
-    if (digits <= 3) return 'text-[min(18vmin,90px)]';
-    return 'text-[min(14vmin,72px)]';
+    if (digits <= 2) return 'text-[min(22vmin,100px)]';
+    if (digits <= 3) return 'text-[min(16vmin,76px)]';
+    return 'text-[min(12vmin,60px)]';
   };
+
+  const getModeColor = () => {
+    switch (counterMode) {
+      case 'poison': return 'text-green-400';
+      case 'experience': return 'text-yellow-400';
+      case 'energy': return 'text-blue-400';
+      case 'commander': return 'text-orange-400';
+      default: return '';
+    }
+  };
+
+  const getModeIcon = () => {
+    switch (counterMode) {
+      case 'poison': return Skull;
+      case 'experience': return Sparkles;
+      case 'energy': return Zap;
+      case 'commander': return Swords;
+      default: return null;
+    }
+  };
+
+  const ModeIcon = getModeIcon();
 
   return (
     <div
-      className="player-panel w-full h-full relative select-none"
+      className="player-panel w-full h-full relative select-none overflow-hidden"
       style={{ backgroundColor: `hsl(${player.color})` }}
     >
-      {/* Rotated content wrapper */}
+      {/* Rotated content wrapper - all content stays within bounds */}
       <div
-        className="absolute inset-0 flex flex-col items-center justify-center"
+        className="absolute inset-0 flex flex-col overflow-hidden"
         style={{ transform: `rotate(${rotation}deg)` }}
       >
-        {/* Status badges */}
-        {(isMonarch || hasInitiative) && (
-          <div className={cn(
-            "absolute flex gap-1.5 z-10",
-            isCompact ? "top-2" : "top-4"
-          )}>
-            {isMonarch && (
-              <div className={cn(
-                "rounded-full bg-black/30 backdrop-blur-sm shadow-lg",
-                isCompact ? "p-1" : "p-2"
-              )}>
-                <Crown 
-                  className={cn("text-yellow-300", isCompact ? "w-4 h-4" : "w-6 h-6")} 
-                  fill="currentColor" 
-                />
-              </div>
-            )}
-            {hasInitiative && (
-              <div className={cn(
-                "rounded-full bg-black/30 backdrop-blur-sm shadow-lg",
-                isCompact ? "p-1" : "p-2"
-              )}>
-                <Shield 
-                  className={cn("text-purple-300", isCompact ? "w-4 h-4" : "w-6 h-6")} 
-                  fill="currentColor" 
-                />
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Plus button - top half tap zone */}
-        {isAdmin && (
+        {/* Top: Counter mode selector */}
+        <div className={cn(
+          "flex justify-center items-center gap-1 shrink-0 flex-wrap",
+          isCompact ? "pt-1 pb-0.5 px-1" : "pt-2 pb-1 px-2"
+        )}>
+          {/* Life */}
           <button
-            onClick={() => handleLifeChange(1)}
-            onPointerDown={() => startHoldToAdjust(1)}
-            onPointerUp={stopHoldToAdjust}
-            onPointerLeave={stopHoldToAdjust}
-            onPointerCancel={stopHoldToAdjust}
-            className="life-btn-zone life-btn-zone-plus"
-            aria-label="Increase life"
+            onClick={() => setCounterMode('life')}
+            className={cn(
+              "rounded-full transition-all flex items-center justify-center",
+              isCompact ? "w-6 h-6 text-[9px]" : "w-8 h-8 text-[10px]",
+              counterMode === 'life' 
+                ? "bg-black/40 text-white font-bold" 
+                : "bg-black/20 text-white/60"
+            )}
+          >♥</button>
+          
+          {/* Poison */}
+          <button
+            onClick={() => setCounterMode('poison')}
+            className={cn(
+              "rounded-full transition-all flex items-center justify-center gap-0.5",
+              isCompact ? "min-w-6 h-6 px-1" : "min-w-8 h-8 px-1.5",
+              counterMode === 'poison' 
+                ? "bg-green-500/40 text-green-300" 
+                : "bg-black/20 text-white/60"
+            )}
           >
-            <span className={cn(
-              "life-btn-icon-circle",
-              isCompact ? "w-10 h-10 text-xl" : "w-12 h-12 text-2xl"
-            )}>+</span>
+            <Skull className={isCompact ? "w-3 h-3" : "w-3.5 h-3.5"} />
+            {player.poison > 0 && (
+              <span className={isCompact ? "text-[9px]" : "text-[10px]"}>{player.poison}</span>
+            )}
           </button>
-        )}
+          
+          {/* Experience */}
+          <button
+            onClick={() => setCounterMode('experience')}
+            className={cn(
+              "rounded-full transition-all flex items-center justify-center gap-0.5",
+              isCompact ? "min-w-6 h-6 px-1" : "min-w-8 h-8 px-1.5",
+              counterMode === 'experience' 
+                ? "bg-yellow-500/40 text-yellow-300" 
+                : "bg-black/20 text-white/60"
+            )}
+          >
+            <Sparkles className={isCompact ? "w-3 h-3" : "w-3.5 h-3.5"} />
+            {player.experience > 0 && (
+              <span className={isCompact ? "text-[9px]" : "text-[10px]"}>{player.experience}</span>
+            )}
+          </button>
+          
+          {/* Energy */}
+          <button
+            onClick={() => setCounterMode('energy')}
+            className={cn(
+              "rounded-full transition-all flex items-center justify-center gap-0.5",
+              isCompact ? "min-w-6 h-6 px-1" : "min-w-8 h-8 px-1.5",
+              counterMode === 'energy' 
+                ? "bg-blue-500/40 text-blue-300" 
+                : "bg-black/20 text-white/60"
+            )}
+          >
+            <Zap className={isCompact ? "w-3 h-3" : "w-3.5 h-3.5"} />
+            {player.energy > 0 && (
+              <span className={isCompact ? "text-[9px]" : "text-[10px]"}>{player.energy}</span>
+            )}
+          </button>
+          
+          {/* Commander */}
+          <button
+            onClick={() => setCounterMode('commander')}
+            className={cn(
+              "rounded-full transition-all flex items-center justify-center gap-0.5",
+              isCompact ? "min-w-6 h-6 px-1" : "min-w-8 h-8 px-1.5",
+              counterMode === 'commander' 
+                ? "bg-orange-500/40 text-orange-300" 
+                : "bg-black/20 text-white/60"
+            )}
+          >
+            <Swords className={isCompact ? "w-3 h-3" : "w-3.5 h-3.5"} />
+            {totalCommanderDamage > 0 && (
+              <span className={isCompact ? "text-[9px]" : "text-[10px]"}>{totalCommanderDamage}</span>
+            )}
+          </button>
 
-        {/* Life total - center (tap to edit) */}
-        <div className="relative flex items-center justify-center z-20 pointer-events-none">
-          {isEditing ? (
-            <input
-              ref={inputRef}
-              type="number"
-              inputMode="numeric"
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              onBlur={handleEditSubmit}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleEditSubmit();
-                if (e.key === 'Escape') setIsEditing(false);
-              }}
-              className={cn(
-                "life-input font-display text-center bg-black/20 rounded-2xl outline-none pointer-events-auto",
-                isCompact ? "w-20 text-[min(14vmin,56px)] px-2 py-1" : "w-32 text-[min(20vmin,96px)] px-3 py-2"
-              )}
-              style={{ color: 'rgba(0,0,0,0.8)' }}
-            />
-          ) : (
-            <button
-              onClick={handleLifeClick}
-              disabled={!isAdmin}
-              className={cn(
-                "life-total font-display leading-none transition-all relative pointer-events-auto",
-                getLifeFontSize(),
-                animating && "animate-life-change",
-                isAdmin && "cursor-pointer active:scale-95"
-              )}
-              style={{ color: 'rgba(0,0,0,0.75)' }}
-              aria-label={`Life: ${player.life}. Tap to edit.`}
-            >
-              {player.life}
-              
-              {/* Delta indicator */}
-              {lastDelta !== null && (
-                <span 
-                  className={cn(
-                    "absolute -right-6 top-1/2 -translate-y-1/2 font-display animate-delta-fade",
-                    isCompact ? "text-[min(5vmin,20px)]" : "text-[min(6vmin,28px)]",
-                    lastDelta > 0 ? "text-green-900/60" : "text-red-900/60"
-                  )}
-                >
-                  {lastDelta > 0 ? `+${lastDelta}` : lastDelta}
-                </span>
-              )}
-            </button>
+          {/* Monarch indicator */}
+          {isMonarch && (
+            <div className={cn(
+              "rounded-full bg-yellow-500/40 flex items-center justify-center",
+              isCompact ? "w-6 h-6" : "w-8 h-8"
+            )}>
+              <Crown className={cn("text-yellow-300", isCompact ? "w-3 h-3" : "w-4 h-4")} fill="currentColor" />
+            </div>
+          )}
+
+          {/* Initiative indicator */}
+          {hasInitiative && (
+            <div className={cn(
+              "rounded-full bg-purple-500/40 flex items-center justify-center gap-0.5",
+              isCompact ? "min-w-6 h-6 px-1" : "min-w-8 h-8 px-1"
+            )}>
+              <Shield className={cn("text-purple-300", isCompact ? "w-3 h-3" : "w-3.5 h-3.5")} fill="currentColor" />
+              <span className={cn("text-purple-300 font-bold", isCompact ? "text-[8px]" : "text-[9px]")}>
+                {dungeonProgress + 1}
+              </span>
+            </div>
           )}
         </div>
 
-        {/* Player name - fixed position at bottom */}
+        {/* Middle: Main value area */}
+        <div className="flex-1 flex flex-col items-center justify-center relative min-h-0">
+          {counterMode === 'commander' ? (
+            /* Commander damage grid */
+            <div className={cn(
+              "w-full h-full flex flex-col items-center justify-center gap-1 overflow-y-auto",
+              isCompact ? "px-2 py-1" : "px-3 py-2"
+            )}>
+              <span className={cn("text-white/50 font-medium", isCompact ? "text-[8px]" : "text-[10px]")}>
+                Commander Damage
+              </span>
+              {opponents.length === 0 ? (
+                <span className="text-white/40 text-xs">No opponents</span>
+              ) : (
+                <div className={cn("w-full grid gap-1", opponents.length > 2 ? "grid-cols-2" : "grid-cols-1")}>
+                  {opponents.map((opp) => {
+                    const dmg = player.commanderDamage[opp.id] || 0;
+                    return (
+                      <div 
+                        key={opp.id}
+                        className={cn(
+                          "flex items-center justify-between rounded-lg bg-black/20",
+                          isCompact ? "px-1.5 py-0.5" : "px-2 py-1"
+                        )}
+                      >
+                        <div className="flex items-center gap-1 min-w-0">
+                          <div 
+                            className={cn("rounded-full shrink-0", isCompact ? "w-2 h-2" : "w-2.5 h-2.5")}
+                            style={{ backgroundColor: `hsl(${opp.color})` }}
+                          />
+                          <span className={cn(
+                            "text-white/80 truncate",
+                            isCompact ? "text-[9px] max-w-[40px]" : "text-[11px] max-w-[60px]"
+                          )}>
+                            {opp.name}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={() => onCommanderDamageChange(opp.id, -1)}
+                            disabled={!isAdmin}
+                            className={cn(
+                              "rounded-full bg-white/10 text-white flex items-center justify-center active:bg-white/20",
+                              isCompact ? "w-6 h-6 text-sm" : "w-7 h-7 text-base"
+                            )}
+                          >−</button>
+                          <span className={cn(
+                            "font-display text-orange-400 text-center",
+                            isCompact ? "text-sm w-4" : "text-base w-5"
+                          )}>{dmg}</span>
+                          <button
+                            onClick={() => onCommanderDamageChange(opp.id, 1)}
+                            disabled={!isAdmin}
+                            className={cn(
+                              "rounded-full bg-white/10 text-white flex items-center justify-center active:bg-white/20",
+                              isCompact ? "w-6 h-6 text-sm" : "w-7 h-7 text-base"
+                            )}
+                          >+</button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Plus tap zone */}
+              {isAdmin && (
+                <button
+                  onClick={() => handleCounterChange(1)}
+                  onPointerDown={() => startHoldToAdjust(1)}
+                  onPointerUp={stopHoldToAdjust}
+                  onPointerLeave={stopHoldToAdjust}
+                  onPointerCancel={stopHoldToAdjust}
+                  className="absolute inset-x-0 top-0 h-[40%] flex items-start justify-center pt-2 active:bg-white/5 transition-colors"
+                  aria-label="Increase"
+                >
+                  <span className={cn(
+                    "rounded-full bg-black/20 text-white/50 flex items-center justify-center font-medium",
+                    isCompact ? "w-8 h-8 text-lg" : "w-10 h-10 text-xl"
+                  )}>+</span>
+                </button>
+              )}
+
+              {/* Value display */}
+              <div className="relative z-10 flex flex-col items-center pointer-events-none">
+                {ModeIcon && (
+                  <ModeIcon className={cn(getModeColor(), isCompact ? "w-4 h-4 mb-0.5" : "w-5 h-5 mb-1")} />
+                )}
+                {isEditing ? (
+                  <input
+                    ref={inputRef}
+                    type="number"
+                    inputMode="numeric"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onBlur={handleEditSubmit}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleEditSubmit();
+                      if (e.key === 'Escape') setIsEditing(false);
+                    }}
+                    className={cn(
+                      "text-center bg-black/20 rounded-xl outline-none pointer-events-auto",
+                      isCompact ? "w-16 text-[min(12vmin,48px)] px-1" : "w-24 text-[min(16vmin,72px)] px-2"
+                    )}
+                    style={{ color: 'rgba(0,0,0,0.8)' }}
+                    aria-label="Edit value"
+                  />
+                ) : (
+                  <button
+                    onClick={handleValueClick}
+                    disabled={!isAdmin || counterMode !== 'life'}
+                    className={cn(
+                      'font-display leading-none transition-transform pointer-events-auto relative',
+                      getValueFontSize(),
+                      animating && 'animate-life-change',
+                      isAdmin && counterMode === 'life' && 'cursor-pointer active:scale-95',
+                      counterMode !== 'life' ? getModeColor() : ''
+                    )}
+                    style={counterMode === 'life' ? { color: 'rgba(0,0,0,0.75)' } : undefined}
+                    aria-label={`${counterMode}: ${getCurrentValue()}`}
+                  >
+                    {getCurrentValue()}
+                    {lastDelta !== null && (
+                      <span 
+                        className={cn(
+                          "absolute -right-4 top-1/2 -translate-y-1/2 font-display animate-delta-fade",
+                          isCompact ? "text-[min(4vmin,16px)]" : "text-[min(5vmin,20px)]",
+                          lastDelta > 0 ? "text-green-900/60" : "text-red-900/60"
+                        )}
+                      >
+                        {lastDelta > 0 ? `+${lastDelta}` : lastDelta}
+                      </span>
+                    )}
+                  </button>
+                )}
+              </div>
+
+              {/* Minus tap zone */}
+              {isAdmin && (
+                <button
+                  onClick={() => handleCounterChange(-1)}
+                  onPointerDown={() => startHoldToAdjust(-1)}
+                  onPointerUp={stopHoldToAdjust}
+                  onPointerLeave={stopHoldToAdjust}
+                  onPointerCancel={stopHoldToAdjust}
+                  className="absolute inset-x-0 bottom-0 h-[40%] flex items-end justify-center pb-2 active:bg-white/5 transition-colors"
+                  aria-label="Decrease"
+                >
+                  <span className={cn(
+                    "rounded-full bg-black/20 text-white/50 flex items-center justify-center font-medium",
+                    isCompact ? "w-8 h-8 text-lg" : "w-10 h-10 text-xl"
+                  )}>−</span>
+                </button>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Bottom: Player name */}
         <div className={cn(
-          "absolute left-0 right-0 text-center z-10",
-          isCompact ? "bottom-2" : "bottom-3"
+          "flex justify-center items-center shrink-0",
+          isCompact ? "pb-1 pt-0.5" : "pb-2 pt-1"
         )}>
           <span 
             className={cn(
-              "font-medium tracking-wide uppercase px-2 py-0.5 rounded bg-black/10",
-              isCompact ? "text-[10px]" : "text-xs"
+              "font-medium tracking-wide uppercase px-2 py-0.5 rounded bg-black/15",
+              isCompact ? "text-[8px]" : "text-[10px]"
             )}
-            style={{ color: 'rgba(0,0,0,0.6)' }}
+            style={{ color: 'rgba(0,0,0,0.55)' }}
           >
             {player.name}
           </span>
         </div>
-
-        {/* Minus button - bottom half tap zone */}
-        {isAdmin && (
-          <button
-            onClick={() => handleLifeChange(-1)}
-            onPointerDown={() => startHoldToAdjust(-1)}
-            onPointerUp={stopHoldToAdjust}
-            onPointerLeave={stopHoldToAdjust}
-            onPointerCancel={stopHoldToAdjust}
-            className="life-btn-zone life-btn-zone-minus"
-            aria-label="Decrease life"
-          >
-            <span className={cn(
-              "life-btn-icon-circle",
-              isCompact ? "w-10 h-10 text-xl" : "w-12 h-12 text-2xl"
-            )}>−</span>
-          </button>
-        )}
-
-        {/* Counter indicators - top left, always visible */}
-        {(player.poison > 0 || player.experience > 0 || player.energy > 0) && (
-          <button
-            onClick={onOpenCounters}
-            disabled={!isAdmin}
-            className={cn(
-              "absolute z-30 flex gap-1 rounded-md bg-black/40 backdrop-blur-sm",
-              isCompact ? "top-1 left-1 px-1 py-0.5" : "top-2 left-2 px-1.5 py-1",
-              isAdmin && "active:bg-black/50"
-            )}
-          >
-            {player.poison > 0 && (
-              <span className={cn("font-display text-green-300", isCompact ? "text-[10px]" : "text-xs")}>
-                ☠️{player.poison}
-              </span>
-            )}
-            {player.experience > 0 && (
-              <span className={cn("font-display text-yellow-300", isCompact ? "text-[10px]" : "text-xs")}>
-                ✨{player.experience}
-              </span>
-            )}
-            {player.energy > 0 && (
-              <span className={cn("font-display text-blue-300", isCompact ? "text-[10px]" : "text-xs")}>
-                ⚡{player.energy}
-              </span>
-            )}
-          </button>
-        )}
-
-        {/* Commander damage indicators - top right */}
-        {Object.values(player.commanderDamage).some(d => d > 0) && (
-          <button
-            onClick={onOpenCounters}
-            disabled={!isAdmin}
-            className={cn(
-              "absolute z-30 flex gap-1 rounded-md bg-black/40 backdrop-blur-sm",
-              isCompact ? "top-1 right-1 px-1 py-0.5" : "top-2 right-2 px-1.5 py-1",
-              isAdmin && "active:bg-black/50"
-            )}
-          >
-            <span 
-              className={cn("font-display text-orange-300", isCompact ? "text-[10px]" : "text-xs")}
-            >
-              ⚔️{Object.values(player.commanderDamage).reduce((a, b) => a + b, 0)}
-            </span>
-          </button>
-        )}
       </div>
     </div>
   );
