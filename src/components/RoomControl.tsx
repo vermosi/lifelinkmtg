@@ -570,7 +570,7 @@ export function RoomControl() {
                         {isAdmin && (
                           <button
                             onClick={() => {
-                              loadPreset(preset);
+                              loadPresetToRoom(preset);
                               setMenuOpen(false);
                             }}
                             className="w-full py-1.5 bg-foreground/10 hover:bg-foreground/20 text-foreground rounded-lg text-xs font-medium transition-colors"
@@ -681,7 +681,7 @@ export function RoomControl() {
                             className="flex-1 px-2 py-1.5 rounded-lg bg-secondary text-foreground text-sm border border-border focus:outline-none focus:ring-2 focus:ring-foreground/20"
                           />
                           <button
-                            onClick={() => setMonarch(room.monarchId === player.id ? null : player.id)}
+                            onClick={() => toggleMonarch(player.id)}
                             className={cn(
                               'p-1.5 rounded-lg transition-all',
                               room.monarchId === player.id 
@@ -693,7 +693,7 @@ export function RoomControl() {
                             <Crown className="w-4 h-4" fill={room.monarchId === player.id ? 'currentColor' : 'none'} />
                           </button>
                           <button
-                            onClick={() => setInitiative(room.initiativeId === player.id ? null : player.id)}
+                            onClick={() => toggleInitiative(player.id)}
                             className={cn(
                               'p-1.5 rounded-lg transition-all',
                               room.initiativeId === player.id 
