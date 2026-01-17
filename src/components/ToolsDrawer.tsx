@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Dices, Timer, RotateCcw, Users, PlayCircle, PauseCircle, 
-  SkipForward, SkipBack, Coins, Trophy, Shuffle
+  SkipForward, SkipBack, Coins, Trophy, Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Room, PlayerCount } from '@/lib/roomUtils';
@@ -21,7 +21,7 @@ interface ToolsDrawerProps {
   onSetPlayerCount: (count: PlayerCount) => void;
 }
 
-type DrawerTab = 'dice' | 'timer' | 'actions';
+type DrawerTab = 'dice' | 'settings';
 
 interface HighRollResult {
   playerId: number;
@@ -183,8 +183,7 @@ function ToolsDrawerContent({
         <div className="flex border-b border-border px-4">
           {[
             { id: 'dice' as const, label: 'Dice', icon: Dices },
-            { id: 'timer' as const, label: 'Timer', icon: Timer },
-            { id: 'actions' as const, label: 'Actions', icon: Shuffle },
+            { id: 'settings' as const, label: 'Settings', icon: Settings },
           ].map(tab => (
             <button
               key={tab.id}
@@ -280,12 +279,14 @@ function ToolsDrawerContent({
             </div>
           )}
 
-          {activeTab === 'timer' && (
+          {activeTab === 'settings' && (
             <div className="space-y-6">
               {/* Game Timer */}
               <div className="text-center">
-                <div className="text-xs text-muted-foreground mb-2">Game Time</div>
-                <div className="font-display text-6xl tabular-nums tracking-tight">
+                <div className="text-xs text-muted-foreground mb-2 flex items-center justify-center gap-1">
+                  <Timer className="w-3 h-3" /> Game Time
+                </div>
+                <div className="font-display text-5xl tabular-nums tracking-tight">
                   {formatTime(displayTime)}
                 </div>
               </div>
@@ -296,42 +297,42 @@ function ToolsDrawerContent({
                   <button
                     onClick={onToggleGameTimer}
                     className={cn(
-                      'p-4 rounded-2xl transition-all',
+                      'p-3 rounded-2xl transition-all',
                       room.gameTimer.running 
                         ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' 
                         : 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
                     )}
                   >
                     {room.gameTimer.running ? (
-                      <PauseCircle className="w-8 h-8" />
+                      <PauseCircle className="w-6 h-6" />
                     ) : (
-                      <PlayCircle className="w-8 h-8" />
+                      <PlayCircle className="w-6 h-6" />
                     )}
                   </button>
                   <button
                     onClick={onResetGameTimer}
-                    className="p-4 rounded-2xl bg-secondary hover:bg-secondary/80 transition-colors"
+                    className="p-3 rounded-2xl bg-secondary hover:bg-secondary/80 transition-colors"
                   >
-                    <RotateCcw className="w-8 h-8" />
+                    <RotateCcw className="w-6 h-6" />
                   </button>
                 </div>
               )}
 
               {/* Turn Tracker */}
-              <div className="pt-6 border-t border-border">
-                <div className="flex items-center justify-between mb-4">
+              <div className="pt-4 border-t border-border">
+                <div className="flex items-center justify-between mb-3">
                   <div>
-                    <div className="text-xs text-muted-foreground">Current Turn</div>
-                    <div className="font-display text-2xl">Turn {room.turnNumber}</div>
+                    <div className="text-xs text-muted-foreground">Turn</div>
+                    <div className="font-display text-xl">Turn {room.turnNumber}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs text-muted-foreground">Active Player</div>
+                    <div className="text-xs text-muted-foreground">Active</div>
                     <div className="flex items-center gap-2 justify-end">
                       <div 
-                        className="w-3 h-3 rounded-full"
+                        className="w-2.5 h-2.5 rounded-full"
                         style={{ backgroundColor: `hsl(${activePlayer?.color})` }}
                       />
-                      <span className="font-medium">{activePlayer?.name}</span>
+                      <span className="font-medium text-sm">{activePlayer?.name}</span>
                     </div>
                   </div>
                 </div>
@@ -339,17 +340,17 @@ function ToolsDrawerContent({
                 {isAdmin && (
                   <>
                     {/* Turn Navigation */}
-                    <div className="flex gap-2 mb-4">
+                    <div className="flex gap-2 mb-3">
                       <button
                         onClick={onPreviousTurn}
-                        className="flex-1 py-3 bg-secondary hover:bg-secondary/80 rounded-xl flex items-center justify-center gap-2 transition-colors"
+                        className="flex-1 py-2.5 bg-secondary hover:bg-secondary/80 rounded-xl flex items-center justify-center gap-2 transition-colors text-sm"
                       >
                         <SkipBack className="w-4 h-4" />
-                        Previous
+                        Prev
                       </button>
                       <button
                         onClick={onNextTurn}
-                        className="flex-1 py-3 bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl flex items-center justify-center gap-2 transition-colors"
+                        className="flex-1 py-2.5 bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl flex items-center justify-center gap-2 transition-colors text-sm"
                       >
                         Next
                         <SkipForward className="w-4 h-4" />
@@ -357,20 +358,20 @@ function ToolsDrawerContent({
                     </div>
 
                     {/* Player Quick Select */}
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-1.5">
                       {room.players.map((player, index) => (
                         <button
                           key={player.id}
                           onClick={() => onSetActivePlayer(index)}
                           className={cn(
-                            'px-3 py-2 rounded-lg flex items-center gap-2 transition-all text-sm',
+                            'px-2.5 py-1.5 rounded-lg flex items-center gap-2 transition-all text-xs',
                             room.activePlayerIndex === index
                               ? 'ring-2 ring-foreground bg-foreground/10'
                               : 'bg-secondary hover:bg-secondary/80'
                           )}
                         >
                           <div 
-                            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                            className="w-2 h-2 rounded-full flex-shrink-0"
                             style={{ backgroundColor: `hsl(${player.color})` }}
                           />
                           <span className="truncate">{player.name}</span>
@@ -380,55 +381,56 @@ function ToolsDrawerContent({
                   </>
                 )}
               </div>
-            </div>
-          )}
 
-          {activeTab === 'actions' && isAdmin && (
-            <div className="space-y-4">
-              {/* Player Count */}
-              <div>
-                <div className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
-                  <Users className="w-3 h-3" /> Players
+              {/* Game Actions - Admin Only */}
+              {isAdmin && (
+                <div className="pt-4 border-t border-border space-y-4">
+                  {/* Player Count */}
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                      <Users className="w-3 h-3" /> Players
+                    </div>
+                    <div className="grid grid-cols-5 gap-2">
+                      {([2, 3, 4, 5, 6] as PlayerCount[]).map(count => (
+                        <button
+                          key={count}
+                          onClick={() => onSetPlayerCount(count)}
+                          className={cn(
+                            'py-2.5 rounded-xl font-display text-lg transition-all',
+                            room.playerCount === count
+                              ? 'bg-foreground text-background'
+                              : 'bg-secondary text-muted-foreground hover:text-foreground'
+                          )}
+                        >
+                          {count}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Reset Game */}
+                  <button
+                    onClick={() => {
+                      if (confirm('Reset game? This will restore all life totals and clear history.')) {
+                        onResetGame();
+                        onClose();
+                      }
+                    }}
+                    className="w-full py-2.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors text-sm"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Reset Game
+                  </button>
                 </div>
-                <div className="grid grid-cols-5 gap-2">
-                  {([2, 3, 4, 5, 6] as PlayerCount[]).map(count => (
-                    <button
-                      key={count}
-                      onClick={() => onSetPlayerCount(count)}
-                      className={cn(
-                        'py-3 rounded-xl font-display text-xl transition-all',
-                        room.playerCount === count
-                          ? 'bg-foreground text-background'
-                          : 'bg-secondary text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      {count}
-                    </button>
-                  ))}
+              )}
+
+              {!isAdmin && (
+                <div className="pt-4 border-t border-border">
+                  <p className="text-center py-4 text-muted-foreground text-sm">
+                    Only the room admin can change game settings.
+                  </p>
                 </div>
-              </div>
-
-              {/* Reset Game */}
-              <div className="pt-4 border-t border-border">
-                <button
-                  onClick={() => {
-                    if (confirm('Reset game? This will restore all life totals and clear history.')) {
-                      onResetGame();
-                      onClose();
-                    }
-                  }}
-                  className="w-full py-3 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  Reset Game
-                </button>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'actions' && !isAdmin && (
-            <div className="text-center py-8 text-muted-foreground">
-              Only the room admin can perform game actions.
+              )}
             </div>
           )}
         </div>
