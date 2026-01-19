@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Player } from '@/lib/roomUtils';
 import { haptics } from '@/lib/haptics';
 
@@ -25,8 +25,9 @@ export function useCounterMode({
   const [animating, setAnimating] = useState(false);
   const [lastDelta, setLastDelta] = useState<number | null>(null);
   const lastActionRef = useRef(0);
+  const animationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const totalCommanderDamage = Object.values(player.commanderDamage).reduce((a, b) => a + b, 0);
+  const totalCommanderDamage = Object.values(player.commanderDamageReceived ?? {}).reduce((a, b) => a + b, 0);
 
   const getCurrentValue = useCallback(() => {
     switch (mode) {
@@ -58,11 +59,22 @@ export function useCounterMode({
 
     setLastDelta(delta);
     setAnimating(true);
-    setTimeout(() => {
+    if (animationTimeoutRef.current) {
+      clearTimeout(animationTimeoutRef.current);
+    }
+    animationTimeoutRef.current = setTimeout(() => {
       setAnimating(false);
       setLastDelta(null);
     }, 300);
   }, [isAdmin, mode, onLifeChange, onPoisonChange, onExperienceChange, onEnergyChange]);
+
+  useEffect(() => {
+    return () => {
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     mode,

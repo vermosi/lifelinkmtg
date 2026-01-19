@@ -3,7 +3,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useCloudRoomState } from '@/hooks/useCloudRoomState';
 import { cn } from '@/lib/utils';
 import { Skull, Sparkles, Zap, Crown, Shield, Sun, Moon, Move, Lock, Unlock, RotateCcw } from 'lucide-react';
-import { DUNGEON_ROOMS, OverlayLayout, OverlayPosition, createDefaultOverlayLayout } from '@/lib/roomUtils';
+import { DUNGEON_ROOMS, OverlayLayout, OverlayPosition, createDefaultOverlayLayout, getTotalCommanderDamageFromPlayer } from '@/lib/roomUtils';
 
 interface DraggableElementProps {
   id: string;
@@ -432,14 +432,22 @@ export function OverlayView() {
               </div>
 
               {/* Commander damage */}
-              {Object.keys(player.commanderDamage).length > 0 && (
-                <div className="flex gap-1 mt-1">
-                  {room.players.filter(p => p.id !== player.id).map(opp => {
-                    const dmg = player.commanderDamage[opp.id];
-                    if (!dmg) return null;
-                    return (
+              {(() => {
+                const commanderDamageEntries = room.players
+                  .filter(p => p.id !== player.id)
+                  .map(opp => ({
+                    opponent: opp,
+                    damage: getTotalCommanderDamageFromPlayer(player, opp.id),
+                  }))
+                  .filter(({ damage }) => damage > 0);
+
+                if (commanderDamageEntries.length === 0) return null;
+
+                return (
+                  <div className="flex gap-1 mt-1">
+                    {commanderDamageEntries.map(({ opponent, damage }) => (
                       <div
-                        key={opp.id}
+                        key={opponent.id}
                         className={cn(
                           'px-1.5 py-0.5 rounded text-xs font-display font-bold',
                           useSimpleText && 'bg-transparent'
@@ -448,16 +456,16 @@ export function OverlayView() {
                           color: 'white',
                           textShadow: '1px 1px 0 black, -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black',
                         } : { 
-                          backgroundColor: `hsl(${opp.color})`,
+                          backgroundColor: `hsl(${opponent.color})`,
                           color: 'rgba(0,0,0,0.8)',
                         }}
                       >
-                        {dmg}
+                        {damage}
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           </DraggableElement>
         );

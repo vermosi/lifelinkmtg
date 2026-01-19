@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { Player } from '@/lib/roomUtils';
+import { getTotalCommanderDamageFromPlayer, Player } from '@/lib/roomUtils';
 
 interface CommanderDamageGridProps {
   player: Player;
@@ -30,7 +30,7 @@ export function CommanderDamageGrid({
       ) : (
         <div className={cn("w-full grid gap-1", opponents.length > 2 ? "grid-cols-2" : "grid-cols-1")}>
           {opponents.map((opp) => {
-            const dmg = player.commanderDamage[opp.id] || 0;
+            const dmg = getTotalCommanderDamageFromPlayer(player, opp.id);
             return (
               <div 
                 key={opp.id}
