@@ -515,9 +515,10 @@ export function getCommanderDamageKey(playerId: number, commanderIndex: number):
 
 export function getTotalCommanderDamageFromPlayer(player: Player, fromPlayerId: number): number {
   let total = 0;
-  for (const key in player.commanderDamageReceived) {
+  const commanderDamageReceived = player.commanderDamageReceived ?? {};
+  for (const key in commanderDamageReceived) {
     if (key.startsWith(`${fromPlayerId}-`)) {
-      total += player.commanderDamageReceived[key] || 0;
+      total += commanderDamageReceived[key] || 0;
     }
   }
   return total;

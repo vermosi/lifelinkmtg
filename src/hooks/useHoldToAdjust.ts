@@ -33,6 +33,7 @@ export function useHoldToAdjust({
 
   const start = useCallback((delta: number) => {
     if (!enabled) return;
+    stop();
     
     holdTimeoutRef.current = setTimeout(() => {
       onAdjust(delta);
@@ -48,7 +49,7 @@ export function useHoldToAdjust({
         }
       }, initialSpeed);
     }, initialDelay);
-  }, [enabled, onAdjust, initialDelay, initialSpeed, acceleratedSpeed, accelerateAfterCount]);
+  }, [enabled, onAdjust, initialDelay, initialSpeed, acceleratedSpeed, accelerateAfterCount, stop]);
 
   useEffect(() => {
     return () => stop();

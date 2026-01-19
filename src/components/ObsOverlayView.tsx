@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useCloudRoomState } from '@/hooks/useCloudRoomState';
 import { cn } from '@/lib/utils';
-import { createDefaultOverlayLayout } from '@/lib/roomUtils';
+import { createDefaultOverlayLayout, getTotalCommanderDamageFromPlayer } from '@/lib/roomUtils';
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
@@ -121,27 +121,33 @@ export function ObsOverlayView() {
             {showPoison && player.poison > 0 && (
               <div className="mt-1 text-xs font-medium text-emerald-400">Poison: {player.poison}</div>
             )}
-            {showCommanderDamage && Object.keys(player.commanderDamage).length > 0 && (
-              <div className="mt-1 flex flex-wrap gap-1 justify-center">
-                {room.players
-                  .filter((opponent) => opponent.id !== player.id)
-                  .map((opponent) => {
-                    const damage = player.commanderDamage[opponent.id];
-                    if (!damage) return null;
-                    return (
-                      <div
-                        key={opponent.id}
-                        className={cn(
-                          'text-[11px] px-1.5 py-0.5 rounded-full font-semibold',
-                          effectiveTheme === 'light' ? 'bg-slate-200 text-slate-700' : 'bg-white/10 text-white'
-                        )}
-                      >
-                        {opponent.name}: {damage}
-                      </div>
-                    );
-                  })}
-              </div>
-            )}
+            {showCommanderDamage && (() => {
+              const commanderDamageEntries = room.players
+                .filter((opponent) => opponent.id !== player.id)
+                .map((opponent) => ({
+                  opponent,
+                  damage: getTotalCommanderDamageFromPlayer(player, opponent.id),
+                }))
+                .filter(({ damage }) => damage > 0);
+
+              if (commanderDamageEntries.length === 0) return null;
+
+              return (
+                <div className="mt-1 flex flex-wrap gap-1 justify-center">
+                  {commanderDamageEntries.map(({ opponent, damage }) => (
+                    <div
+                      key={opponent.id}
+                      className={cn(
+                        'text-[11px] px-1.5 py-0.5 rounded-full font-semibold',
+                        effectiveTheme === 'light' ? 'bg-slate-200 text-slate-700' : 'bg-white/10 text-white'
+                      )}
+                    >
+                      {opponent.name}: {damage}
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         ))}
       </div>
