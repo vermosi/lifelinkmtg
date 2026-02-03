@@ -118,6 +118,9 @@ export function CleanPlayerPanel({
           hasInitiative={hasInitiative}
           dungeonProgress={dungeonProgress}
           isCompact={isCompact}
+          isAdmin={isAdmin}
+          onToggleMonarch={onToggleMonarch}
+          onToggleInitiative={onToggleInitiative}
         />
 
         {/* Middle: Main value area */}

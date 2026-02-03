@@ -23,7 +23,6 @@ interface FullScreenPlayerPanelProps {
   onCommanderDamageChange: (fromPlayerId: number, delta: number) => void;
   onToggleMonarch: () => void;
   onToggleInitiative: () => void;
-  onAdvanceDungeon: () => void;
   onDeckNameChange: (deckName: string) => void;
   isAdmin: boolean;
   rotation: number;
@@ -47,7 +46,6 @@ export function FullScreenPlayerPanel({
   onCommanderDamageChange,
   onToggleMonarch,
   onToggleInitiative,
-  onAdvanceDungeon,
   onDeckNameChange,
   isAdmin,
   rotation,
@@ -142,6 +140,9 @@ export function FullScreenPlayerPanel({
           hasInitiative={hasInitiative}
           dungeonProgress={dungeonProgress}
           isCompact={isCompact}
+          isAdmin={isAdmin}
+          onToggleMonarch={onToggleMonarch}
+          onToggleInitiative={onToggleInitiative}
         />
 
         {/* Middle section: Main value + buttons */}

@@ -47,6 +47,8 @@
     --counter-experience: 48 96% 53%;
     --counter-energy: 217 91% 60%;
     --counter-commander: 25 95% 53%;
+    --counter-monarch: 48 89% 50%;
+    --counter-initiative: 270 60% 60%;
 
     /* Font families */
     --font-display: 'Bebas Neue', sans-serif;
@@ -137,23 +139,6 @@
   .life-btn-zone:active .life-btn-icon-circle {
     transform: scale(0.9);
     background: rgba(0, 0, 0, 0.3);
-  }
-
-  /* Legacy life-button for FullScreenPlayerPanel */
-  .life-button {
-    @apply absolute flex items-center justify-center text-2xl font-light select-none w-11 h-11 rounded-full bg-black/20 active:bg-black/40;
-    color: rgba(0, 0, 0, 0.5);
-    transition: color 0.15s, transform 0.1s;
-    z-index: 10;
-  }
-
-  .life-button.compact {
-    @apply w-9 h-9 text-xl;
-  }
-
-  .life-button:active {
-    transform: scale(0.9);
-    color: rgba(0, 0, 0, 0.7);
   }
 
   /* Center menu button */

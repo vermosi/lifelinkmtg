@@ -13,6 +13,9 @@ interface CounterModeSelectorProps {
   hasInitiative: boolean;
   dungeonProgress: number;
   isCompact: boolean;
+  isAdmin: boolean;
+  onToggleMonarch: () => void;
+  onToggleInitiative: () => void;
 }
 
 export function CounterModeSelector({
@@ -26,6 +29,9 @@ export function CounterModeSelector({
   hasInitiative,
   dungeonProgress,
   isCompact,
+  isAdmin,
+  onToggleMonarch,
+  onToggleInitiative,
 }: CounterModeSelectorProps) {
   const btnBase = cn(
     "rounded-full transition-all flex items-center justify-center",
@@ -114,28 +120,52 @@ export function CounterModeSelector({
         {commanderDamage > 0 && <span className={textSize}>{commanderDamage}</span>}
       </button>
 
-      {/* Monarch indicator */}
-      {isMonarch && (
-        <div className={cn(
-          "rounded-full bg-yellow-500/40 flex items-center justify-center",
-          isCompact ? "w-6 h-6" : "w-8 h-8"
-        )}>
-          <Crown className={cn("text-yellow-300", isCompact ? "w-3 h-3" : "w-4 h-4")} fill="currentColor" />
-        </div>
-      )}
+      {/* Monarch toggle */}
+      <button
+        onClick={isAdmin ? onToggleMonarch : undefined}
+        disabled={!isAdmin}
+        className={cn(
+          btnBase,
+          isCompact ? "w-6" : "w-8",
+          isMonarch
+            ? "bg-counter-monarch/40 text-counter-monarch"
+            : "bg-black/20 text-white/40",
+          isAdmin && "cursor-pointer hover:bg-black/30",
+          !isAdmin && "cursor-default"
+        )}
+        aria-label={isMonarch ? "Remove Monarch" : "Claim Monarch"}
+      >
+        <Crown
+          className={cn(isCompact ? "w-3 h-3" : "w-4 h-4")}
+          fill={isMonarch ? "currentColor" : "none"}
+        />
+      </button>
 
-      {/* Initiative indicator */}
-      {hasInitiative && (
-        <div className={cn(
-          "rounded-full bg-purple-500/40 flex items-center justify-center gap-0.5",
-          isCompact ? "min-w-6 h-6 px-1" : "min-w-8 h-8 px-1"
-        )}>
-          <Shield className={cn("text-purple-300", isCompact ? "w-3 h-3" : "w-3.5 h-3.5")} fill="currentColor" />
-          <span className={cn("text-purple-300 font-bold", isCompact ? "text-[8px]" : "text-[9px]")}>
+      {/* Initiative toggle */}
+      <button
+        onClick={isAdmin ? onToggleInitiative : undefined}
+        disabled={!isAdmin}
+        className={cn(
+          btnBase, "gap-0.5",
+          isCompact ? "min-w-6 px-1" : "min-w-8 px-1",
+          hasInitiative
+            ? "bg-counter-initiative/40 text-counter-initiative"
+            : "bg-black/20 text-white/40",
+          isAdmin && "cursor-pointer hover:bg-black/30",
+          !isAdmin && "cursor-default"
+        )}
+        aria-label={hasInitiative ? "Remove Initiative" : "Claim Initiative"}
+      >
+        <Shield
+          className={cn(isCompact ? "w-3 h-3" : "w-3.5 h-3.5")}
+          fill={hasInitiative ? "currentColor" : "none"}
+        />
+        {hasInitiative && (
+          <span className={cn("font-bold", isCompact ? "text-[8px]" : "text-[9px]")}>
             {dungeonProgress + 1}
           </span>
-        </div>
-      )}
+        )}
+      </button>
     </div>
   );
 }

@@ -17,8 +17,8 @@ export function useHoldToAdjust({
   acceleratedSpeed = 80,
   accelerateAfterCount = 5,
 }: UseHoldToAdjustOptions) {
-  const holdTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const holdIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const holdTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stop = useCallback(() => {
     if (holdTimeoutRef.current) {
