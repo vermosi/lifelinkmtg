@@ -58,6 +58,8 @@ export default {
           experience: "hsl(var(--counter-experience))",
           energy: "hsl(var(--counter-energy))",
           commander: "hsl(var(--counter-commander))",
+          monarch: "hsl(var(--counter-monarch))",
+          initiative: "hsl(var(--counter-initiative))",
         },
       },
       fontFamily: {

@@ -344,7 +344,6 @@ export function RoomControl() {
               onCommanderDamageChange={(fromId, delta) => updateCommanderDamage(player.id, fromId, 0, delta)}
               onToggleMonarch={() => toggleMonarch(player.id)}
               onToggleInitiative={() => toggleInitiative(player.id)}
-              onAdvanceDungeon={advanceDungeon}
               onDeckNameChange={(deckName) => setPlayerCommanders(player.id, deckName ? [deckName] : [])}
               isAdmin={isAdmin}
               rotation={layout.rotation}
