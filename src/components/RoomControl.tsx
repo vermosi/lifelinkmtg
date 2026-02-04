@@ -59,6 +59,8 @@ export function RoomControl() {
     setActivePlayer,
     toggleGameTimer,
     resetGameTimer,
+    setOverlayFontSize,
+    setOverlayFontFamily,
   } = useCloudRoomState(roomId);
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -764,10 +766,59 @@ export function RoomControl() {
                 </div>
 
                 {/* Overlay settings */}
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                     <Monitor className="w-3 h-3" /> Stream Overlay
                   </label>
+                  
+                  {/* Font Size */}
+                  <div className="space-y-1">
+                    <span className="text-xs text-muted-foreground">Font Size</span>
+                    <div className="flex gap-1">
+                      {(['small', 'medium', 'large'] as const).map((size) => (
+                        <button
+                          key={size}
+                          onClick={() => setOverlayFontSize(size)}
+                          className={cn(
+                            'flex-1 py-1.5 px-2 rounded-lg text-xs font-medium transition-all capitalize',
+                            room.settings.overlayFontSize === size
+                              ? 'bg-foreground text-background'
+                              : 'bg-secondary text-muted-foreground hover:text-foreground'
+                          )}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Font Family */}
+                  <div className="space-y-1">
+                    <span className="text-xs text-muted-foreground">Font Family</span>
+                    <div className="grid grid-cols-3 gap-1">
+                      {([
+                        { id: 'bebas', label: 'Bebas' },
+                        { id: 'inter', label: 'Inter' },
+                        { id: 'roboto', label: 'Roboto' },
+                        { id: 'oswald', label: 'Oswald' },
+                        { id: 'anton', label: 'Anton' },
+                      ] as const).map((font) => (
+                        <button
+                          key={font.id}
+                          onClick={() => setOverlayFontFamily(font.id)}
+                          className={cn(
+                            'py-1.5 px-2 rounded-lg text-xs font-medium transition-all',
+                            room.settings.overlayFontFamily === font.id
+                              ? 'bg-foreground text-background'
+                              : 'bg-secondary text-muted-foreground hover:text-foreground'
+                          )}
+                        >
+                          {font.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <button
                     onClick={() => setSimpleTextStyle(!room.settings.simpleTextStyle)}
                     className={cn(

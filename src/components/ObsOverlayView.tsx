@@ -6,6 +6,14 @@ import { createDefaultOverlayLayout, getTotalCommanderDamageFromPlayer } from '@
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
+const FONT_FAMILIES: Record<string, string> = {
+  bebas: "'Bebas Neue', sans-serif",
+  inter: "'Inter', sans-serif",
+  roboto: "'Roboto', sans-serif",
+  oswald: "'Oswald', sans-serif",
+  anton: "'Anton', sans-serif",
+};
+
 export function ObsOverlayView() {
   const [searchParams] = useSearchParams();
   const roomId = searchParams.get('roomId') || undefined;
@@ -50,6 +58,7 @@ export function ObsOverlayView() {
   }
 
   const effectiveTheme = config.theme ?? room.settings.theme;
+  const effectiveFontFamily = FONT_FAMILIES[room.settings.overlayFontFamily] || FONT_FAMILIES.bebas;
   const showNames = config.showNames ?? room.settings.showNamesOnOverlay;
   const showCommanderDamage = config.showCommanderDamage ?? true;
   const showPoison = config.showPoison ?? true;
@@ -109,12 +118,15 @@ export function ObsOverlayView() {
             )}
             <div
               className={cn(
-                'font-display leading-none drop-shadow-sm',
+                'leading-none drop-shadow-sm',
                 room.settings.overlayFontSize === 'small' && 'text-5xl',
                 room.settings.overlayFontSize === 'medium' && 'text-6xl',
                 room.settings.overlayFontSize === 'large' && 'text-7xl'
               )}
-              style={{ color: effectiveTheme === 'light' ? '#111827' : 'white' }}
+              style={{ 
+                color: effectiveTheme === 'light' ? '#111827' : 'white',
+                fontFamily: effectiveFontFamily,
+              }}
             >
               {player.life}
             </div>

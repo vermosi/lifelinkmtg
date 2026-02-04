@@ -118,6 +118,7 @@ export async function createCloudRoom(playerCount: PlayerCount = 4, layoutId?: s
       theme: 'dark',
       startingLife,
       overlayFontSize: 'medium',
+      overlayFontFamily: 'bebas',
       showNamesOnOverlay: true,
       showBackgroundCards: true,
       overlayLayout: 'horizontal',
