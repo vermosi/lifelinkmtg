@@ -234,9 +234,12 @@ export function createPresetFromRoom(room: Room, presetName: string): GamePreset
 
 export function generateId(length: number = 6): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  const randomValues = new Uint8Array(length);
+  crypto.getRandomValues(randomValues);
+  
   let result = '';
   for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+    result += chars.charAt(randomValues[i] % chars.length);
   }
   return result;
 }
