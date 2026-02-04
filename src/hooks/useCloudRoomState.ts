@@ -490,6 +490,20 @@ export function useCloudRoomState(roomId: string | undefined) {
     }));
   }, [updateRoom]);
 
+  const setOverlayFontSize = useCallback((size: 'small' | 'medium' | 'large') => {
+    updateRoom(prev => ({
+      ...prev,
+      settings: { ...prev.settings, overlayFontSize: size },
+    }));
+  }, [updateRoom]);
+
+  const setOverlayFontFamily = useCallback((family: 'bebas' | 'inter' | 'roboto' | 'oswald' | 'anton') => {
+    updateRoom(prev => ({
+      ...prev,
+      settings: { ...prev.settings, overlayFontFamily: family },
+    }));
+  }, [updateRoom]);
+
   const loadPreset = useCallback((preset: GamePreset) => {
     updateRoom(prev => {
       const newPlayerCount = preset.playerCount;
@@ -567,6 +581,8 @@ export function useCloudRoomState(roomId: string | undefined) {
     setHoldToAdjust,
     setStreamerMode,
     setTextScale,
+    setOverlayFontSize,
+    setOverlayFontFamily,
     loadPreset,
   };
 }

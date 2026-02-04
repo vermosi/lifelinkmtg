@@ -58,6 +58,7 @@ export interface RoomSettings {
   theme: 'dark' | 'light';
   startingLife: 40 | 20 | 30 | 25;
   overlayFontSize: 'small' | 'medium' | 'large';
+  overlayFontFamily: 'bebas' | 'inter' | 'roboto' | 'oswald' | 'anton';
   showNamesOnOverlay: boolean;
   showBackgroundCards: boolean;
   overlayLayout: 'horizontal' | 'vertical';
@@ -309,6 +310,7 @@ export function createRoom(playerCount: PlayerCount = 4, layoutId?: string): Roo
       theme: 'dark',
       startingLife,
       overlayFontSize: 'medium',
+      overlayFontFamily: 'bebas',
       showNamesOnOverlay: true,
       showBackgroundCards: true,
       overlayLayout: 'horizontal',
@@ -398,6 +400,7 @@ export function normalizeRoom(room: Room): Room {
       theme: room.settings?.theme ?? 'dark',
       startingLife: room.settings?.startingLife ?? 40,
       overlayFontSize: room.settings?.overlayFontSize ?? 'medium',
+      overlayFontFamily: room.settings?.overlayFontFamily ?? 'bebas',
       showNamesOnOverlay: room.settings?.showNamesOnOverlay ?? true,
       showBackgroundCards: room.settings?.showBackgroundCards ?? true,
       overlayLayout: room.settings?.overlayLayout ?? 'horizontal',
