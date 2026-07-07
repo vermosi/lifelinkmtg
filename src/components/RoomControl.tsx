@@ -909,54 +909,57 @@ export function RoomControl() {
               <div className="text-center py-4 text-muted-foreground text-sm">View-only mode</div>
             )}
 
-            {/* URLs */}
-            <div className="space-y-2 pt-2 border-t border-border">
-              <button
-                onClick={() => copyUrl('overlay')}
-                className="w-full flex items-center justify-center gap-2 py-2 bg-accent rounded-xl text-accent-foreground text-sm font-medium hover:bg-accent/90"
-              >
-                {copiedUrl === 'overlay' ? <Check className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
-                Copy Overlay URL
-              </button>
-              {isAdmin && (
-                <button
-                  onClick={() => copyUrl('control')}
-                  className="w-full flex items-center justify-center gap-2 py-2 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80"
-                >
-                  {copiedUrl === 'control' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  Copy Admin URL
-                </button>
-              )}
-
-              <div className="space-y-3 pt-2">
-                <div className="bg-secondary/50 rounded-xl p-3 flex flex-col items-center gap-2">
-                  <span className="text-xs font-medium text-muted-foreground">Scan to open overlay</span>
-                  <div className="bg-white p-2 rounded-lg">
-                    <QRCode
-                      value={getOverlayUrl(room)}
-                      size={160}
-                      bgColor="#ffffff"
-                      fgColor="#000000"
-                      aria-label="QR code for overlay URL"
-                    />
-                  </div>
+            {menuTab === 'share' && (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <button
+                    onClick={() => copyUrl('overlay')}
+                    className="w-full flex items-center justify-center gap-2 py-2 bg-accent rounded-xl text-accent-foreground text-sm font-medium hover:bg-accent/90"
+                  >
+                    {copiedUrl === 'overlay' ? <Check className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
+                    Copy Overlay URL
+                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => copyUrl('control')}
+                      className="w-full flex items-center justify-center gap-2 py-2 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80"
+                    >
+                      {copiedUrl === 'control' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      Copy Admin URL
+                    </button>
+                  )}
                 </div>
-                {isAdmin && (
+
+                <div className="space-y-3">
                   <div className="bg-secondary/50 rounded-xl p-3 flex flex-col items-center gap-2">
-                    <span className="text-xs font-medium text-muted-foreground">Scan to control this room</span>
+                    <span className="text-xs font-medium text-muted-foreground">Scan to open overlay</span>
                     <div className="bg-white p-2 rounded-lg">
                       <QRCode
-                        value={getControlUrl(room)}
+                        value={getOverlayUrl(room)}
                         size={160}
                         bgColor="#ffffff"
                         fgColor="#000000"
-                        aria-label="QR code for admin control URL"
+                        aria-label="QR code for overlay URL"
                       />
                     </div>
                   </div>
-                )}
+                  {isAdmin && (
+                    <div className="bg-secondary/50 rounded-xl p-3 flex flex-col items-center gap-2">
+                      <span className="text-xs font-medium text-muted-foreground">Scan to control this room</span>
+                      <div className="bg-white p-2 rounded-lg">
+                        <QRCode
+                          value={getControlUrl(room)}
+                          size={160}
+                          bgColor="#ffffff"
+                          fgColor="#000000"
+                          aria-label="QR code for admin control URL"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             <button
               onClick={() => navigate('/')}
