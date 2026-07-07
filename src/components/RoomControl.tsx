@@ -89,12 +89,30 @@ export function RoomControl() {
   useEffect(() => { localStorage.setItem('lifelink:overlayFit', overlayFit); }, [overlayFit]);
   useEffect(() => { localStorage.setItem('lifelink:overlaySafe', overlaySafe ? '1' : '0'); }, [overlaySafe]);
 
+  // Snapshot the current preset/colors into every share URL so anyone opening
+  // the link sees the same styling, even if the room is edited later.
+  const shareStyle = useMemo(() => (
+    room
+      ? {
+          preset: room.settings.overlayPreset,
+          bg: room.settings.overlayBgColor ?? null,
+          text: room.settings.overlayTextColor ?? null,
+        }
+      : {}
+  ), [room?.settings.overlayPreset, room?.settings.overlayBgColor, room?.settings.overlayTextColor]);
+
   const overlayUrl = useMemo(
-    () => (room ? getOverlayUrl(room, { fit: overlayFit, safeMargins: overlaySafe }) : ''),
-    [room?.id, overlayFit, overlaySafe]
+    () => (room ? getOverlayUrl(room, { fit: overlayFit, safeMargins: overlaySafe, ...shareStyle }) : ''),
+    [room?.id, overlayFit, overlaySafe, shareStyle]
   );
-  const controlUrl = useMemo(() => (room ? getControlUrl(room) : ''), [room?.id, room?.adminKey]);
-  const overlayEditUrl = useMemo(() => (room ? getOverlayEditUrl(room) : ''), [room?.id, room?.adminKey]);
+  const controlUrl = useMemo(
+    () => (room ? getControlUrl(room, shareStyle) : ''),
+    [room?.id, room?.adminKey, shareStyle]
+  );
+  const overlayEditUrl = useMemo(
+    () => (room ? getOverlayEditUrl(room, shareStyle) : ''),
+    [room?.id, room?.adminKey, shareStyle]
+  );
 
   // Convert hex to HSL for color picker
   const hexToHsl = (hex: string): string => {

@@ -3,7 +3,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useCloudRoomState } from '@/hooks/useCloudRoomState';
 import { cn } from '@/lib/utils';
 import { Skull, Sparkles, Zap, Crown, Shield, Sun, Moon, Move, Lock, Unlock, RotateCcw } from 'lucide-react';
-import { DUNGEON_ROOMS, OverlayLayout, OverlayPosition, createDefaultOverlayLayout, getTotalCommanderDamageFromPlayer } from '@/lib/roomUtils';
+import { DUNGEON_ROOMS, OverlayLayout, OverlayPosition, OverlayPresetId, buildOverlayPresetLayout, createDefaultOverlayLayout, getTotalCommanderDamageFromPlayer, OVERLAY_PRESETS } from '@/lib/roomUtils';
 
 interface DraggableElementProps {
   id: string;
@@ -162,13 +162,21 @@ export function OverlayView() {
   const providedAdminKey = searchParams.get('adminKey');
   const canEdit = !!(room && providedAdminKey && providedAdminKey === room.adminKey);
 
-  // OBS scaling options (URL-driven so different scenes can use different sizes):
-  //   ?fit=fixed  -> render on a 1920×1080 canvas, scaled to fit the browser
-  //   ?fit=fill   -> fill the browser size (default; keeps existing behavior)
-  //   ?safe=1     -> inset the positioning area by 5% (title-safe margins)
+  // URL-driven overrides so a shared link snapshots the current look:
+  //   ?fit=fixed | ?safe=1  -> OBS scaling
+  //   ?preset=compact|centered|split  -> layout preset (overrides room's saved layout)
+  //   ?bg=<hex> | ?text=<hex>         -> overlay background / text color overrides
   const fitParam = (searchParams.get('fit') || '').toLowerCase();
   const requestedFit: 'fill' | 'fixed' = fitParam === 'fixed' ? 'fixed' : 'fill';
   const safeMargins = searchParams.get('safe') === '1';
+  const presetParam = searchParams.get('preset');
+  const presetOverride: OverlayPresetId | undefined =
+    presetParam && OVERLAY_PRESETS.some(p => p.id === presetParam)
+      ? (presetParam as OverlayPresetId)
+      : undefined;
+  const isHex = (v: string | null): v is string => !!v && /^#[0-9a-fA-F]{6}$/.test(v);
+  const bgOverride = isHex(searchParams.get('bg')) ? searchParams.get('bg')! : undefined;
+  const textOverride = isHex(searchParams.get('text')) ? searchParams.get('text')! : undefined;
 
   const resetOverlayLayout = () => {
     if (room) {
@@ -191,7 +199,20 @@ export function OverlayView() {
     );
   }
 
-  const layout = room.overlayLayout || createDefaultOverlayLayout(room.playerCount);
+  // URL preset override snapshots the layout at share time. Ignore it in edit
+  // mode so admins can drag from the room's actual saved layout.
+  const layout: OverlayLayout = editingEnabled || !presetOverride
+    ? (room.overlayLayout || createDefaultOverlayLayout(room.playerCount))
+    : buildOverlayPresetLayout(presetOverride, room.playerCount);
+
+  // Merge URL color overrides on top of room settings for rendering only —
+  // never mutate/persist. Room state stays the source of truth.
+  const effectiveSettings = {
+    ...room.settings,
+    overlayBgColor: bgOverride ?? room.settings.overlayBgColor,
+    overlayTextColor: textOverride ?? room.settings.overlayTextColor,
+  };
+  const settingsRoom = { ...room, settings: effectiveSettings };
 
   const updatePosition = (key: 'dayNight' | 'dungeon', pos: OverlayPosition) => {
     updateOverlayLayout({
@@ -339,11 +360,11 @@ export function OverlayView() {
             <div
               className={cn(
                 'flex flex-col items-center justify-center py-3 px-6 rounded-2xl min-w-[120px] relative',
-                !useSimpleText && room.settings.showBackgroundCards && !room.settings.overlayBgColor && 'backdrop-blur-md'
+                !useSimpleText && room.settings.showBackgroundCards && !effectiveSettings.overlayBgColor && 'backdrop-blur-md'
               )}
               style={{ 
                 backgroundColor: !useSimpleText && room.settings.showBackgroundCards
-                  ? (room.settings.overlayBgColor ?? `hsl(${player.color} / 0.9)`)
+                  ? (effectiveSettings.overlayBgColor ?? `hsl(${player.color} / 0.9)`)
                   : 'transparent' 
               }}
             >
@@ -383,10 +404,10 @@ export function OverlayView() {
                 <div 
                   className="font-body font-semibold text-base mb-0.5"
                   style={useSimpleText ? {
-                    color: room.settings.overlayTextColor ?? 'white',
+                    color: effectiveSettings.overlayTextColor ?? 'white',
                     textShadow: '2px 2px 0 black, -2px -2px 0 black, 2px -2px 0 black, -2px 2px 0 black, 0 2px 0 black, 0 -2px 0 black, 2px 0 0 black, -2px 0 0 black',
                   } : { 
-                    color: room.settings.overlayTextColor ?? 'rgba(0,0,0,0.7)'
+                    color: effectiveSettings.overlayTextColor ?? 'rgba(0,0,0,0.7)'
                   }}
                 >
                   {player.name}
@@ -395,10 +416,10 @@ export function OverlayView() {
               <div
                 className={cn('font-display leading-none', getFontSize())}
                 style={useSimpleText ? {
-                  color: room.settings.overlayTextColor ?? 'white',
+                  color: effectiveSettings.overlayTextColor ?? 'white',
                   textShadow: '3px 3px 0 black, -3px -3px 0 black, 3px -3px 0 black, -3px 3px 0 black, 0 3px 0 black, 0 -3px 0 black, 3px 0 0 black, -3px 0 0 black',
                 } : {
-                  color: room.settings.overlayTextColor ?? (room.settings.showBackgroundCards 
+                  color: effectiveSettings.overlayTextColor ?? (room.settings.showBackgroundCards 
                     ? 'rgba(0,0,0,0.8)' 
                     : `hsl(${player.color})`),
                   textShadow: room.settings.showBackgroundCards 
