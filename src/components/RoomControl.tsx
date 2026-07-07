@@ -996,6 +996,29 @@ export function RoomControl() {
 
             {menuTab === 'share' && (
               <div className="space-y-4">
+                {/* Join code — short room code for players to type on lifelinkmtg.app */}
+                <div className="bg-secondary/50 rounded-xl p-3 flex flex-col items-center gap-1">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Join code</span>
+                  <button
+                    onClick={async () => {
+                      if (!room) return;
+                      try {
+                        await navigator.clipboard.writeText(room.id);
+                        toast({ title: 'Join code copied', description: room.id });
+                      } catch {
+                        toast({ title: 'Copy failed', description: 'Clipboard access is unavailable.' });
+                      }
+                    }}
+                    className="font-display text-4xl tracking-[0.3em] text-foreground hover:text-accent transition-colors"
+                    aria-label={`Copy join code ${room?.id ?? ''}`}
+                  >
+                    {room?.id}
+                  </button>
+                  <span className="text-[11px] text-muted-foreground text-center">
+                    Players enter this at <span className="text-foreground font-medium">lifelinkmtg.app</span> to join.
+                  </span>
+                </div>
+
                 {/* Primary action: copy overlay URL for OBS */}
                 <div className="space-y-2">
                   <button
