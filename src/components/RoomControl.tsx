@@ -37,6 +37,7 @@ export function RoomControl() {
     room,
     loading,
     syncing,
+    syncStatus,
     updatePlayerLife,
     setPlayerLife,
     setPlayerName,
