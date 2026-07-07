@@ -1135,6 +1135,32 @@ Overlay URL: ${overlayUrl}`;
                       aria-label="Enable safe margins"
                     />
                   </label>
+
+                  {/* Live preview of how the overlay will appear in OBS */}
+                  <div className="space-y-1 pt-1">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">OBS preview</span>
+                      <span className="text-[10px]">
+                        {overlayFit === 'fixed' ? '1920×1080' : 'Fit to browser'}
+                        {overlaySafe ? ' · safe margins' : ''}
+                      </span>
+                    </div>
+                    <div className="relative w-full rounded-lg overflow-hidden border border-border bg-black" style={{ aspectRatio: '16/9' }}>
+                      {overlayUrl && (
+                        <iframe
+                          key={overlayUrl}
+                          src={overlayUrl}
+                          title="OBS overlay preview"
+                          className="w-full h-full"
+                          style={{ border: 'none', display: 'block' }}
+                          loading="lazy"
+                        />
+                      )}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      The preview updates instantly as you change scaling, safe margins, preset, or colors.
+                    </p>
+                  </div>
                 </div>
 
                 {/* Primary action: copy overlay URL for OBS */}
