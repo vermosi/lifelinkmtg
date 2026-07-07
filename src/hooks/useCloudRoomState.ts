@@ -504,6 +504,32 @@ export function useCloudRoomState(roomId: string | undefined) {
     }));
   }, [updateRoom]);
 
+  const setShowNamesOnOverlay = useCallback((show: boolean) => {
+    updateRoom(prev => ({
+      ...prev,
+      settings: { ...prev.settings, showNamesOnOverlay: show },
+    }));
+  }, [updateRoom]);
+
+  const setOverlayColors = useCallback((colors: { bg?: string | null; text?: string | null }) => {
+    updateRoom(prev => ({
+      ...prev,
+      settings: {
+        ...prev.settings,
+        ...(colors.bg !== undefined ? { overlayBgColor: colors.bg ?? undefined } : {}),
+        ...(colors.text !== undefined ? { overlayTextColor: colors.text ?? undefined } : {}),
+      },
+    }));
+  }, [updateRoom]);
+
+  const applyOverlayPreset = useCallback((preset: OverlayPresetId) => {
+    updateRoom(prev => ({
+      ...prev,
+      overlayLayout: buildOverlayPresetLayout(preset, prev.playerCount),
+      settings: { ...prev.settings, overlayPreset: preset },
+    }));
+  }, [updateRoom]);
+
   const loadPreset = useCallback((preset: GamePreset) => {
     updateRoom(prev => {
       const newPlayerCount = preset.playerCount;
