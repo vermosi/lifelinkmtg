@@ -477,10 +477,21 @@ Overlay URL: ${overlayUrl}`;
       {!menuOpen && (
         <button
           onClick={() => setMenuOpen(true)}
-          className="menu-button w-12 h-12 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-          aria-label="Open menu"
+          className="menu-button w-12 h-12 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 relative"
+          aria-label={`Open menu (sync ${syncStatus})`}
         >
           <Menu className="w-5 h-5 text-foreground" />
+          {syncStatus !== 'online' && (
+            <span
+              className={cn(
+                'absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-background',
+                syncStatus === 'syncing' && 'bg-sky-400 animate-pulse',
+                syncStatus === 'offline' && 'bg-amber-400',
+                syncStatus === 'error' && 'bg-destructive'
+              )}
+              aria-hidden
+            />
+          )}
         </button>
       )}
 
