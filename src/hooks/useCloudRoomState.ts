@@ -628,6 +628,7 @@ export function useCloudRoomState(roomId: string | undefined) {
     setShowNamesOnOverlay,
     setOverlayColors,
     applyOverlayPreset,
+    resetOverlayDefaults,
     loadPreset,
   };
 }
