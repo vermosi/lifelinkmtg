@@ -1192,18 +1192,39 @@ Overlay URL: ${overlayUrl}`;
                       </li>
                     </ul>
 
-                    <div className="text-xs font-semibold text-foreground pt-1">Recommended Browser Source settings</div>
-                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                      <span>Width</span>
-                      <span className="text-foreground font-medium">1920</span>
-                      <span>Height</span>
-                      <span className="text-foreground font-medium">1080</span>
-                      <span>FPS</span>
-                      <span className="text-foreground font-medium">30</span>
-                      <span>Custom CSS</span>
-                      <span className="text-foreground font-medium">Leave blank</span>
-                      <span>Shutdown source when not visible</span>
-                      <span className="text-foreground font-medium">Off</span>
+                    <div className="text-xs font-semibold text-foreground pt-1 flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <Check className="w-3.5 h-3.5" /> Browser Source Checklist
+                      </span>
+                      <button
+                        onClick={copyChecklist}
+                        className="flex items-center gap-1 text-[11px] text-accent hover:text-accent/80 font-medium transition-colors"
+                      >
+                        {copiedChecklist ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        {copiedChecklist ? 'Copied!' : 'Copy settings'}
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
+                      <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-foreground/10 text-foreground text-[10px] shrink-0 mt-0.5">1</span>
+                      <span>Width <span className="text-foreground font-medium">1920</span></span>
+
+                      <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-foreground/10 text-foreground text-[10px] shrink-0 mt-0.5">2</span>
+                      <span>Height <span className="text-foreground font-medium">1080</span></span>
+
+                      <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-foreground/10 text-foreground text-[10px] shrink-0 mt-0.5">3</span>
+                      <span>FPS <span className="text-foreground font-medium">30</span></span>
+
+                      <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-foreground/10 text-foreground text-[10px] shrink-0 mt-0.5">4</span>
+                      <span>Refresh interval <span className="text-foreground font-medium">0 seconds</span> (LifeLink updates live)</span>
+
+                      <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-foreground/10 text-foreground text-[10px] shrink-0 mt-0.5">5</span>
+                      <span>Refresh browser when scene becomes active <span className="text-foreground font-medium">ON</span></span>
+
+                      <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-foreground/10 text-foreground text-[10px] shrink-0 mt-0.5">6</span>
+                      <span>Shutdown source when not visible <span className="text-foreground font-medium">OFF</span></span>
+
+                      <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-foreground/10 text-foreground text-[10px] shrink-0 mt-0.5">7</span>
+                      <span>Custom CSS <span className="text-foreground font-medium">Leave blank</span></span>
                     </div>
                     <p className="text-[11px] text-muted-foreground/80 pt-1">
                       Tip: If the overlay is blank or frozen, right-click the source → Properties → Refresh Cache, or re-paste the URL.
