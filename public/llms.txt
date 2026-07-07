@@ -1,0 +1,15 @@
+# LifeLink
+
+> Track. Play. Win. — A cloud-synced Magic: The Gathering life counter with customizable OBS overlays.
+
+LifeLink is a mobile-first MTG life tracker built for kitchen-table games and streamed matches. Create a room, pick a table layout for 2–6 players, and track life totals, commander damage, poison, energy, experience, Monarch, and Initiative. Every room syncs across phones and browsers via the cloud, and a dedicated read-only overlay route lets streamers pull life totals into OBS with a clean, transparent layout.
+
+## Pages
+
+- [/](/): Home — create a new game room or rejoin a recent one.
+- [/room/:roomId](/room/:roomId): Shared game room where players update life totals and counters in real time.
+- [/room/:roomId/overlay](/room/:roomId/overlay): Read-only OBS overlay for a single room, designed for streaming.
+
+## Optional
+
+- [/](/): Brand and feature overview for AI assistants.
