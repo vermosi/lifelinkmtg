@@ -1016,9 +1016,52 @@ export function RoomControl() {
                     <li>Set <span className="text-foreground font-medium">Width 1920</span>, <span className="text-foreground font-medium">Height 1080</span>. Click OK.</li>
                     <li>That's it — the overlay is transparent and updates live.</li>
                   </ol>
-                  <p className="text-[11px] text-muted-foreground/80 pt-1">
-                    Tip: If it looks off, right-click the source → Properties → check "Shutdown source when not visible" is <span className="text-foreground">off</span>.
-                  </p>
+
+                  {/* How to use this in OBS checklist + recommended settings */}
+                  <div className="pt-2 border-t border-border/50 space-y-2">
+                    <div className="text-xs font-semibold text-foreground flex items-center gap-2">
+                      <Check className="w-3.5 h-3.5" /> How to use this in OBS
+                    </div>
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      <li className="flex items-start gap-2">
+                        <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-foreground/10 text-foreground text-[10px] shrink-0 mt-0.5">1</span>
+                        <span>Copy the overlay URL above and paste it into the Browser Source <span className="text-foreground font-medium">URL</span> field.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-foreground/10 text-foreground text-[10px] shrink-0 mt-0.5">2</span>
+                        <span>Set the source size to <span className="text-foreground font-medium">1920×1080</span> so presets line up correctly.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-foreground/10 text-foreground text-[10px] shrink-0 mt-0.5">3</span>
+                        <span>Keep the overlay transparent — do not add a custom CSS background.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-foreground/10 text-foreground text-[10px] shrink-0 mt-0.5">4</span>
+                        <span>Position or resize the source in your scene like any other layer.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-foreground/10 text-foreground text-[10px] shrink-0 mt-0.5">5</span>
+                        <span>Life totals and counters update automatically as the game changes.</span>
+                      </li>
+                    </ul>
+
+                    <div className="text-xs font-semibold text-foreground pt-1">Recommended Browser Source settings</div>
+                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                      <span>Width</span>
+                      <span className="text-foreground font-medium">1920</span>
+                      <span>Height</span>
+                      <span className="text-foreground font-medium">1080</span>
+                      <span>FPS</span>
+                      <span className="text-foreground font-medium">30</span>
+                      <span>Custom CSS</span>
+                      <span className="text-foreground font-medium">Leave blank</span>
+                      <span>Shutdown source when not visible</span>
+                      <span className="text-foreground font-medium">Off</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground/80 pt-1">
+                      Tip: If the overlay is blank or frozen, right-click the source → Properties → Refresh Cache, or re-paste the URL.
+                    </p>
+                  </div>
                 </div>
 
                 {/* Admin: arrange layout */}
