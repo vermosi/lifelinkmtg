@@ -479,29 +479,53 @@ export function normalizeRoom(room: Room): Room {
 
 // ============= URL HELPERS =============
 
-export function getControlUrl(room: Room): string {
-  return `${window.location.origin}/room/${room.id}?adminKey=${room.adminKey}`;
-}
-
 export type OverlayFit = 'fill' | 'fixed';
-export interface OverlayUrlOptions {
+
+/**
+ * Options encoded into share URLs. `preset` / `bg` / `text` are included so
+ * anyone who opens the link sees the same styling even if the room is later
+ * edited — the URL snapshots the look at share time.
+ */
+export interface ShareUrlOptions {
   fit?: OverlayFit;
   safeMargins?: boolean;
+  preset?: OverlayPresetId;
+  bg?: string | null;
+  text?: string | null;
 }
 
-export function getOverlayUrl(room: Room, options: OverlayUrlOptions = {}): string {
-  // Clean, read-only URL for OBS Browser Sources. No adminKey — keeps stream safe if scene is shared.
+function buildShareParams(options: ShareUrlOptions): URLSearchParams {
   const params = new URLSearchParams();
   if (options.fit === 'fixed') params.set('fit', 'fixed');
   if (options.safeMargins) params.set('safe', '1');
+  if (options.preset) params.set('preset', options.preset);
+  if (options.bg) params.set('bg', options.bg);
+  if (options.text) params.set('text', options.text);
+  return params;
+}
+
+export function getControlUrl(room: Room, options: ShareUrlOptions = {}): string {
+  const params = buildShareParams(options);
+  params.set('adminKey', room.adminKey);
+  return `${window.location.origin}/room/${room.id}?${params.toString()}`;
+}
+
+export function getOverlayUrl(room: Room, options: ShareUrlOptions = {}): string {
+  // Clean, read-only URL for OBS Browser Sources. No adminKey — keeps stream safe if scene is shared.
+  const params = buildShareParams(options);
   const qs = params.toString();
   return `${window.location.origin}/room/${room.id}/overlay${qs ? `?${qs}` : ''}`;
 }
 
-export function getOverlayEditUrl(room: Room): string {
+export function getOverlayEditUrl(room: Room, options: ShareUrlOptions = {}): string {
   // Admin-only URL that unlocks Edit Layout mode in the overlay page.
-  return `${window.location.origin}/room/${room.id}/overlay?adminKey=${room.adminKey}`;
+  const params = buildShareParams(options);
+  params.set('adminKey', room.adminKey);
+  return `${window.location.origin}/room/${room.id}/overlay?${params.toString()}`;
 }
+
+// Legacy alias kept for older imports.
+export type OverlayUrlOptions = ShareUrlOptions;
 
 // ============= LOCAL STORAGE =============
 
