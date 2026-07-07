@@ -483,9 +483,19 @@ export function getControlUrl(room: Room): string {
   return `${window.location.origin}/room/${room.id}?adminKey=${room.adminKey}`;
 }
 
-export function getOverlayUrl(room: Room): string {
+export type OverlayFit = 'fill' | 'fixed';
+export interface OverlayUrlOptions {
+  fit?: OverlayFit;
+  safeMargins?: boolean;
+}
+
+export function getOverlayUrl(room: Room, options: OverlayUrlOptions = {}): string {
   // Clean, read-only URL for OBS Browser Sources. No adminKey — keeps stream safe if scene is shared.
-  return `${window.location.origin}/room/${room.id}/overlay`;
+  const params = new URLSearchParams();
+  if (options.fit === 'fixed') params.set('fit', 'fixed');
+  if (options.safeMargins) params.set('safe', '1');
+  const qs = params.toString();
+  return `${window.location.origin}/room/${room.id}/overlay${qs ? `?${qs}` : ''}`;
 }
 
 export function getOverlayEditUrl(room: Room): string {
