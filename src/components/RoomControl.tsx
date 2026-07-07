@@ -71,6 +71,7 @@ export function RoomControl() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuTab, setMenuTab] = useState<'settings' | 'history' | 'dice' | 'presets' | 'share'>('settings');
   const [copiedUrl, setCopiedUrl] = useState<'control' | 'overlay' | null>(null);
+  const [copiedChecklist, setCopiedChecklist] = useState(false);
   const [highlightedPlayer, setHighlightedPlayer] = useState<number | null>(null);
   const [presets, setPresets] = useState<GamePreset[]>(() => loadPresets());
   const [newPresetName, setNewPresetName] = useState('');
