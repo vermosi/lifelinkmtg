@@ -1093,32 +1093,36 @@ export function RoomControl() {
                   </button>
                 )}
 
-                {/* QR codes */}
+                {/* QR codes — re-derive from live room so scans always match the current URL/adminKey */}
                 <div className="grid grid-cols-1 gap-3">
                   <div className="bg-secondary/50 rounded-xl p-3 flex flex-col items-center gap-2">
                     <span className="text-xs font-medium text-muted-foreground">Scan to open overlay</span>
                     <div className="bg-white p-2 rounded-lg">
                       <QRCode
-                        value={getOverlayUrl(room)}
+                        key={overlayUrl}
+                        value={overlayUrl}
                         size={160}
                         bgColor="#ffffff"
                         fgColor="#000000"
                         aria-label="QR code for overlay URL"
                       />
                     </div>
+                    <span className="text-[10px] text-muted-foreground break-all text-center px-1">{overlayUrl}</span>
                   </div>
                   {isAdmin && (
                     <div className="bg-secondary/50 rounded-xl p-3 flex flex-col items-center gap-2">
                       <span className="text-xs font-medium text-muted-foreground">Scan to control this room</span>
                       <div className="bg-white p-2 rounded-lg">
                         <QRCode
-                          value={getControlUrl(room)}
+                          key={controlUrl}
+                          value={controlUrl}
                           size={160}
                           bgColor="#ffffff"
                           fgColor="#000000"
                           aria-label="QR code for admin control URL"
                         />
                       </div>
+                      <span className="text-[10px] text-muted-foreground break-all text-center px-1">Includes admin key — keep private</span>
                     </div>
                   )}
                 </div>
