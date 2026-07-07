@@ -70,6 +70,11 @@ export function RoomControl() {
     resetOverlayDefaults,
   } = useCloudRoomState(roomId);
 
+  // Keep the screen awake while the tracker is open — mid-game screen sleep is
+  // the single biggest mobile annoyance and the Wake Lock API handles it for us.
+  useWakeLock(!!room);
+
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuTab, setMenuTab] = useState<'settings' | 'history' | 'dice' | 'presets' | 'share'>('settings');
   const [copiedUrl, setCopiedUrl] = useState<'control' | 'overlay' | null>(null);
