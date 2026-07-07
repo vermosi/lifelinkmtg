@@ -644,10 +644,19 @@ export function useCloudRoomState(roomId: string | undefined) {
     };
   }, []);
 
+  const syncStatus: 'offline' | 'error' | 'syncing' | 'online' = !isOnline
+    ? 'offline'
+    : syncError
+    ? 'error'
+    : syncing
+    ? 'syncing'
+    : 'online';
+
   return {
     room,
     loading,
     syncing,
+    syncStatus,
     updateRoom,
     // Life
     updatePlayerLife,
