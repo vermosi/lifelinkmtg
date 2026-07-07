@@ -1028,6 +1028,54 @@ export function RoomControl() {
                   </span>
                 </div>
 
+                {/* OBS scaling / fit — encoded into the overlay URL below */}
+                <div className="space-y-2">
+                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Overlay scaling</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setOverlayFit('fill')}
+                      className={cn(
+                        'px-3 py-2 rounded-lg text-xs font-medium border transition-colors text-left',
+                        overlayFit === 'fill'
+                          ? 'bg-accent text-accent-foreground border-accent'
+                          : 'bg-secondary text-foreground border-border hover:bg-secondary/80'
+                      )}
+                      aria-pressed={overlayFit === 'fill'}
+                    >
+                      <div className="font-semibold">Fit to browser</div>
+                      <div className="text-[10px] opacity-80">Fills whatever OBS gives it.</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOverlayFit('fixed')}
+                      className={cn(
+                        'px-3 py-2 rounded-lg text-xs font-medium border transition-colors text-left',
+                        overlayFit === 'fixed'
+                          ? 'bg-accent text-accent-foreground border-accent'
+                          : 'bg-secondary text-foreground border-border hover:bg-secondary/80'
+                      )}
+                      aria-pressed={overlayFit === 'fixed'}
+                    >
+                      <div className="font-semibold">1920×1080 (fixed)</div>
+                      <div className="text-[10px] opacity-80">Scales identically across sizes.</div>
+                    </button>
+                  </div>
+                  <label className="flex items-center justify-between gap-2 px-3 py-2 bg-secondary/50 rounded-lg cursor-pointer">
+                    <span className="text-xs text-foreground">
+                      <span className="font-medium">Safe margins</span>
+                      <span className="block text-[10px] text-muted-foreground">Keeps elements 5% away from every edge (title-safe).</span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={overlaySafe}
+                      onChange={(e) => setOverlaySafe(e.target.checked)}
+                      className="w-4 h-4 accent-accent shrink-0"
+                      aria-label="Enable safe margins"
+                    />
+                  </label>
+                </div>
+
                 {/* Primary action: copy overlay URL for OBS */}
                 <div className="space-y-2">
                   <button
