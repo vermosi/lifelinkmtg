@@ -466,11 +466,7 @@ Overlay URL: ${overlayUrl}`;
             <div className="flex items-center justify-between pr-10">
               <h2 className="font-display text-2xl text-foreground">Room {room.id}</h2>
               <div className="flex items-center gap-2">
-                {syncing && (
-                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                  </span>
-                )}
+                <SyncStatusPill status={syncStatus} />
                 <span className="text-xs text-muted-foreground px-2 py-1 bg-secondary rounded-full flex items-center gap-1">
                   <Cloud className="w-3 h-3" />
                   {isAdmin ? 'Admin' : 'View Only'}
