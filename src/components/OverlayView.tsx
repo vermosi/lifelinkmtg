@@ -236,7 +236,7 @@ export function OverlayView() {
         id="dayNight"
         position={layout.dayNight}
         onPositionChange={(pos) => updatePosition('dayNight', pos)}
-        isEditMode={isEditMode}
+        isEditMode={editingEnabled}
       >
         <div 
           className={cn(
@@ -258,7 +258,7 @@ export function OverlayView() {
           id="dungeon"
           position={layout.dungeon}
           onPositionChange={(pos) => updatePosition('dungeon', pos)}
-          isEditMode={isEditMode}
+          isEditMode={editingEnabled}
         >
           <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/70 backdrop-blur-sm">
             <Shield className="w-4 h-4 text-purple-400" fill="currentColor" />
@@ -291,7 +291,7 @@ export function OverlayView() {
             id={`player-${player.id}`}
             position={playerPos}
             onPositionChange={(pos) => updatePlayerPosition(player.id, pos)}
-            isEditMode={isEditMode}
+            isEditMode={editingEnabled}
           >
             <div
               className={cn(
