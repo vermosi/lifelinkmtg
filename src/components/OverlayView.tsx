@@ -3,7 +3,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useCloudRoomState } from '@/hooks/useCloudRoomState';
 import { cn } from '@/lib/utils';
 import { Skull, Sparkles, Zap, Crown, Shield, Sun, Moon, Move, Lock, Unlock, RotateCcw } from 'lucide-react';
-import { DUNGEON_ROOMS, OverlayLayout, OverlayPosition, createDefaultOverlayLayout, getTotalCommanderDamageFromPlayer } from '@/lib/roomUtils';
+import { DUNGEON_ROOMS, OverlayLayout, OverlayPosition, OverlayPresetId, buildOverlayPresetLayout, createDefaultOverlayLayout, getTotalCommanderDamageFromPlayer, OVERLAY_PRESETS } from '@/lib/roomUtils';
 
 interface DraggableElementProps {
   id: string;
