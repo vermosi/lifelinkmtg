@@ -484,6 +484,12 @@ export function getControlUrl(room: Room): string {
 }
 
 export function getOverlayUrl(room: Room): string {
+  // Clean, read-only URL for OBS Browser Sources. No adminKey — keeps stream safe if scene is shared.
+  return `${window.location.origin}/room/${room.id}/overlay`;
+}
+
+export function getOverlayEditUrl(room: Room): string {
+  // Admin-only URL that unlocks Edit Layout mode in the overlay page.
   return `${window.location.origin}/room/${room.id}/overlay?adminKey=${room.adminKey}`;
 }
 
