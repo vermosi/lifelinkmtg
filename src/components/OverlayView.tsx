@@ -132,14 +132,19 @@ function DraggableElement({ id, position, onPositionChange, isEditMode, children
 
 export function OverlayView() {
   const { roomId } = useParams<{ roomId: string }>();
+  const [searchParams] = useSearchParams();
   const { room, loading, updateOverlayLayout } = useCloudRoomState(roomId);
-  
+
+  const providedAdminKey = searchParams.get('adminKey');
+  const canEdit = !!(room && providedAdminKey && providedAdminKey === room.adminKey);
+
   const resetOverlayLayout = () => {
     if (room) {
       updateOverlayLayout(createDefaultOverlayLayout(room.playerCount));
     }
   };
   const [isEditMode, setIsEditMode] = useState(false);
+  const editingEnabled = canEdit && isEditMode;
 
   if (loading || !room) {
     return (
