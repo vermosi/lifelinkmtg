@@ -82,7 +82,16 @@ export function RoomControl() {
 
   // Recompute share URLs whenever the room id or adminKey changes so QR codes
   // and copy buttons always reflect the current room state.
-  const overlayUrl = useMemo(() => (room ? getOverlayUrl(room) : ''), [room?.id]);
+  // OBS scaling controls — persisted locally per browser so the copy/QR reflect the last chosen preset.
+  const [overlayFit, setOverlayFit] = useState<'fill' | 'fixed'>(() => (localStorage.getItem('lifelink:overlayFit') as 'fill' | 'fixed') || 'fill');
+  const [overlaySafe, setOverlaySafe] = useState<boolean>(() => localStorage.getItem('lifelink:overlaySafe') === '1');
+  useEffect(() => { localStorage.setItem('lifelink:overlayFit', overlayFit); }, [overlayFit]);
+  useEffect(() => { localStorage.setItem('lifelink:overlaySafe', overlaySafe ? '1' : '0'); }, [overlaySafe]);
+
+  const overlayUrl = useMemo(
+    () => (room ? getOverlayUrl(room, { fit: overlayFit, safeMargins: overlaySafe }) : ''),
+    [room?.id, overlayFit, overlaySafe]
+  );
   const controlUrl = useMemo(() => (room ? getControlUrl(room) : ''), [room?.id, room?.adminKey]);
   const overlayEditUrl = useMemo(() => (room ? getOverlayEditUrl(room) : ''), [room?.id, room?.adminKey]);
 
