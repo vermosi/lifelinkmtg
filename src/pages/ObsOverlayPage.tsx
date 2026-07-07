@@ -7,7 +7,7 @@ const ObsOverlayPage = () => {
     trackEvent('overlay_loaded');
   }, []);
 
-  return <ObsOverlayView />;
+  return <main><ObsOverlayView /></main>;
 };
 
 export default ObsOverlayPage;
