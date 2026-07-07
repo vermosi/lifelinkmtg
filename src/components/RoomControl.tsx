@@ -1183,6 +1183,39 @@ export function RoomControl() {
                   </div>
                 </div>
 
+                {/* OBS Browser Source troubleshooting */}
+                <div className="bg-secondary/50 rounded-xl p-3 space-y-2">
+                  <div className="text-xs font-semibold text-foreground flex items-center gap-2">
+                    <Wrench className="w-3.5 h-3.5" /> Troubleshooting
+                  </div>
+                  <ul className="text-xs text-muted-foreground space-y-2">
+                    <li className="flex items-start gap-2">
+                      <AlertCircle className="w-3.5 h-3.5 text-foreground shrink-0 mt-0.5" />
+                      <span>
+                        <span className="text-foreground font-medium">Blank screen:</span> confirm the source is visible and the URL field has no extra spaces. Right-click the source → Properties → refresh the URL.
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <RefreshCw className="w-3.5 h-3.5 text-foreground shrink-0 mt-0.5" />
+                      <span>
+                        <span className="text-foreground font-medium">Cache problems:</span> right-click the Browser Source → Properties → <span className="text-foreground font-medium">Refresh Cache</span>. Restart OBS if it still looks stale.
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Maximize className="w-3.5 h-3.5 text-foreground shrink-0 mt-0.5" />
+                      <span>
+                        <span className="text-foreground font-medium">Wrong size:</span> set the source width to <span className="text-foreground font-medium">1920</span> and height to <span className="text-foreground font-medium">1080</span>, then scale the source in the scene.
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Link className="w-3.5 h-3.5 text-foreground shrink-0 mt-0.5" />
+                      <span>
+                        <span className="text-foreground font-medium">URL not loading:</span> check your internet connection and re-copy the overlay URL. If it still fails, try pasting the URL into a regular browser tab.
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+
                 {/* Admin: arrange layout */}
                 {isAdmin && (
                   <div className="space-y-2">
