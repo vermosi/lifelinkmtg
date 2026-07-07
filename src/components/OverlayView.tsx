@@ -136,7 +136,8 @@ export function OverlayView() {
   
   const resetOverlayLayout = () => {
     if (room) {
-      const { createDefaultOverlayLayout } = require('@/lib/roomUtils');
+      updateOverlayLayout(createDefaultOverlayLayout(room.playerCount));
+      return;
       updateOverlayLayout(createDefaultOverlayLayout(room.playerCount));
     }
   };
