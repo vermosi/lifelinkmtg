@@ -457,6 +457,17 @@ export function RoomControl() {
                   </span>
                 )}
               </button>
+              <button
+                onClick={() => setMenuTab('share')}
+                className={cn(
+                  'flex-1 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1',
+                  menuTab === 'share' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground'
+                )}
+                role="tab"
+                aria-selected={menuTab === 'share'}
+              >
+                <Share2 className="w-3 h-3" /> Share
+              </button>
             </div>
 
             {/* Dice tab */}
