@@ -1074,7 +1074,7 @@ export function RoomControl() {
                 {isAdmin && (
                   <div className="space-y-2">
                     <a
-                      href={getOverlayEditUrl(room)}
+                      href={overlayEditUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full flex items-center justify-center gap-2 py-2 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80"
