@@ -265,10 +265,18 @@ export function OverlayView() {
         </div>
       )}
 
-
-      {/* Day/Night indicator */}
-      <DraggableElement
-        id="dayNight"
+      <FitContainer fit={fit}>
+        {/* Positioning stage — safe margins inset the coordinate space so nothing hugs the edge on a stream. */}
+        <div
+          className="absolute"
+          style={{ inset: safeMargins ? '5%' : 0 }}
+        >
+          {editingEnabled && safeMargins && (
+            <div className="absolute inset-0 pointer-events-none border-2 border-dashed border-yellow-400/40 rounded" />
+          )}
+          {/* Day/Night indicator */}
+          <DraggableElement
+            id="dayNight"
         position={layout.dayNight}
         onPositionChange={(pos) => updatePosition('dayNight', pos)}
         isEditMode={editingEnabled}
