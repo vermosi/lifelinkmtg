@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown, Shield, Sun, Moon, Dices, Save, FolderOpen, Plus, Cloud, Loader2, Wrench, Share2 } from 'lucide-react';
 import { ToolsDrawer } from './ToolsDrawer';
 import { useCloudRoomState } from '@/hooks/useCloudRoomState';
-import { getControlUrl, getOverlayUrl, PLAYER_COLORS, formatTimestamp, HistoryEntry, DUNGEON_ROOMS, loadPresets, savePreset, deletePreset, createPresetFromRoom, GamePreset, LAYOUTS } from '@/lib/roomUtils';
+import { getControlUrl, getOverlayUrl, PLAYER_COLORS, formatTimestamp, HistoryEntry, DUNGEON_ROOMS, loadPresets, savePreset, deletePreset, createPresetFromRoom, GamePreset, LAYOUTS, OVERLAY_PRESETS } from '@/lib/roomUtils';
 import { FullScreenPlayerPanel } from './FullScreenPlayerPanel';
 import { DiceRoller } from './DiceRoller';
 import { cn } from '@/lib/utils';
@@ -62,6 +62,9 @@ export function RoomControl() {
     resetGameTimer,
     setOverlayFontSize,
     setOverlayFontFamily,
+    setShowNamesOnOverlay,
+    setOverlayColors,
+    applyOverlayPreset,
   } = useCloudRoomState(roomId);
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -848,6 +851,82 @@ export function RoomControl() {
                   <p className="text-xs text-muted-foreground">
                     White text with black outline - no backgrounds
                   </p>
+
+                  {/* One-tap layout presets */}
+                  <div className="space-y-1 pt-2">
+                    <span className="text-xs text-muted-foreground">Layout Preset</span>
+                    <div className="grid grid-cols-3 gap-1">
+                      {OVERLAY_PRESETS.map((preset) => (
+                        <button
+                          key={preset.id}
+                          onClick={() => applyOverlayPreset(preset.id)}
+                          title={preset.description}
+                          className={cn(
+                            'py-1.5 px-2 rounded-lg text-xs font-medium transition-all',
+                            room.settings.overlayPreset === preset.id
+                              ? 'bg-foreground text-background'
+                              : 'bg-secondary text-muted-foreground hover:text-foreground'
+                          )}
+                        >
+                          {preset.name}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Instantly re-arranges player cards. Fine-tune later via Edit Layout.
+                    </p>
+                  </div>
+
+                  {/* Player names on overlay */}
+                  <button
+                    onClick={() => setShowNamesOnOverlay(!room.settings.showNamesOnOverlay)}
+                    className={cn(
+                      'w-full py-2 px-3 rounded-xl text-sm font-medium transition-all flex items-center justify-between',
+                      room.settings.showNamesOnOverlay
+                        ? 'bg-foreground text-background'
+                        : 'bg-secondary text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    <span>Show Player Names</span>
+                    <span className="text-xs opacity-70">
+                      {room.settings.showNamesOnOverlay ? 'ON' : 'OFF'}
+                    </span>
+                  </button>
+
+                  {/* Overlay colors */}
+                  <div className="space-y-1">
+                    <span className="text-xs text-muted-foreground">Overlay Colors</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="flex items-center gap-2 bg-secondary rounded-lg px-2 py-1.5">
+                        <input
+                          type="color"
+                          value={room.settings.overlayBgColor ?? '#000000'}
+                          onChange={(e) => setOverlayColors({ bg: e.target.value })}
+                          className="w-6 h-6 rounded cursor-pointer bg-transparent border-0 p-0"
+                          aria-label="Overlay background color"
+                        />
+                        <span className="text-xs text-muted-foreground">Background</span>
+                      </label>
+                      <label className="flex items-center gap-2 bg-secondary rounded-lg px-2 py-1.5">
+                        <input
+                          type="color"
+                          value={room.settings.overlayTextColor ?? '#ffffff'}
+                          onChange={(e) => setOverlayColors({ text: e.target.value })}
+                          className="w-6 h-6 rounded cursor-pointer bg-transparent border-0 p-0"
+                          aria-label="Overlay text color"
+                        />
+                        <span className="text-xs text-muted-foreground">Text</span>
+                      </label>
+                    </div>
+                    {(room.settings.overlayBgColor || room.settings.overlayTextColor) && (
+                      <button
+                        onClick={() => setOverlayColors({ bg: null, text: null })}
+                        className="w-full py-1 text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        Reset to player colors
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Interaction settings */}

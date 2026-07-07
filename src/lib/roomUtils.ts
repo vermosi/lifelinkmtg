@@ -68,6 +68,51 @@ export interface RoomSettings {
   textScale: 'normal' | 'large' | 'extra-large';
   streamerMode: boolean;
   enableSwipeLife: boolean;
+  overlayBgColor?: string;
+  overlayTextColor?: string;
+  overlayPreset?: OverlayPresetId;
+}
+
+export type OverlayPresetId = 'compact' | 'centered' | 'split';
+
+export const OVERLAY_PRESETS: { id: OverlayPresetId; name: string; description: string }[] = [
+  { id: 'compact', name: 'Compact', description: 'Tight row along the bottom edge' },
+  { id: 'centered', name: 'Centered', description: 'Evenly spaced across the middle' },
+  { id: 'split', name: 'Split', description: 'Half at the top, half at the bottom' },
+];
+
+export function buildOverlayPresetLayout(preset: OverlayPresetId, playerCount: number): OverlayLayout {
+  const players: Record<number, OverlayPosition> = {};
+  const n = Math.max(1, playerCount);
+
+  if (preset === 'compact') {
+    const start = 25;
+    const end = 75;
+    const step = n === 1 ? 0 : (end - start) / (n - 1);
+    for (let i = 1; i <= n; i++) players[i] = { x: n === 1 ? 50 : start + step * (i - 1), y: 90 };
+  } else if (preset === 'centered') {
+    const start = 10;
+    const end = 90;
+    const step = n === 1 ? 0 : (end - start) / (n - 1);
+    for (let i = 1; i <= n; i++) players[i] = { x: n === 1 ? 50 : start + step * (i - 1), y: 50 };
+  } else {
+    // split: top row / bottom row
+    const topCount = Math.ceil(n / 2);
+    const bottomCount = n - topCount;
+    const placeRow = (count: number, y: number, offset: number) => {
+      if (count === 0) return;
+      const step = 100 / (count + 1);
+      for (let i = 0; i < count; i++) players[offset + i + 1] = { x: step * (i + 1), y };
+    };
+    placeRow(topCount, 15, 0);
+    placeRow(bottomCount, 85, topCount);
+  }
+
+  return {
+    players,
+    dayNight: { x: 5, y: 5 },
+    dungeon: { x: 95, y: 5 },
+  };
 }
 
 export interface OverlayPosition {
@@ -413,6 +458,9 @@ export function normalizeRoom(room: Room): Room {
       textScale: room.settings?.textScale ?? 'normal',
       streamerMode: room.settings?.streamerMode ?? false,
       enableSwipeLife: room.settings?.enableSwipeLife ?? false,
+      overlayBgColor: room.settings?.overlayBgColor,
+      overlayTextColor: room.settings?.overlayTextColor,
+      overlayPreset: room.settings?.overlayPreset,
     },
     activePlayerIndex: room.activePlayerIndex ?? 0,
     turnNumber: room.turnNumber ?? 1,

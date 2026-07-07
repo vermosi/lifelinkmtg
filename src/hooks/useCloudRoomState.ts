@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Room, HistoryEntry, OverlayLayout, generateId, createDefaultOverlayLayout, GamePreset, Player, PlayerCount, createDefaultPlayer, normalizeRoom } from '@/lib/roomUtils';
+import { Room, HistoryEntry, OverlayLayout, generateId, createDefaultOverlayLayout, GamePreset, Player, PlayerCount, createDefaultPlayer, normalizeRoom, OverlayPresetId, buildOverlayPresetLayout } from '@/lib/roomUtils';
 import { getCloudRoom, updateCloudRoom, subscribeToRoom, addToRecentRooms, getStoredAdminKey } from '@/lib/cloudRoomUtils';
 import { loadPersistedRoom, savePersistedRoom } from '@/lib/roomPersistence';
 import { trackEvent } from '@/lib/analytics';
@@ -504,6 +504,32 @@ export function useCloudRoomState(roomId: string | undefined) {
     }));
   }, [updateRoom]);
 
+  const setShowNamesOnOverlay = useCallback((show: boolean) => {
+    updateRoom(prev => ({
+      ...prev,
+      settings: { ...prev.settings, showNamesOnOverlay: show },
+    }));
+  }, [updateRoom]);
+
+  const setOverlayColors = useCallback((colors: { bg?: string | null; text?: string | null }) => {
+    updateRoom(prev => ({
+      ...prev,
+      settings: {
+        ...prev.settings,
+        ...(colors.bg !== undefined ? { overlayBgColor: colors.bg ?? undefined } : {}),
+        ...(colors.text !== undefined ? { overlayTextColor: colors.text ?? undefined } : {}),
+      },
+    }));
+  }, [updateRoom]);
+
+  const applyOverlayPreset = useCallback((preset: OverlayPresetId) => {
+    updateRoom(prev => ({
+      ...prev,
+      overlayLayout: buildOverlayPresetLayout(preset, prev.playerCount),
+      settings: { ...prev.settings, overlayPreset: preset },
+    }));
+  }, [updateRoom]);
+
   const loadPreset = useCallback((preset: GamePreset) => {
     updateRoom(prev => {
       const newPlayerCount = preset.playerCount;
@@ -583,6 +609,9 @@ export function useCloudRoomState(roomId: string | undefined) {
     setTextScale,
     setOverlayFontSize,
     setOverlayFontFamily,
+    setShowNamesOnOverlay,
+    setOverlayColors,
+    applyOverlayPreset,
     loadPreset,
   };
 }
