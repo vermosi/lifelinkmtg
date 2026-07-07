@@ -65,6 +65,7 @@ export function RoomControl() {
     setShowNamesOnOverlay,
     setOverlayColors,
     applyOverlayPreset,
+    resetOverlayDefaults,
   } = useCloudRoomState(roomId);
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -942,6 +943,20 @@ export function RoomControl() {
                       </button>
                     )}
                   </div>
+
+                  {/* Single reset for overlay preset, colors, and name visibility */}
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Reset the overlay to defaults? This clears the layout preset, custom colors, and re-enables player names.')) {
+                        resetOverlayDefaults();
+                        toast({ title: 'Overlay reset', description: 'Preset, colors, and names restored to defaults.' });
+                      }
+                    }}
+                    className="w-full flex items-center justify-center gap-2 py-2 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Reset overlay to defaults
+                  </button>
                 </div>
 
                 {/* Interaction settings */}

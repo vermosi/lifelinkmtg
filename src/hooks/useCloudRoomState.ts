@@ -530,6 +530,22 @@ export function useCloudRoomState(roomId: string | undefined) {
     }));
   }, [updateRoom]);
 
+  // Restore overlay to the room's baseline: default layout for player count,
+  // no preset, no color overrides, names visible.
+  const resetOverlayDefaults = useCallback(() => {
+    updateRoom(prev => ({
+      ...prev,
+      overlayLayout: createDefaultOverlayLayout(prev.playerCount),
+      settings: {
+        ...prev.settings,
+        overlayPreset: undefined,
+        overlayBgColor: undefined,
+        overlayTextColor: undefined,
+        showNamesOnOverlay: true,
+      },
+    }));
+  }, [updateRoom]);
+
   const loadPreset = useCallback((preset: GamePreset) => {
     updateRoom(prev => {
       const newPlayerCount = preset.playerCount;
@@ -612,6 +628,7 @@ export function useCloudRoomState(roomId: string | undefined) {
     setShowNamesOnOverlay,
     setOverlayColors,
     applyOverlayPreset,
+    resetOverlayDefaults,
     loadPreset,
   };
 }
