@@ -162,6 +162,14 @@ export function OverlayView() {
   const providedAdminKey = searchParams.get('adminKey');
   const canEdit = !!(room && providedAdminKey && providedAdminKey === room.adminKey);
 
+  // OBS scaling options (URL-driven so different scenes can use different sizes):
+  //   ?fit=fixed  -> render on a 1920×1080 canvas, scaled to fit the browser
+  //   ?fit=fill   -> fill the browser size (default; keeps existing behavior)
+  //   ?safe=1     -> inset the positioning area by 5% (title-safe margins)
+  const fitParam = (searchParams.get('fit') || '').toLowerCase();
+  const requestedFit: 'fill' | 'fixed' = fitParam === 'fixed' ? 'fixed' : 'fill';
+  const safeMargins = searchParams.get('safe') === '1';
+
   const resetOverlayLayout = () => {
     if (room) {
       updateOverlayLayout(createDefaultOverlayLayout(room.playerCount));
@@ -169,6 +177,9 @@ export function OverlayView() {
   };
   const [isEditMode, setIsEditMode] = useState(false);
   const editingEnabled = canEdit && isEditMode;
+  // Force fill mode while dragging so drag coordinates match the visible stage
+  // (fixed mode uses a CSS transform that would confuse pointer math).
+  const fit: 'fill' | 'fixed' = editingEnabled ? 'fill' : requestedFit;
 
   if (loading || !room) {
     return (
