@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Room, HistoryEntry, OverlayLayout, generateId, createDefaultOverlayLayout, GamePreset, Player, PlayerCount, createDefaultPlayer, normalizeRoom } from '@/lib/roomUtils';
+import { Room, HistoryEntry, OverlayLayout, generateId, createDefaultOverlayLayout, GamePreset, Player, PlayerCount, createDefaultPlayer, normalizeRoom, OverlayPresetId, buildOverlayPresetLayout } from '@/lib/roomUtils';
 import { getCloudRoom, updateCloudRoom, subscribeToRoom, addToRecentRooms, getStoredAdminKey } from '@/lib/cloudRoomUtils';
 import { loadPersistedRoom, savePersistedRoom } from '@/lib/roomPersistence';
 import { trackEvent } from '@/lib/analytics';
