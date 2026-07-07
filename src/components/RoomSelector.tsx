@@ -12,6 +12,31 @@ export function RoomSelector() {
   const [isCreating, setIsCreating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showLayoutPicker, setShowLayoutPicker] = useState(false);
+  const [joinCode, setJoinCode] = useState('');
+  const [isJoining, setIsJoining] = useState(false);
+
+  const handleJoinByCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const code = joinCode.trim();
+    if (!code) return;
+    if (!/^[A-Za-z0-9]{4,32}$/.test(code)) {
+      toast({ title: 'Invalid code', description: 'Codes are 4-32 letters and numbers.' });
+      return;
+    }
+    setIsJoining(true);
+    const room = await getCloudRoom(code);
+    setIsJoining(false);
+    if (!room) {
+      toast({ title: 'Room not found', description: `No active room matches “${code}”.` });
+      return;
+    }
+    const storedAdminKey = getStoredAdminKey(room.id);
+    if (storedAdminKey) {
+      navigate(`/room/${room.id}?adminKey=${storedAdminKey}`);
+    } else {
+      navigate(`/room/${room.id}`);
+    }
+  };
 
   useEffect(() => {
     const loadRecentRooms = async () => {
