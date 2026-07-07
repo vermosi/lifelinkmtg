@@ -961,12 +961,14 @@ export function RoomControl() {
               </div>
             )}
 
-            <button
-              onClick={() => navigate('/')}
-              className="w-full flex items-center justify-center gap-2 py-2 text-muted-foreground text-sm hover:text-foreground"
-            >
-              <ArrowLeft className="w-4 h-4" /> Home
-            </button>
+            <div className="pt-2 border-t border-border">
+              <button
+                onClick={() => navigate('/')}
+                className="w-full flex items-center justify-center gap-2 py-2 text-muted-foreground text-sm hover:text-foreground"
+              >
+                <ArrowLeft className="w-4 h-4" /> Home
+              </button>
+            </div>
           </div>
         </div>
       )}
