@@ -65,6 +65,7 @@ export function RoomControl() {
     setShowNamesOnOverlay,
     setOverlayColors,
     applyOverlayPreset,
+    resetOverlayDefaults,
   } = useCloudRoomState(roomId);
 
   const [menuOpen, setMenuOpen] = useState(false);
