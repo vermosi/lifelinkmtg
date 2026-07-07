@@ -129,8 +129,10 @@ export function useCloudRoomState(roomId: string | undefined) {
         lastUpdateRef.current = JSON.stringify(toSync);
         await updateCloudRoom(toSync, adminKey);
         pendingRoomRef.current = null;
+        setSyncError(false);
       } catch (error) {
         console.error('Failed to sync room to cloud.', error);
+        setSyncError(true);
       } finally {
         setSyncing(false);
       }
