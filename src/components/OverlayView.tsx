@@ -137,8 +137,6 @@ export function OverlayView() {
   const resetOverlayLayout = () => {
     if (room) {
       updateOverlayLayout(createDefaultOverlayLayout(room.playerCount));
-      return;
-      updateOverlayLayout(createDefaultOverlayLayout(room.playerCount));
     }
   };
   const [isEditMode, setIsEditMode] = useState(false);
