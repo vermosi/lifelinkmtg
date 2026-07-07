@@ -916,6 +916,35 @@ export function RoomControl() {
                   Copy Admin URL
                 </button>
               )}
+
+              <div className="space-y-3 pt-2">
+                <div className="bg-secondary/50 rounded-xl p-3 flex flex-col items-center gap-2">
+                  <span className="text-xs font-medium text-muted-foreground">Scan to open overlay</span>
+                  <div className="bg-white p-2 rounded-lg">
+                    <QRCode
+                      value={getOverlayUrl(room)}
+                      size={160}
+                      bgColor="#ffffff"
+                      fgColor="#000000"
+                      aria-label="QR code for overlay URL"
+                    />
+                  </div>
+                </div>
+                {isAdmin && (
+                  <div className="bg-secondary/50 rounded-xl p-3 flex flex-col items-center gap-2">
+                    <span className="text-xs font-medium text-muted-foreground">Scan to control this room</span>
+                    <div className="bg-white p-2 rounded-lg">
+                      <QRCode
+                        value={getControlUrl(room)}
+                        size={160}
+                        bgColor="#ffffff"
+                        fgColor="#000000"
+                        aria-label="QR code for admin control URL"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <button
