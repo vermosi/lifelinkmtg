@@ -187,6 +187,33 @@ export function RoomControl() {
     }
   };
 
+  const copyChecklist = async () => {
+    const text = `OBS Browser Source checklist for LifeLink
+
+1. Source type: Browser
+2. Width: 1920
+3. Height: 1080
+4. FPS: 30
+5. Refresh interval: 0 seconds (LifeLink updates live)
+6. Refresh browser when scene becomes active: ON
+7. Shutdown source when not visible: OFF
+8. Custom CSS: Leave blank
+
+Overlay URL: ${overlayUrl}`;
+    if (!navigator.clipboard) {
+      toast({ title: 'Copy failed', description: 'Clipboard access is unavailable in this browser.' });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedChecklist(true);
+      setTimeout(() => setCopiedChecklist(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy checklist to clipboard.', error);
+      toast({ title: 'Copy failed', description: 'Unable to copy the checklist. Please try again.' });
+    }
+  };
+
   const randomizeFirstPlayer = () => {
     const players = room.players;
     const randomIndex = Math.floor(Math.random() * players.length);
