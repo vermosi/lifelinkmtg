@@ -110,8 +110,8 @@ export async function createCloudRoom(playerCount: PlayerCount = 4, layoutId?: s
     : getDefaultLayout(playerCount);
 
   const room: Room = {
-    id: generateId(6),
-    adminKey: generateId(12),
+    id: generateId(10),
+    adminKey: generateId(24),
     playerCount,
     players: createDefaultPlayers(playerCount, startingLife),
     settings: {
