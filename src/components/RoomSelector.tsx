@@ -120,6 +120,41 @@ export function RoomSelector() {
           </p>
         </div>
 
+        {/* Join by code */}
+        <form onSubmit={handleJoinByCode} className="space-y-2">
+          <label htmlFor="join-code" className="text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+            <LogIn className="w-3 h-3" />
+            Join with code
+          </label>
+          <div className="flex gap-2">
+            <input
+              id="join-code"
+              type="text"
+              inputMode="text"
+              autoComplete="off"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              maxLength={32}
+              placeholder="e.g. A7kP2q"
+              value={joinCode}
+              onChange={(e) => setJoinCode(e.target.value.replace(/\s+/g, ''))}
+              className="flex-1 px-3 py-3 bg-secondary rounded-lg sm:rounded-xl text-foreground font-display text-xl tracking-widest text-center placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent"
+              aria-label="Room join code"
+            />
+            <button
+              type="submit"
+              disabled={isJoining || joinCode.trim().length < 4}
+              className="px-4 py-3 bg-accent text-accent-foreground rounded-lg sm:rounded-xl font-medium hover:bg-accent/90 transition-colors disabled:opacity-50 flex items-center justify-center min-w-[72px]"
+            >
+              {isJoining ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Join'}
+            </button>
+          </div>
+          <p className="text-center text-xs text-muted-foreground">
+            Enter the code shown on the host's screen or scan their QR.
+          </p>
+        </form>
+
         {/* Recent rooms */}
         {isLoading ? (
           <div className="flex items-center justify-center py-4 sm:py-6">
