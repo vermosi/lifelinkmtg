@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useCloudRoomState } from '@/hooks/useCloudRoomState';
 import { cn } from '@/lib/utils';
@@ -132,14 +132,19 @@ function DraggableElement({ id, position, onPositionChange, isEditMode, children
 
 export function OverlayView() {
   const { roomId } = useParams<{ roomId: string }>();
+  const [searchParams] = useSearchParams();
   const { room, loading, updateOverlayLayout } = useCloudRoomState(roomId);
-  
+
+  const providedAdminKey = searchParams.get('adminKey');
+  const canEdit = !!(room && providedAdminKey && providedAdminKey === room.adminKey);
+
   const resetOverlayLayout = () => {
     if (room) {
       updateOverlayLayout(createDefaultOverlayLayout(room.playerCount));
     }
   };
   const [isEditMode, setIsEditMode] = useState(false);
+  const editingEnabled = canEdit && isEditMode;
 
   if (loading || !room) {
     return (
@@ -181,54 +186,57 @@ export function OverlayView() {
   return (
     <div 
       className="w-screen h-screen relative overflow-hidden"
-      style={{ backgroundColor: isEditMode ? 'rgba(0,0,0,0.8)' : 'transparent' }}
+      style={{ backgroundColor: editingEnabled ? 'rgba(0,0,0,0.8)' : 'transparent' }}
     >
-      {/* Edit mode toggle */}
-      <div className="absolute top-4 right-4 z-50 flex gap-2">
-        {isEditMode && (
+      {/* Edit mode toggle — only visible to admins (adminKey in URL). OBS overlay URL stays clean. */}
+      {canEdit && (
+        <div className="absolute top-4 right-4 z-50 flex gap-2">
+          {isEditMode && (
+            <button
+              onClick={() => resetOverlayLayout()}
+              className="flex items-center gap-2 px-3 py-2 bg-red-500/80 hover:bg-red-500 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Reset Layout
+            </button>
+          )}
           <button
-            onClick={() => resetOverlayLayout()}
-            className="flex items-center gap-2 px-3 py-2 bg-red-500/80 hover:bg-red-500 text-white rounded-lg text-sm font-medium transition-colors"
+            onClick={() => setIsEditMode(!isEditMode)}
+            className={cn(
+              'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all',
+              isEditMode
+                ? 'bg-green-500 text-white hover:bg-green-600'
+                : 'bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm'
+            )}
           >
-            <RotateCcw className="w-4 h-4" />
-            Reset Layout
+            {isEditMode ? (
+              <>
+                <Lock className="w-4 h-4" />
+                Lock Layout
+              </>
+            ) : (
+              <>
+                <Unlock className="w-4 h-4" />
+                Edit Layout
+              </>
+            )}
           </button>
-        )}
-        <button
-          onClick={() => setIsEditMode(!isEditMode)}
-          className={cn(
-            'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all',
-            isEditMode
-              ? 'bg-green-500 text-white hover:bg-green-600'
-              : 'bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm'
-          )}
-        >
-          {isEditMode ? (
-            <>
-              <Lock className="w-4 h-4" />
-              Lock Layout
-            </>
-          ) : (
-            <>
-              <Unlock className="w-4 h-4" />
-              Edit Layout
-            </>
-          )}
-        </button>
-      </div>
+        </div>
+      )}
 
-      {isEditMode && (
+      {editingEnabled && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-black/70 text-white px-4 py-2 rounded-lg text-sm">
           Drag elements to reposition them for your stream
         </div>
       )}
+
 
       {/* Day/Night indicator */}
       <DraggableElement
         id="dayNight"
         position={layout.dayNight}
         onPositionChange={(pos) => updatePosition('dayNight', pos)}
-        isEditMode={isEditMode}
+        isEditMode={editingEnabled}
       >
         <div 
           className={cn(
@@ -250,7 +258,7 @@ export function OverlayView() {
           id="dungeon"
           position={layout.dungeon}
           onPositionChange={(pos) => updatePosition('dungeon', pos)}
-          isEditMode={isEditMode}
+          isEditMode={editingEnabled}
         >
           <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/70 backdrop-blur-sm">
             <Shield className="w-4 h-4 text-purple-400" fill="currentColor" />
@@ -283,7 +291,7 @@ export function OverlayView() {
             id={`player-${player.id}`}
             position={playerPos}
             onPositionChange={(pos) => updatePlayerPosition(player.id, pos)}
-            isEditMode={isEditMode}
+            isEditMode={editingEnabled}
           >
             <div
               className={cn(
