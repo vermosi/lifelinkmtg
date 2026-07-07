@@ -80,6 +80,12 @@ export function RoomControl() {
   const [toolsDrawerOpen, setToolsDrawerOpen] = useState(false);
   const isAdmin = room ? adminKey === room.adminKey : false;
 
+  // Recompute share URLs whenever the room id or adminKey changes so QR codes
+  // and copy buttons always reflect the current room state.
+  const overlayUrl = useMemo(() => (room ? getOverlayUrl(room) : ''), [room?.id]);
+  const controlUrl = useMemo(() => (room ? getControlUrl(room) : ''), [room?.id, room?.adminKey]);
+  const overlayEditUrl = useMemo(() => (room ? getOverlayEditUrl(room) : ''), [room?.id, room?.adminKey]);
+
   // Convert hex to HSL for color picker
   const hexToHsl = (hex: string): string => {
     const r = parseInt(hex.slice(1, 3), 16) / 255;
