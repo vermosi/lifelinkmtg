@@ -1,6 +1,6 @@
 import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import QRCode from 'react-qr-code';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown, Shield, Sun, Moon, Dices, Save, FolderOpen, Plus, Cloud, Loader2, Wrench, Share2, Move } from 'lucide-react';
 import { ToolsDrawer } from './ToolsDrawer';
 import { useCloudRoomState } from '@/hooks/useCloudRoomState';
@@ -80,6 +80,12 @@ export function RoomControl() {
   const [toolsDrawerOpen, setToolsDrawerOpen] = useState(false);
   const isAdmin = room ? adminKey === room.adminKey : false;
 
+  // Recompute share URLs whenever the room id or adminKey changes so QR codes
+  // and copy buttons always reflect the current room state.
+  const overlayUrl = useMemo(() => (room ? getOverlayUrl(room) : ''), [room?.id]);
+  const controlUrl = useMemo(() => (room ? getControlUrl(room) : ''), [room?.id, room?.adminKey]);
+  const overlayEditUrl = useMemo(() => (room ? getOverlayEditUrl(room) : ''), [room?.id, room?.adminKey]);
+
   // Convert hex to HSL for color picker
   const hexToHsl = (hex: string): string => {
     const r = parseInt(hex.slice(1, 3), 16) / 255;
@@ -130,7 +136,7 @@ export function RoomControl() {
   };
 
   const copyUrl = async (type: 'control' | 'overlay') => {
-    const url = type === 'control' ? getControlUrl(room) : getOverlayUrl(room);
+    const url = type === 'control' ? controlUrl : overlayUrl;
     if (!navigator.clipboard) {
       toast({
         title: 'Copy failed',
@@ -1068,7 +1074,7 @@ export function RoomControl() {
                 {isAdmin && (
                   <div className="space-y-2">
                     <a
-                      href={getOverlayEditUrl(room)}
+                      href={overlayEditUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full flex items-center justify-center gap-2 py-2 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80"
@@ -1093,32 +1099,36 @@ export function RoomControl() {
                   </button>
                 )}
 
-                {/* QR codes */}
+                {/* QR codes — re-derive from live room so scans always match the current URL/adminKey */}
                 <div className="grid grid-cols-1 gap-3">
                   <div className="bg-secondary/50 rounded-xl p-3 flex flex-col items-center gap-2">
                     <span className="text-xs font-medium text-muted-foreground">Scan to open overlay</span>
                     <div className="bg-white p-2 rounded-lg">
                       <QRCode
-                        value={getOverlayUrl(room)}
+                        key={overlayUrl}
+                        value={overlayUrl}
                         size={160}
                         bgColor="#ffffff"
                         fgColor="#000000"
                         aria-label="QR code for overlay URL"
                       />
                     </div>
+                    <span className="text-[10px] text-muted-foreground break-all text-center px-1">{overlayUrl}</span>
                   </div>
                   {isAdmin && (
                     <div className="bg-secondary/50 rounded-xl p-3 flex flex-col items-center gap-2">
                       <span className="text-xs font-medium text-muted-foreground">Scan to control this room</span>
                       <div className="bg-white p-2 rounded-lg">
                         <QRCode
-                          value={getControlUrl(room)}
+                          key={controlUrl}
+                          value={controlUrl}
                           size={160}
                           bgColor="#ffffff"
                           fgColor="#000000"
                           aria-label="QR code for admin control URL"
                         />
                       </div>
+                      <span className="text-[10px] text-muted-foreground break-all text-center px-1">Includes admin key — keep private</span>
                     </div>
                   )}
                 </div>
