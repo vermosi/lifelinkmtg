@@ -1,7 +1,7 @@
 import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import QRCode from 'react-qr-code';
 import { useEffect, useMemo, useState } from 'react';
-import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown, Shield, Sun, Moon, Dices, Save, FolderOpen, Plus, Cloud, Loader2, Wrench, Share2, Move } from 'lucide-react';
+import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown, Shield, Sun, Moon, Dices, Save, FolderOpen, Plus, Cloud, Loader2, Wrench, Share2, Move, AlertCircle, RefreshCw, Maximize, Link } from 'lucide-react';
 import { ToolsDrawer } from './ToolsDrawer';
 import { useCloudRoomState } from '@/hooks/useCloudRoomState';
 import { getControlUrl, getOverlayUrl, getOverlayEditUrl, PLAYER_COLORS, formatTimestamp, HistoryEntry, DUNGEON_ROOMS, loadPresets, savePreset, deletePreset, createPresetFromRoom, GamePreset, LAYOUTS, OVERLAY_PRESETS } from '@/lib/roomUtils';
@@ -1181,6 +1181,39 @@ export function RoomControl() {
                       Tip: If the overlay is blank or frozen, right-click the source → Properties → Refresh Cache, or re-paste the URL.
                     </p>
                   </div>
+                </div>
+
+                {/* OBS Browser Source troubleshooting */}
+                <div className="bg-secondary/50 rounded-xl p-3 space-y-2">
+                  <div className="text-xs font-semibold text-foreground flex items-center gap-2">
+                    <Wrench className="w-3.5 h-3.5" /> Troubleshooting
+                  </div>
+                  <ul className="text-xs text-muted-foreground space-y-2">
+                    <li className="flex items-start gap-2">
+                      <AlertCircle className="w-3.5 h-3.5 text-foreground shrink-0 mt-0.5" />
+                      <span>
+                        <span className="text-foreground font-medium">Blank screen:</span> confirm the source is visible and the URL field has no extra spaces. Right-click the source → Properties → refresh the URL.
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <RefreshCw className="w-3.5 h-3.5 text-foreground shrink-0 mt-0.5" />
+                      <span>
+                        <span className="text-foreground font-medium">Cache problems:</span> right-click the Browser Source → Properties → <span className="text-foreground font-medium">Refresh Cache</span>. Restart OBS if it still looks stale.
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Maximize className="w-3.5 h-3.5 text-foreground shrink-0 mt-0.5" />
+                      <span>
+                        <span className="text-foreground font-medium">Wrong size:</span> set the source width to <span className="text-foreground font-medium">1920</span> and height to <span className="text-foreground font-medium">1080</span>, then scale the source in the scene.
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Link className="w-3.5 h-3.5 text-foreground shrink-0 mt-0.5" />
+                      <span>
+                        <span className="text-foreground font-medium">URL not loading:</span> check your internet connection and re-copy the overlay URL. If it still fails, try pasting the URL into a regular browser tab.
+                      </span>
+                    </li>
+                  </ul>
                 </div>
 
                 {/* Admin: arrange layout */}
