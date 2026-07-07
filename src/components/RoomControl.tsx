@@ -12,6 +12,48 @@ import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { trackEvent } from '@/lib/analytics';
 
+type SyncStatus = 'online' | 'syncing' | 'offline' | 'error';
+
+function SyncStatusPill({ status }: { status: SyncStatus }) {
+  const config: Record<SyncStatus, { label: string; className: string; icon: JSX.Element }> = {
+    online: {
+      label: 'Synced',
+      className: 'bg-secondary text-muted-foreground',
+      icon: <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" aria-hidden />,
+    },
+    syncing: {
+      label: 'Syncing',
+      className: 'bg-secondary text-muted-foreground',
+      icon: <Loader2 className="w-3 h-3 animate-spin" aria-hidden />,
+    },
+    offline: {
+      label: 'Offline',
+      className: 'bg-amber-500/15 text-amber-400',
+      icon: <WifiOff className="w-3 h-3" aria-hidden />,
+    },
+    error: {
+      label: 'Sync error',
+      className: 'bg-destructive/15 text-destructive',
+      icon: <AlertCircle className="w-3 h-3" aria-hidden />,
+    },
+  };
+  const { label, className, icon } = config[status];
+  return (
+    <span
+      className={cn(
+        'text-xs px-2 py-1 rounded-full flex items-center gap-1',
+        className
+      )}
+      role="status"
+      aria-live="polite"
+      title={label}
+    >
+      {icon}
+      {label}
+    </span>
+  );
+}
+
 function HistoryIcon({ type }: { type: HistoryEntry['type'] }) {
   switch (type) {
     case 'life': return <Heart className="w-3 h-3" />;
