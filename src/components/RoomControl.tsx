@@ -1172,6 +1172,15 @@ Overlay URL: ${overlayUrl}`;
                     {copiedUrl === 'overlay' ? <Check className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
                     {copiedUrl === 'overlay' ? 'Copied!' : 'Copy Overlay URL for OBS'}
                   </button>
+                  <a
+                    href={overlayUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-center gap-2 py-2 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Open overlay in new tab
+                  </a>
                   <p className="text-xs text-muted-foreground text-center">
                     Read-only, safe to share. No admin access.
                   </p>
