@@ -360,11 +360,11 @@ export function OverlayView() {
             <div
               className={cn(
                 'flex flex-col items-center justify-center py-3 px-6 rounded-2xl min-w-[120px] relative',
-                !useSimpleText && room.settings.showBackgroundCards && !room.settings.overlayBgColor && 'backdrop-blur-md'
+                !useSimpleText && room.settings.showBackgroundCards && !effectiveSettings.overlayBgColor && 'backdrop-blur-md'
               )}
               style={{ 
                 backgroundColor: !useSimpleText && room.settings.showBackgroundCards
-                  ? (room.settings.overlayBgColor ?? `hsl(${player.color} / 0.9)`)
+                  ? (effectiveSettings.overlayBgColor ?? `hsl(${player.color} / 0.9)`)
                   : 'transparent' 
               }}
             >
@@ -404,10 +404,10 @@ export function OverlayView() {
                 <div 
                   className="font-body font-semibold text-base mb-0.5"
                   style={useSimpleText ? {
-                    color: room.settings.overlayTextColor ?? 'white',
+                    color: effectiveSettings.overlayTextColor ?? 'white',
                     textShadow: '2px 2px 0 black, -2px -2px 0 black, 2px -2px 0 black, -2px 2px 0 black, 0 2px 0 black, 0 -2px 0 black, 2px 0 0 black, -2px 0 0 black',
                   } : { 
-                    color: room.settings.overlayTextColor ?? 'rgba(0,0,0,0.7)'
+                    color: effectiveSettings.overlayTextColor ?? 'rgba(0,0,0,0.7)'
                   }}
                 >
                   {player.name}
@@ -416,10 +416,10 @@ export function OverlayView() {
               <div
                 className={cn('font-display leading-none', getFontSize())}
                 style={useSimpleText ? {
-                  color: room.settings.overlayTextColor ?? 'white',
+                  color: effectiveSettings.overlayTextColor ?? 'white',
                   textShadow: '3px 3px 0 black, -3px -3px 0 black, 3px -3px 0 black, -3px 3px 0 black, 0 3px 0 black, 0 -3px 0 black, 3px 0 0 black, -3px 0 0 black',
                 } : {
-                  color: room.settings.overlayTextColor ?? (room.settings.showBackgroundCards 
+                  color: effectiveSettings.overlayTextColor ?? (room.settings.showBackgroundCards 
                     ? 'rgba(0,0,0,0.8)' 
                     : `hsl(${player.color})`),
                   textShadow: room.settings.showBackgroundCards 
