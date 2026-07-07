@@ -69,11 +69,14 @@ export function useCloudRoomState(roomId: string | undefined) {
     loadRoom();
   }, [roomId]);
 
-  // Subscribe to real-time updates
+  // Subscribe to real-time updates. Skip incoming updates whenever there is
+  // a pending local write — otherwise a poll that ran before our debounced
+  // sync completes could clobber the just-tapped life total.
   useEffect(() => {
     if (!roomId) return;
 
     const unsubscribe = subscribeToRoom(roomId, (updatedRoom) => {
+      if (pendingRoomRef.current) return;
       const updateStr = JSON.stringify(updatedRoom);
       if (updateStr !== lastUpdateRef.current) {
         lastUpdateRef.current = updateStr;
