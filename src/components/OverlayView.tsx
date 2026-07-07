@@ -18,78 +18,61 @@ function DraggableElement({ id, position, onPositionChange, isEditMode, children
   const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0 });
   const initialPos = useRef({ x: 0, y: 0 });
+  const stageSize = useRef({ w: window.innerWidth, h: window.innerHeight });
+
+  // Measure the positioning parent so drag math stays correct inside a
+  // scaled/inset stage (fit-to-fixed or safe-margin modes).
+  const captureStageSize = () => {
+    const parent = elementRef.current?.parentElement;
+    if (parent) {
+      const rect = parent.getBoundingClientRect();
+      stageSize.current = {
+        w: rect.width || window.innerWidth,
+        h: rect.height || window.innerHeight,
+      };
+    } else {
+      stageSize.current = { w: window.innerWidth, h: window.innerHeight };
+    }
+  };
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (!isEditMode) return;
     e.preventDefault();
+    captureStageSize();
     setIsDragging(true);
     dragStart.current = { x: e.clientX, y: e.clientY };
     initialPos.current = { x: position.x, y: position.y };
   }, [isEditMode, position]);
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isDragging) return;
-    const deltaX = ((e.clientX - dragStart.current.x) / window.innerWidth) * 100;
-    const deltaY = ((e.clientY - dragStart.current.y) / window.innerHeight) * 100;
-    const newX = Math.max(5, Math.min(95, initialPos.current.x + deltaX));
-    const newY = Math.max(5, Math.min(95, initialPos.current.y + deltaY));
-    onPositionChange({ x: newX, y: newY });
-  }, [isDragging, onPositionChange]);
-
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
-  }, []);
-
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (!isEditMode) return;
     const touch = e.touches[0];
+    captureStageSize();
     setIsDragging(true);
     dragStart.current = { x: touch.clientX, y: touch.clientY };
     initialPos.current = { x: position.x, y: position.y };
   }, [isEditMode, position]);
 
-  const handleTouchMove = useCallback((e: TouchEvent) => {
-    if (!isDragging) return;
-    const touch = e.touches[0];
-    const deltaX = ((touch.clientX - dragStart.current.x) / window.innerWidth) * 100;
-    const deltaY = ((touch.clientY - dragStart.current.y) / window.innerHeight) * 100;
-    const newX = Math.max(5, Math.min(95, initialPos.current.x + deltaX));
-    const newY = Math.max(5, Math.min(95, initialPos.current.y + deltaY));
-    onPositionChange({ x: newX, y: newY });
-  }, [isDragging, onPositionChange]);
-
-  const handleTouchEnd = useCallback(() => {
-    setIsDragging(false);
-  }, []);
-
   // Add global event listeners when dragging
   useEffect(() => {
     if (!isDragging) return;
 
-    const handleGlobalMouseMove = (e: MouseEvent) => {
-      const deltaX = ((e.clientX - dragStart.current.x) / window.innerWidth) * 100;
-      const deltaY = ((e.clientY - dragStart.current.y) / window.innerHeight) * 100;
+    const computeAndSet = (clientX: number, clientY: number) => {
+      const { w, h } = stageSize.current;
+      const deltaX = ((clientX - dragStart.current.x) / w) * 100;
+      const deltaY = ((clientY - dragStart.current.y) / h) * 100;
       const newX = Math.max(5, Math.min(95, initialPos.current.x + deltaX));
       const newY = Math.max(5, Math.min(95, initialPos.current.y + deltaY));
       onPositionChange({ x: newX, y: newY });
     };
 
-    const handleGlobalMouseUp = () => {
-      setIsDragging(false);
-    };
-
+    const handleGlobalMouseMove = (e: MouseEvent) => computeAndSet(e.clientX, e.clientY);
+    const handleGlobalMouseUp = () => setIsDragging(false);
     const handleGlobalTouchMove = (e: TouchEvent) => {
       const touch = e.touches[0];
-      const deltaX = ((touch.clientX - dragStart.current.x) / window.innerWidth) * 100;
-      const deltaY = ((touch.clientY - dragStart.current.y) / window.innerHeight) * 100;
-      const newX = Math.max(5, Math.min(95, initialPos.current.x + deltaX));
-      const newY = Math.max(5, Math.min(95, initialPos.current.y + deltaY));
-      onPositionChange({ x: newX, y: newY });
+      computeAndSet(touch.clientX, touch.clientY);
     };
-
-    const handleGlobalTouchEnd = () => {
-      setIsDragging(false);
-    };
+    const handleGlobalTouchEnd = () => setIsDragging(false);
 
     window.addEventListener('mousemove', handleGlobalMouseMove);
     window.addEventListener('mouseup', handleGlobalMouseUp);
@@ -126,6 +109,47 @@ function DraggableElement({ id, position, onPositionChange, isEditMode, children
         </div>
       )}
       {children}
+    </div>
+  );
+}
+
+/**
+ * Wraps overlay content in a fit container.
+ *  - fill: fills whatever size OBS/browser gives us (default, current behavior).
+ *  - fixed: renders a 1920x1080 canvas scaled with `contain` (letterbox) so the
+ *    layout looks identical regardless of Browser Source dimensions.
+ */
+function FitContainer({ fit, children }: { fit: 'fill' | 'fixed'; children: React.ReactNode }) {
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    if (fit !== 'fixed') return;
+    const update = () => {
+      const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+      setScale(s > 0 ? s : 1);
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, [fit]);
+
+  if (fit === 'fill') {
+    return <div className="absolute inset-0">{children}</div>;
+  }
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      <div
+        className="relative"
+        style={{
+          width: 1920,
+          height: 1080,
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
+        }}
+      >
+        {children}
+      </div>
     </div>
   );
 }
