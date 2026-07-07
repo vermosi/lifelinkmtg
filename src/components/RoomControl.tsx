@@ -136,7 +136,7 @@ export function RoomControl() {
   };
 
   const copyUrl = async (type: 'control' | 'overlay') => {
-    const url = type === 'control' ? getControlUrl(room) : getOverlayUrl(room);
+    const url = type === 'control' ? controlUrl : overlayUrl;
     if (!navigator.clipboard) {
       toast({
         title: 'Copy failed',
