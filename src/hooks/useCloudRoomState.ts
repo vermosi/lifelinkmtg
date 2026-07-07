@@ -609,6 +609,9 @@ export function useCloudRoomState(roomId: string | undefined) {
     setTextScale,
     setOverlayFontSize,
     setOverlayFontFamily,
+    setShowNamesOnOverlay,
+    setOverlayColors,
+    applyOverlayPreset,
     loadPreset,
   };
 }
