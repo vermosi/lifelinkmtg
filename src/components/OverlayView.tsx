@@ -162,13 +162,21 @@ export function OverlayView() {
   const providedAdminKey = searchParams.get('adminKey');
   const canEdit = !!(room && providedAdminKey && providedAdminKey === room.adminKey);
 
-  // OBS scaling options (URL-driven so different scenes can use different sizes):
-  //   ?fit=fixed  -> render on a 1920×1080 canvas, scaled to fit the browser
-  //   ?fit=fill   -> fill the browser size (default; keeps existing behavior)
-  //   ?safe=1     -> inset the positioning area by 5% (title-safe margins)
+  // URL-driven overrides so a shared link snapshots the current look:
+  //   ?fit=fixed | ?safe=1  -> OBS scaling
+  //   ?preset=compact|centered|split  -> layout preset (overrides room's saved layout)
+  //   ?bg=<hex> | ?text=<hex>         -> overlay background / text color overrides
   const fitParam = (searchParams.get('fit') || '').toLowerCase();
   const requestedFit: 'fill' | 'fixed' = fitParam === 'fixed' ? 'fixed' : 'fill';
   const safeMargins = searchParams.get('safe') === '1';
+  const presetParam = searchParams.get('preset');
+  const presetOverride: OverlayPresetId | undefined =
+    presetParam && OVERLAY_PRESETS.some(p => p.id === presetParam)
+      ? (presetParam as OverlayPresetId)
+      : undefined;
+  const isHex = (v: string | null): v is string => !!v && /^#[0-9a-fA-F]{6}$/.test(v);
+  const bgOverride = isHex(searchParams.get('bg')) ? searchParams.get('bg')! : undefined;
+  const textOverride = isHex(searchParams.get('text')) ? searchParams.get('text')! : undefined;
 
   const resetOverlayLayout = () => {
     if (room) {
