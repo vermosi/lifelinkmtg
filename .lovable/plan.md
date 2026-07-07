@@ -1,111 +1,37 @@
+Here are suggested improvements based on the project's history and current state. Pick any subset you want and I'll build them.
 
-# Code Review Fixes Plan
+## 1. OBS / Overlay polish (recent focus area)
+- **Preset thumbnails in the Share tab** — small visual chips for each overlay preset so streamers can pick a layout without opening the editor.
+- **Per-preset color themes** — save color picks per preset (not just per room), so switching preset restores its palette.
+- **Overlay diagnostics banner** — inside the read-only overlay, show a tiny toast if the room isn't reachable or the URL params failed to parse (currently silent).
+- **"Copy as OBS scene" JSON** — export a `.json` scene collection snippet with the Browser Source pre-configured (URL, 1920×1080, refresh settings). One import in OBS instead of manual setup.
+- **Overlay refresh throttle** — the polling sync runs at 2s; the overlay could drop to 3–5s to reduce load when only spectators watch.
 
-## Overview
-This plan addresses the issues identified in the code review of the recently refactored player panel components. We'll fix unused props, add missing UI for Monarch/Initiative toggles, add semantic color tokens, clean up dead code, and fix type issues.
+## 2. Room sync & reliability
+- **Optimistic updates with rollback** — life taps currently wait on the poll cycle to reconcile; adding local optimistic state would make mobile feel instant.
+- **Reconnect / offline indicator** — a small dot in the header showing "syncing / offline / stale" so users know when polling stalls.
+- **Idempotency keys on RPC mutations** — protect against double-tap network retries applying life changes twice.
+- **Room TTL / cleanup** — auto-archive rooms with no activity for N days to keep the DB tidy.
 
----
+## 3. Mobile UX
+- **Wake-lock during a game** — request `navigator.wakeLock` so phones don't sleep mid-match.
+- **Haptic on long-press ramp** — subtle escalating vibration as the ramp speeds up.
+- **Landscape lock hint** for 3–4 player rotated layouts on first entry.
+- **PWA install + offline shell** — manifest + service worker so LifeLink installs to home screen.
 
-## Changes Summary
+## 4. Features that fit the roadmap
+- **Match history export** — download the History Log as CSV/JSON at end of game.
+- **Turn timer / chess-clock mode** in the Tools Drawer.
+- **Undo last action** button surfaced from the History Log (one-tap revert of the most recent life/counter change).
+- **Deck archetype quick-pick** — dropdown of previously used deck names per room owner instead of retyping.
 
-### 1. Add Monarch/Initiative Toggle Buttons to CounterModeSelector
-Currently, Monarch and Initiative are display-only indicators. We need to make them interactive so users can toggle these statuses.
+## 5. Code health
+- **Split `RoomControl.tsx`** — it now owns Share, Checklist, Troubleshooting, OBS preview, QR, admin actions. Extract `ShareTab`, `ObsSetupGuide`, `BrowserSourceChecklist`, `ObsPreview` into their own files under `components/room-control/`.
+- **Extract a `services/` layer** for Supabase RPC calls (per workspace standards — UI components shouldn't call the client directly).
+- **Typed room-state schema** — a single `zod` schema for the payload persisted in `useCloudRoomState` (layout, name visibility, colors, preset) to prevent drift between overlay URL params and cloud state.
+- **Unit tests for `roomUtils.ts`** — URL encode/decode is now security-adjacent (drives overlay state); worth a small vitest suite.
 
-**File:** `src/components/CounterModeSelector.tsx`
-- Add `onToggleMonarch` and `onToggleInitiative` callback props
-- Convert static indicators to toggle buttons that call these callbacks
-- Add empty-state buttons when player is not Monarch/Initiative (so they can claim it)
-- Add `isAdmin` prop to control whether buttons are interactive
+## Suggested first batch
+If you want a focused next step, I'd recommend: **optimistic life updates + sync status indicator + wake-lock** — three small, high-impact changes that make the core tracker feel dramatically better on mobile.
 
-### 2. Remove Unused Props from CleanPlayerPanel
-The `onToggleMonarch`, `onToggleInitiative`, and `onAdvanceDungeon` props are passed but never used because this panel doesn't have the Monarch/Initiative toggle UI.
-
-**File:** `src/components/CleanPlayerPanel.tsx`
-- Pass `onToggleMonarch` and `onToggleInitiative` to `CounterModeSelector`
-- Remove `onAdvanceDungeon` from props (not needed for this component)
-
-### 3. Wire Up Props in FullScreenPlayerPanel
-Same issue - props are passed but not forwarded to child components.
-
-**File:** `src/components/FullScreenPlayerPanel.tsx`
-- Pass `onToggleMonarch` and `onToggleInitiative` to `CounterModeSelector`
-- Remove unused `onAdvanceDungeon` from props interface
-
-### 4. Add Semantic Color Tokens for Monarch & Initiative
-Currently using hardcoded yellow/purple colors. We'll add CSS variables and Tailwind config.
-
-**File:** `src/index.css`
-- Add `--counter-monarch: 48 89% 50%` (golden yellow)
-- Add `--counter-initiative: 270 60% 60%` (purple)
-
-**File:** `tailwind.config.ts`
-- Add `monarch: "hsl(var(--counter-monarch))"` to counter colors
-- Add `initiative: "hsl(var(--counter-initiative))"` to counter colors
-
-**File:** `src/components/CounterModeSelector.tsx`
-- Replace hardcoded `bg-yellow-500/40 text-yellow-300` with `bg-counter-monarch/40 text-counter-monarch`
-- Replace hardcoded `bg-purple-500/40 text-purple-300` with `bg-counter-initiative/40 text-counter-initiative`
-
-### 5. Fix TypeScript Type in useHoldToAdjust
-Using `NodeJS.Timeout` which is Node-specific. Browser should use `ReturnType<typeof setTimeout>`.
-
-**File:** `src/hooks/useHoldToAdjust.ts`
-- Change `useRef<NodeJS.Timeout | null>` to `useRef<ReturnType<typeof setTimeout> | null>`
-- This is already correct for `setTimeout`, but `setInterval` should use `ReturnType<typeof setInterval>`
-
-### 6. Remove Dead CSS Classes
-The `.life-button` classes are no longer used after the refactor.
-
-**File:** `src/index.css`
-- Remove `.life-button` and `.life-button.compact` classes (lines 143-157)
-
----
-
-## Technical Details
-
-### Updated CounterModeSelector Interface
-```typescript
-interface CounterModeSelectorProps {
-  mode: CounterMode;
-  onModeChange: (mode: CounterMode) => void;
-  poison: number;
-  experience: number;
-  energy: number;
-  commanderDamage: number;
-  isMonarch: boolean;
-  hasInitiative: boolean;
-  dungeonProgress: number;
-  isCompact: boolean;
-  isAdmin: boolean;  // NEW
-  onToggleMonarch: () => void;  // NEW
-  onToggleInitiative: () => void;  // NEW
-}
-```
-
-### Monarch/Initiative Button Behavior
-- When player is Monarch: Show filled crown button (tap to remove)
-- When player is not Monarch: Show outline crown button (tap to claim)
-- Same pattern for Initiative with shield icon
-- Only interactive when `isAdmin` is true
-
----
-
-## Files to Modify
-1. `src/components/CounterModeSelector.tsx` - Add toggle functionality and semantic colors
-2. `src/components/CleanPlayerPanel.tsx` - Wire up toggle props
-3. `src/components/FullScreenPlayerPanel.tsx` - Wire up toggle props, remove unused props
-4. `src/hooks/useHoldToAdjust.ts` - Fix TypeScript types
-5. `src/index.css` - Add color tokens, remove dead CSS
-6. `tailwind.config.ts` - Add Monarch/Initiative color tokens
-
----
-
-## Testing Checklist
-After implementation, verify:
-- Tapping Monarch crown toggles the Monarch status
-- Tapping Initiative shield toggles the Initiative status
-- Only one player can be Monarch at a time
-- Only one player can have Initiative at a time
-- Colors use the new semantic tokens
-- No TypeScript errors
-- No console warnings about unused variables
+Tell me which items to plan in detail and I'll produce an implementation plan.

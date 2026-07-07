@@ -14,8 +14,24 @@ export function useCloudRoomState(roomId: string | undefined) {
   const [room, setRoom] = useState<Room | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState(false);
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof navigator === 'undefined' ? true : navigator.onLine
+  );
   const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastUpdateRef = useRef<string>('');
+
+  // Track online/offline so the UI can surface a status indicator.
+  useEffect(() => {
+    const on = () => setIsOnline(true);
+    const off = () => setIsOnline(false);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
+    return () => {
+      window.removeEventListener('online', on);
+      window.removeEventListener('offline', off);
+    };
+  }, []);
 
   // Load room from cloud
   useEffect(() => {
@@ -53,11 +69,14 @@ export function useCloudRoomState(roomId: string | undefined) {
     loadRoom();
   }, [roomId]);
 
-  // Subscribe to real-time updates
+  // Subscribe to real-time updates. Skip incoming updates whenever there is
+  // a pending local write — otherwise a poll that ran before our debounced
+  // sync completes could clobber the just-tapped life total.
   useEffect(() => {
     if (!roomId) return;
 
     const unsubscribe = subscribeToRoom(roomId, (updatedRoom) => {
+      if (pendingRoomRef.current) return;
       const updateStr = JSON.stringify(updatedRoom);
       if (updateStr !== lastUpdateRef.current) {
         lastUpdateRef.current = updateStr;
@@ -110,8 +129,10 @@ export function useCloudRoomState(roomId: string | undefined) {
         lastUpdateRef.current = JSON.stringify(toSync);
         await updateCloudRoom(toSync, adminKey);
         pendingRoomRef.current = null;
+        setSyncError(false);
       } catch (error) {
         console.error('Failed to sync room to cloud.', error);
+        setSyncError(true);
       } finally {
         setSyncing(false);
       }
@@ -623,10 +644,19 @@ export function useCloudRoomState(roomId: string | undefined) {
     };
   }, []);
 
+  const syncStatus: 'offline' | 'error' | 'syncing' | 'online' = !isOnline
+    ? 'offline'
+    : syncError
+    ? 'error'
+    : syncing
+    ? 'syncing'
+    : 'online';
+
   return {
     room,
     loading,
     syncing,
+    syncStatus,
     updateRoom,
     // Life
     updatePlayerLife,

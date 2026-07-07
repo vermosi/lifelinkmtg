@@ -1,15 +1,58 @@
 import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import QRCode from 'react-qr-code';
 import { useEffect, useMemo, useState } from 'react';
-import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown, Shield, Sun, Moon, Dices, Save, FolderOpen, Plus, Cloud, Loader2, Wrench, Share2, Move, AlertCircle, RefreshCw, Maximize, Link, ExternalLink } from 'lucide-react';
+import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown, Shield, Sun, Moon, Dices, Save, FolderOpen, Plus, Cloud, Loader2, Wrench, Share2, Move, AlertCircle, RefreshCw, Maximize, Link, ExternalLink, WifiOff } from 'lucide-react';
 import { ToolsDrawer } from './ToolsDrawer';
 import { useCloudRoomState } from '@/hooks/useCloudRoomState';
+import { useWakeLock } from '@/hooks/useWakeLock';
 import { getControlUrl, getOverlayUrl, getOverlayEditUrl, PLAYER_COLORS, formatTimestamp, HistoryEntry, DUNGEON_ROOMS, loadPresets, savePreset, deletePreset, createPresetFromRoom, GamePreset, LAYOUTS, OVERLAY_PRESETS } from '@/lib/roomUtils';
 import { FullScreenPlayerPanel } from './FullScreenPlayerPanel';
 import { DiceRoller } from './DiceRoller';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { trackEvent } from '@/lib/analytics';
+
+type SyncStatus = 'online' | 'syncing' | 'offline' | 'error';
+
+function SyncStatusPill({ status }: { status: SyncStatus }) {
+  const config: Record<SyncStatus, { label: string; className: string; icon: JSX.Element }> = {
+    online: {
+      label: 'Synced',
+      className: 'bg-secondary text-muted-foreground',
+      icon: <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" aria-hidden />,
+    },
+    syncing: {
+      label: 'Syncing',
+      className: 'bg-secondary text-muted-foreground',
+      icon: <Loader2 className="w-3 h-3 animate-spin" aria-hidden />,
+    },
+    offline: {
+      label: 'Offline',
+      className: 'bg-amber-500/15 text-amber-400',
+      icon: <WifiOff className="w-3 h-3" aria-hidden />,
+    },
+    error: {
+      label: 'Sync error',
+      className: 'bg-destructive/15 text-destructive',
+      icon: <AlertCircle className="w-3 h-3" aria-hidden />,
+    },
+  };
+  const { label, className, icon } = config[status];
+  return (
+    <span
+      className={cn(
+        'text-xs px-2 py-1 rounded-full flex items-center gap-1',
+        className
+      )}
+      role="status"
+      aria-live="polite"
+      title={label}
+    >
+      {icon}
+      {label}
+    </span>
+  );
+}
 
 function HistoryIcon({ type }: { type: HistoryEntry['type'] }) {
   switch (type) {
@@ -36,6 +79,7 @@ export function RoomControl() {
     room,
     loading,
     syncing,
+    syncStatus,
     updatePlayerLife,
     setPlayerLife,
     setPlayerName,
@@ -67,6 +111,11 @@ export function RoomControl() {
     applyOverlayPreset,
     resetOverlayDefaults,
   } = useCloudRoomState(roomId);
+
+  // Keep the screen awake while the tracker is open — mid-game screen sleep is
+  // the single biggest mobile annoyance and the Wake Lock API handles it for us.
+  useWakeLock(!!room);
+
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuTab, setMenuTab] = useState<'settings' | 'history' | 'dice' | 'presets' | 'share'>('settings');
@@ -428,10 +477,21 @@ Overlay URL: ${overlayUrl}`;
       {!menuOpen && (
         <button
           onClick={() => setMenuOpen(true)}
-          className="menu-button w-12 h-12 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-          aria-label="Open menu"
+          className="menu-button w-12 h-12 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 relative"
+          aria-label={`Open menu (sync ${syncStatus})`}
         >
           <Menu className="w-5 h-5 text-foreground" />
+          {syncStatus !== 'online' && (
+            <span
+              className={cn(
+                'absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-background',
+                syncStatus === 'syncing' && 'bg-sky-400 animate-pulse',
+                syncStatus === 'offline' && 'bg-amber-400',
+                syncStatus === 'error' && 'bg-destructive'
+              )}
+              aria-hidden
+            />
+          )}
         </button>
       )}
 
@@ -459,11 +519,7 @@ Overlay URL: ${overlayUrl}`;
             <div className="flex items-center justify-between pr-10">
               <h2 className="font-display text-2xl text-foreground">Room {room.id}</h2>
               <div className="flex items-center gap-2">
-                {syncing && (
-                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                  </span>
-                )}
+                <SyncStatusPill status={syncStatus} />
                 <span className="text-xs text-muted-foreground px-2 py-1 bg-secondary rounded-full flex items-center gap-1">
                   <Cloud className="w-3 h-3" />
                   {isAdmin ? 'Admin' : 'View Only'}
