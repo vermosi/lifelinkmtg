@@ -1,6 +1,7 @@
 import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
+import QRCode from 'react-qr-code';
 import { useEffect, useState } from 'react';
-import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown, Shield, Sun, Moon, Dices, Save, FolderOpen, Plus, Cloud, Loader2, Wrench } from 'lucide-react';
+import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown, Shield, Sun, Moon, Dices, Save, FolderOpen, Plus, Cloud, Loader2, Wrench, Share2 } from 'lucide-react';
 import { ToolsDrawer } from './ToolsDrawer';
 import { useCloudRoomState } from '@/hooks/useCloudRoomState';
 import { getControlUrl, getOverlayUrl, PLAYER_COLORS, formatTimestamp, HistoryEntry, DUNGEON_ROOMS, loadPresets, savePreset, deletePreset, createPresetFromRoom, GamePreset, LAYOUTS } from '@/lib/roomUtils';
@@ -64,7 +65,7 @@ export function RoomControl() {
   } = useCloudRoomState(roomId);
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [menuTab, setMenuTab] = useState<'settings' | 'history' | 'dice' | 'presets'>('settings');
+  const [menuTab, setMenuTab] = useState<'settings' | 'history' | 'dice' | 'presets' | 'share'>('settings');
   const [copiedUrl, setCopiedUrl] = useState<'control' | 'overlay' | null>(null);
   const [highlightedPlayer, setHighlightedPlayer] = useState<number | null>(null);
   const [presets, setPresets] = useState<GamePreset[]>(() => loadPresets());
@@ -455,6 +456,17 @@ export function RoomControl() {
                     {room.history.length}
                   </span>
                 )}
+              </button>
+              <button
+                onClick={() => setMenuTab('share')}
+                className={cn(
+                  'flex-1 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1',
+                  menuTab === 'share' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground'
+                )}
+                role="tab"
+                aria-selected={menuTab === 'share'}
+              >
+                <Share2 className="w-3 h-3" /> Share
               </button>
             </div>
 
@@ -897,32 +909,66 @@ export function RoomControl() {
               <div className="text-center py-4 text-muted-foreground text-sm">View-only mode</div>
             )}
 
-            {/* URLs */}
-            <div className="space-y-2 pt-2 border-t border-border">
-              <button
-                onClick={() => copyUrl('overlay')}
-                className="w-full flex items-center justify-center gap-2 py-2 bg-accent rounded-xl text-accent-foreground text-sm font-medium hover:bg-accent/90"
-              >
-                {copiedUrl === 'overlay' ? <Check className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
-                Copy Overlay URL
-              </button>
-              {isAdmin && (
-                <button
-                  onClick={() => copyUrl('control')}
-                  className="w-full flex items-center justify-center gap-2 py-2 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80"
-                >
-                  {copiedUrl === 'control' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  Copy Admin URL
-                </button>
-              )}
-            </div>
+            {menuTab === 'share' && (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <button
+                    onClick={() => copyUrl('overlay')}
+                    className="w-full flex items-center justify-center gap-2 py-2 bg-accent rounded-xl text-accent-foreground text-sm font-medium hover:bg-accent/90"
+                  >
+                    {copiedUrl === 'overlay' ? <Check className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
+                    Copy Overlay URL
+                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => copyUrl('control')}
+                      className="w-full flex items-center justify-center gap-2 py-2 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80"
+                    >
+                      {copiedUrl === 'control' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      Copy Admin URL
+                    </button>
+                  )}
+                </div>
 
-            <button
-              onClick={() => navigate('/')}
-              className="w-full flex items-center justify-center gap-2 py-2 text-muted-foreground text-sm hover:text-foreground"
-            >
-              <ArrowLeft className="w-4 h-4" /> Home
-            </button>
+                <div className="space-y-3">
+                  <div className="bg-secondary/50 rounded-xl p-3 flex flex-col items-center gap-2">
+                    <span className="text-xs font-medium text-muted-foreground">Scan to open overlay</span>
+                    <div className="bg-white p-2 rounded-lg">
+                      <QRCode
+                        value={getOverlayUrl(room)}
+                        size={160}
+                        bgColor="#ffffff"
+                        fgColor="#000000"
+                        aria-label="QR code for overlay URL"
+                      />
+                    </div>
+                  </div>
+                  {isAdmin && (
+                    <div className="bg-secondary/50 rounded-xl p-3 flex flex-col items-center gap-2">
+                      <span className="text-xs font-medium text-muted-foreground">Scan to control this room</span>
+                      <div className="bg-white p-2 rounded-lg">
+                        <QRCode
+                          value={getControlUrl(room)}
+                          size={160}
+                          bgColor="#ffffff"
+                          fgColor="#000000"
+                          aria-label="QR code for admin control URL"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="pt-2 border-t border-border">
+              <button
+                onClick={() => navigate('/')}
+                className="w-full flex items-center justify-center gap-2 py-2 text-muted-foreground text-sm hover:text-foreground"
+              >
+                <ArrowLeft className="w-4 h-4" /> Home
+              </button>
+            </div>
           </div>
         </div>
       )}
