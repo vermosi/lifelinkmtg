@@ -1,7 +1,7 @@
 import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import QRCode from 'react-qr-code';
 import { useEffect, useMemo, useState } from 'react';
-import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown, Shield, Sun, Moon, Dices, Save, FolderOpen, Plus, Cloud, Loader2, Wrench, Share2, Move, AlertCircle, RefreshCw, Maximize, Link } from 'lucide-react';
+import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown, Shield, Sun, Moon, Dices, Save, FolderOpen, Plus, Cloud, Loader2, Wrench, Share2, Move, AlertCircle, RefreshCw, Maximize, Link, ExternalLink } from 'lucide-react';
 import { ToolsDrawer } from './ToolsDrawer';
 import { useCloudRoomState } from '@/hooks/useCloudRoomState';
 import { getControlUrl, getOverlayUrl, getOverlayEditUrl, PLAYER_COLORS, formatTimestamp, HistoryEntry, DUNGEON_ROOMS, loadPresets, savePreset, deletePreset, createPresetFromRoom, GamePreset, LAYOUTS, OVERLAY_PRESETS } from '@/lib/roomUtils';
@@ -1172,6 +1172,15 @@ Overlay URL: ${overlayUrl}`;
                     {copiedUrl === 'overlay' ? <Check className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
                     {copiedUrl === 'overlay' ? 'Copied!' : 'Copy Overlay URL for OBS'}
                   </button>
+                  <a
+                    href={overlayUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-center gap-2 py-2 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Open overlay in new tab
+                  </a>
                   <p className="text-xs text-muted-foreground text-center">
                     Read-only, safe to share. No admin access.
                   </p>
