@@ -94,22 +94,61 @@ export function useCloudRoomState(roomId: string | undefined) {
     return [...prev.history.slice(-49), entry];
   }, []);
 
+  const pendingRoomRef = useRef<Room | null>(null);
+
   const syncToCloud = useCallback((updatedRoom: Room) => {
+    pendingRoomRef.current = updatedRoom;
     if (updateTimeoutRef.current) {
       clearTimeout(updateTimeoutRef.current);
     }
 
     setSyncing(true);
     updateTimeoutRef.current = setTimeout(async () => {
+      const toSync = pendingRoomRef.current;
+      if (!toSync) return;
       try {
-        lastUpdateRef.current = JSON.stringify(updatedRoom);
-        await updateCloudRoom(updatedRoom, adminKey);
+        lastUpdateRef.current = JSON.stringify(toSync);
+        await updateCloudRoom(toSync, adminKey);
+        pendingRoomRef.current = null;
       } catch (error) {
         console.error('Failed to sync room to cloud.', error);
       } finally {
         setSyncing(false);
       }
     }, 100);
+  }, [adminKey]);
+
+  // Flush any pending debounced sync before the tab is hidden or closed so
+  // last-second setting changes (colors, preset, name visibility, layout drags)
+  // aren't lost on refresh.
+  useEffect(() => {
+    const flush = () => {
+      if (!pendingRoomRef.current || !adminKey) return;
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+        updateTimeoutRef.current = null;
+      }
+      const toSync = pendingRoomRef.current;
+      pendingRoomRef.current = null;
+      lastUpdateRef.current = JSON.stringify(toSync);
+      // Fire-and-forget — the tab may unload before this resolves.
+      updateCloudRoom(toSync, adminKey).catch((error) => {
+        console.error('Failed to flush pending room sync.', error);
+      });
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') flush();
+    };
+
+    window.addEventListener('beforeunload', flush);
+    window.addEventListener('pagehide', flush);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.removeEventListener('beforeunload', flush);
+      window.removeEventListener('pagehide', flush);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, [adminKey]);
 
   const updateRoom = useCallback((updater: (prev: Room) => Room) => {
