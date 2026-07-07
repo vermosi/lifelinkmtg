@@ -199,7 +199,20 @@ export function OverlayView() {
     );
   }
 
-  const layout = room.overlayLayout || createDefaultOverlayLayout(room.playerCount);
+  // URL preset override snapshots the layout at share time. Ignore it in edit
+  // mode so admins can drag from the room's actual saved layout.
+  const layout: OverlayLayout = editingEnabled || !presetOverride
+    ? (room.overlayLayout || createDefaultOverlayLayout(room.playerCount))
+    : buildOverlayPresetLayout(presetOverride, room.playerCount);
+
+  // Merge URL color overrides on top of room settings for rendering only —
+  // never mutate/persist. Room state stays the source of truth.
+  const effectiveSettings = {
+    ...room.settings,
+    overlayBgColor: bgOverride ?? room.settings.overlayBgColor,
+    overlayTextColor: textOverride ?? room.settings.overlayTextColor,
+  };
+  const settingsRoom = { ...room, settings: effectiveSettings };
 
   const updatePosition = (key: 'dayNight' | 'dungeon', pos: OverlayPosition) => {
     updateOverlayLayout({
