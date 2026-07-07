@@ -989,27 +989,69 @@ export function RoomControl() {
             )}
 
             {menuTab === 'share' && (
-              <div className="space-y-3">
+              <div className="space-y-4">
+                {/* Primary action: copy overlay URL for OBS */}
                 <div className="space-y-2">
                   <button
                     onClick={() => copyUrl('overlay')}
-                    className="w-full flex items-center justify-center gap-2 py-2 bg-accent rounded-xl text-accent-foreground text-sm font-medium hover:bg-accent/90"
+                    className="w-full flex items-center justify-center gap-2 py-3 bg-accent rounded-xl text-accent-foreground text-sm font-semibold hover:bg-accent/90"
                   >
                     {copiedUrl === 'overlay' ? <Check className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
-                    Copy Overlay URL
+                    {copiedUrl === 'overlay' ? 'Copied!' : 'Copy Overlay URL for OBS'}
                   </button>
-                  {isAdmin && (
-                    <button
-                      onClick={() => copyUrl('control')}
-                      className="w-full flex items-center justify-center gap-2 py-2 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80"
-                    >
-                      {copiedUrl === 'control' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                      Copy Admin URL
-                    </button>
-                  )}
+                  <p className="text-xs text-muted-foreground text-center">
+                    Read-only, safe to share. No admin access.
+                  </p>
                 </div>
 
-                <div className="space-y-3">
+                {/* Zero-experience OBS setup guide */}
+                <div className="bg-secondary/50 rounded-xl p-3 space-y-2">
+                  <div className="text-xs font-semibold text-foreground flex items-center gap-2">
+                    <Monitor className="w-3.5 h-3.5" /> OBS Setup (60 seconds)
+                  </div>
+                  <ol className="text-xs text-muted-foreground space-y-1.5 list-decimal list-inside">
+                    <li>In OBS, click <span className="text-foreground font-medium">+</span> under Sources → <span className="text-foreground font-medium">Browser</span>.</li>
+                    <li>Name it "LifeLink" and click OK.</li>
+                    <li>Paste the copied URL into the <span className="text-foreground font-medium">URL</span> field.</li>
+                    <li>Set <span className="text-foreground font-medium">Width 1920</span>, <span className="text-foreground font-medium">Height 1080</span>. Click OK.</li>
+                    <li>That's it — the overlay is transparent and updates live.</li>
+                  </ol>
+                  <p className="text-[11px] text-muted-foreground/80 pt-1">
+                    Tip: If it looks off, right-click the source → Properties → check "Shutdown source when not visible" is <span className="text-foreground">off</span>.
+                  </p>
+                </div>
+
+                {/* Admin: arrange layout */}
+                {isAdmin && (
+                  <div className="space-y-2">
+                    <a
+                      href={getOverlayEditUrl(room)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full flex items-center justify-center gap-2 py-2 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80"
+                    >
+                      <Move className="w-4 h-4" />
+                      Arrange Overlay Layout
+                    </a>
+                    <p className="text-[11px] text-muted-foreground text-center">
+                      Opens the overlay with Edit Layout unlocked. Do this once, then use the clean URL in OBS.
+                    </p>
+                  </div>
+                )}
+
+                {/* Admin URL */}
+                {isAdmin && (
+                  <button
+                    onClick={() => copyUrl('control')}
+                    className="w-full flex items-center justify-center gap-2 py-2 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80"
+                  >
+                    {copiedUrl === 'control' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    Copy Admin URL (keep private)
+                  </button>
+                )}
+
+                {/* QR codes */}
+                <div className="grid grid-cols-1 gap-3">
                   <div className="bg-secondary/50 rounded-xl p-3 flex flex-col items-center gap-2">
                     <span className="text-xs font-medium text-muted-foreground">Scan to open overlay</span>
                     <div className="bg-white p-2 rounded-lg">
@@ -1039,6 +1081,7 @@ export function RoomControl() {
                 </div>
               </div>
             )}
+
 
             <div className="pt-2 border-t border-border">
               <button
