@@ -134,6 +134,22 @@ export function RoomControl() {
   const [toolsDrawerOpen, setToolsDrawerOpen] = useState(false);
   const isAdmin = room ? adminKey === room.adminKey : false;
 
+  // If we recognize this user as the room admin (via localStorage) but the URL
+  // is missing the adminKey, backfill it so refresh/share/QR reflect admin state.
+  // Also persist any URL-provided key so future visits stay admin without the query param.
+  useEffect(() => {
+    if (!room || !roomId) return;
+    if (urlAdminKey && urlAdminKey === room.adminKey) {
+      storeAdminKey(roomId, urlAdminKey);
+      return;
+    }
+    if (!urlAdminKey && storedAdminKeyForRoom && storedAdminKeyForRoom === room.adminKey) {
+      const next = new URLSearchParams(searchParams);
+      next.set('adminKey', storedAdminKeyForRoom);
+      navigate(`/room/${roomId}?${next.toString()}`, { replace: true });
+    }
+  }, [room?.id, room?.adminKey, urlAdminKey, storedAdminKeyForRoom, roomId, navigate]);
+
   // Recompute share URLs whenever the room id or adminKey changes so QR codes
   // and copy buttons always reflect the current room state.
   // OBS scaling controls — persisted locally per browser so the copy/QR reflect the last chosen preset.
