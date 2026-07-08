@@ -74,7 +74,9 @@ export function RoomControl() {
   const { roomId } = useParams<{ roomId: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const adminKey = searchParams.get('adminKey');
+  const urlAdminKey = searchParams.get('adminKey');
+  const storedAdminKeyForRoom = roomId ? getStoredAdminKey(roomId) : null;
+  const adminKey = urlAdminKey || storedAdminKeyForRoom;
 
   const {
     room,
