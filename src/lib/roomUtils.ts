@@ -149,9 +149,12 @@ export const LAYOUTS: LayoutConfig[] = [
   { id: '2-horizontal', name: '2 Horizontal', playerCount: 2, rows: 1, cols: 2, playerCells: [[0], [1]], hasPartner: false },
   { id: '3-top2', name: '3 Top 2', playerCount: 3, rows: 2, cols: 2, playerCells: [[0], [1], [2, 3]], hasPartner: false },
   { id: '3-bottom2', name: '3 Bottom 2', playerCount: 3, rows: 2, cols: 2, playerCells: [[0, 1], [2], [3]], hasPartner: false },
-  { id: '4-grid', name: '4 Grid', playerCount: 4, rows: 2, cols: 2, playerCells: [[0], [1], [2], [3]], hasPartner: false },
-  { id: '5-grid', name: '5 Grid', playerCount: 5, rows: 2, cols: 3, playerCells: [[0], [1], [2], [3], [4, 5]], hasPartner: false },
-  { id: '6-grid', name: '6 Grid', playerCount: 6, rows: 2, cols: 3, playerCells: [[0], [1], [2], [3], [4], [5]], hasPartner: false },
+  // 4-6 player grids are arranged clockwise around the table, not in a
+  // left-to-right / top-to-bottom Z pattern, so the on-device order matches
+  // the physical seating order when the phone sits in the center.
+  { id: '4-grid', name: '4 Grid', playerCount: 4, rows: 2, cols: 2, playerCells: [[0], [1], [3], [2]], hasPartner: false },
+  { id: '5-grid', name: '5 Grid', playerCount: 5, rows: 2, cols: 3, playerCells: [[0], [1], [2], [5], [3, 4]], hasPartner: false },
+  { id: '6-grid', name: '6 Grid', playerCount: 6, rows: 2, cols: 3, playerCells: [[0], [1], [2], [5], [4], [3]], hasPartner: false },
 ];
 
 export function getLayoutsForPlayerCount(count: PlayerCount): LayoutConfig[] {
