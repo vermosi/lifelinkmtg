@@ -497,7 +497,7 @@ Overlay URL: ${overlayUrl}`;
       {!menuOpen && (
         <button
           onClick={() => setMenuOpen(true)}
-          className="menu-button w-12 h-12 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 relative"
+          className="menu-button w-12 h-12 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
           aria-label={`Open menu (sync ${syncStatus})`}
         >
           <Menu className="w-5 h-5 text-foreground" />
