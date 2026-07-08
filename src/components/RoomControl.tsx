@@ -316,15 +316,16 @@ Overlay URL: ${overlayUrl}`;
 
   const getPlayerGridArea = (index: number, total: number) => {
     const cells = currentLayout.playerCells[index];
-    if (!cells || cells.length <= 1) return {};
-    
-    // Calculate grid area from cells
+    if (!cells || cells.length === 0) return {};
+
+    // Calculate grid area from cells so layouts can place players in
+    // clockwise order instead of relying on DOM source order.
     const { cols } = currentLayout;
     const minRow = Math.floor(Math.min(...cells) / cols);
     const maxRow = Math.floor(Math.max(...cells) / cols);
     const minCol = Math.min(...cells.map(c => c % cols));
     const maxCol = Math.max(...cells.map(c => c % cols));
-    
+
     return {
       gridRow: `${minRow + 1} / ${maxRow + 2}`,
       gridColumn: `${minCol + 1} / ${maxCol + 2}`,
