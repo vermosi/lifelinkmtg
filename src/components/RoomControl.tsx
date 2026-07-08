@@ -1,4 +1,5 @@
 import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
+import { getStoredAdminKey, storeAdminKey } from '@/lib/cloudRoomUtils';
 import QRCode from 'react-qr-code';
 import { useEffect, useMemo, useState } from 'react';
 import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown, Shield, Sun, Moon, Dices, Save, FolderOpen, Plus, Cloud, Loader2, Wrench, Share2, Move, AlertCircle, RefreshCw, Maximize, Link, ExternalLink, WifiOff } from 'lucide-react';
@@ -73,7 +74,9 @@ export function RoomControl() {
   const { roomId } = useParams<{ roomId: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const adminKey = searchParams.get('adminKey');
+  const urlAdminKey = searchParams.get('adminKey');
+  const storedAdminKeyForRoom = roomId ? getStoredAdminKey(roomId) : null;
+  const adminKey = urlAdminKey || storedAdminKeyForRoom;
 
   const {
     room,
@@ -130,6 +133,22 @@ export function RoomControl() {
   const [hasTrackedStart, setHasTrackedStart] = useState(false);
   const [toolsDrawerOpen, setToolsDrawerOpen] = useState(false);
   const isAdmin = room ? adminKey === room.adminKey : false;
+
+  // If we recognize this user as the room admin (via localStorage) but the URL
+  // is missing the adminKey, backfill it so refresh/share/QR reflect admin state.
+  // Also persist any URL-provided key so future visits stay admin without the query param.
+  useEffect(() => {
+    if (!room || !roomId) return;
+    if (urlAdminKey && urlAdminKey === room.adminKey) {
+      storeAdminKey(roomId, urlAdminKey);
+      return;
+    }
+    if (!urlAdminKey && storedAdminKeyForRoom && storedAdminKeyForRoom === room.adminKey) {
+      const next = new URLSearchParams(searchParams);
+      next.set('adminKey', storedAdminKeyForRoom);
+      navigate(`/room/${roomId}?${next.toString()}`, { replace: true });
+    }
+  }, [room?.id, room?.adminKey, urlAdminKey, storedAdminKeyForRoom, roomId, navigate]);
 
   // Recompute share URLs whenever the room id or adminKey changes so QR codes
   // and copy buttons always reflect the current room state.
