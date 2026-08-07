@@ -3,7 +3,7 @@
   'use strict';
 
   var root = document.getElementById('root');
-  var config = { roomId: '', showNames: true, showCounters: true, theme: 'dark', fontSize: 'medium' };
+  var config = { roomId: '', showNames: true, showCounters: true, theme: 'dark', fontSize: 'medium', playerColors: [] };
   var THEMES = ['dark', 'light', 'transparent'];
   var SIZES = ['small', 'medium', 'large', 'xlarge'];
 
@@ -204,6 +204,9 @@
       showCounters: params.get('counters') !== '0',
       theme: params.get('theme'),
       fontSize: params.get('size'),
+      playerColors: (params.get('colors') || '').split(',').map(function (c) {
+        return c ? '#' + c.replace(/^#/, '') : null;
+      }),
     });
     start();
   } else if (window.Twitch && window.Twitch.ext) {
