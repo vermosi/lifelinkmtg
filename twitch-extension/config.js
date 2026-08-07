@@ -48,6 +48,8 @@
   }
   var theme = document.getElementById('theme');
   var size = document.getElementById('size');
+  var safe = document.getElementById('safe');
+
 
   var THEMES = ['dark', 'light', 'transparent'];
   var SIZES = ['small', 'medium', 'large', 'xlarge'];
