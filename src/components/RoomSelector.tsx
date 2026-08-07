@@ -274,38 +274,6 @@ export function RoomSelector() {
           )
         )}
 
-        {/* Top feature highlights */}
-        <section aria-label="Highlights" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 w-full mb-10 sm:mb-14">
-          <div className="group p-4 sm:p-6 rounded-2xl transition-all hover:bg-card/50">
-            <div className="w-12 h-12 bg-card shadow-sm rounded-xl flex items-center justify-center text-accent mb-4 group-hover:scale-110 transition-transform">
-              <RefreshCw className="w-6 h-6" aria-hidden="true" />
-            </div>
-            <h2 className="font-bold text-foreground mb-2">Real-time sync</h2>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Every phone, tablet, and PC in the room stays in sync as life totals change.
-            </p>
-          </div>
-
-          <div className="group p-4 sm:p-6 rounded-2xl transition-all hover:bg-card/50">
-            <div className="w-12 h-12 bg-card shadow-sm rounded-xl flex items-center justify-center text-accent mb-4 group-hover:scale-110 transition-transform">
-              <Monitor className="w-6 h-6" aria-hidden="true" />
-            </div>
-            <h2 className="font-bold text-foreground mb-2">OBS overlay</h2>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Drop the read-only overlay into OBS or Twitch as a Browser Source and stream life totals instantly.
-            </p>
-          </div>
-
-          <div className="group p-4 sm:p-6 rounded-2xl transition-all hover:bg-card/50 sm:col-span-2 lg:col-span-1">
-            <div className="w-12 h-12 bg-card shadow-sm rounded-xl flex items-center justify-center text-accent mb-4 group-hover:scale-110 transition-transform">
-              <Smartphone className="w-6 h-6" aria-hidden="true" />
-            </div>
-            <h2 className="font-bold text-foreground mb-2">Mobile-first</h2>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Big tap targets, no install required, and optimized for phones at the table.
-            </p>
-          </div>
-        </section>
 
         {/* Full feature grid */}
         <section aria-labelledby="features-heading" className="w-full mb-10 sm:mb-14">
