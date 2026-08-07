@@ -518,6 +518,7 @@
       theme: params.get('theme'),
       fontSize: params.get('size'),
       safeArea: params.get('safe'),
+      layoutPreset: params.get('preset'),
 
       playerColors: (params.get('colors') || '').split(',').map(function (c) {
         return c ? '#' + c.replace(/^#/, '') : null;
