@@ -1,37 +1,68 @@
-Here are suggested improvements based on the project's history and current state. Pick any subset you want and I'll build them.
+# Homepage SEO Content Expansion
 
-## 1. OBS / Overlay polish (recent focus area)
-- **Preset thumbnails in the Share tab** — small visual chips for each overlay preset so streamers can pick a layout without opening the editor.
-- **Per-preset color themes** — save color picks per preset (not just per room), so switching preset restores its palette.
-- **Overlay diagnostics banner** — inside the read-only overlay, show a tiny toast if the room isn't reachable or the URL params failed to parse (currently silent).
-- **"Copy as OBS scene" JSON** — export a `.json` scene collection snippet with the Browser Source pre-configured (URL, 1920×1080, refresh settings). One import in OBS instead of manual setup.
-- **Overlay refresh throttle** — the polling sync runs at 2s; the overlay could drop to 3–5s to reduce load when only spectators watch.
+## Goal
+Expand the LifeLink homepage so it surfaces every major feature for search intent, improves keyword coverage, and strengthens structured data — without changing app behavior or navigation.
 
-## 2. Room sync & reliability
-- **Optimistic updates with rollback** — life taps currently wait on the poll cycle to reconcile; adding local optimistic state would make mobile feel instant.
-- **Reconnect / offline indicator** — a small dot in the header showing "syncing / offline / stale" so users know when polling stalls.
-- **Idempotency keys on RPC mutations** — protect against double-tap network retries applying life changes twice.
-- **Room TTL / cleanup** — auto-archive rooms with no activity for N days to keep the DB tidy.
+## Scope
+- `src/components/RoomSelector.tsx` — homepage content
+- `index.html` — static SEO fallback metadata and JSON-LD
+- `src/pages/Index.tsx` — per-route Helmet (already present, will align with index.html)
 
-## 3. Mobile UX
-- **Wake-lock during a game** — request `navigator.wakeLock` so phones don't sleep mid-match.
-- **Haptic on long-press ramp** — subtle escalating vibration as the ramp speeds up.
-- **Landscape lock hint** for 3–4 player rotated layouts on first entry.
-- **PWA install + offline shell** — manifest + service worker so LifeLink installs to home screen.
+## What to build
 
-## 4. Features that fit the roadmap
-- **Match history export** — download the History Log as CSV/JSON at end of game.
-- **Turn timer / chess-clock mode** in the Tools Drawer.
-- **Undo last action** button surfaced from the History Log (one-tap revert of the most recent life/counter change).
-- **Deck archetype quick-pick** — dropdown of previously used deck names per room owner instead of retyping.
+### 1. Hero and primary actions
+Keep the existing LifeLink hero, NEW GAME / Join with code glass panel, and recent rooms list. Do not alter functionality.
 
-## 5. Code health
-- **Split `RoomControl.tsx`** — it now owns Share, Checklist, Troubleshooting, OBS preview, QR, admin actions. Extract `ShareTab`, `ObsSetupGuide`, `BrowserSourceChecklist`, `ObsPreview` into their own files under `components/room-control/`.
-- **Extract a `services/` layer** for Supabase RPC calls (per workspace standards — UI components shouldn't call the client directly).
-- **Typed room-state schema** — a single `zod` schema for the payload persisted in `useCloudRoomState` (layout, name visibility, colors, preset) to prevent drift between overlay URL params and cloud state.
-- **Unit tests for `roomUtils.ts`** — URL encode/decode is now security-adjacent (drives overlay state); worth a small vitest suite.
+### 2. Expanded feature coverage
+Add a comprehensive feature section below the glass panel that covers every major capability:
+- Cloud-synced rooms for 2–6 players
+- Commander / EDH support with partner commanders
+- Modular counters: commander damage, poison, energy, experience, monarch, initiative
+- Day / night tracker
+- Deck / commander name labels
+- Multiple table layouts and player orientations
+- Mobile-first design with large tap targets and haptic feedback
+- Keyboard shortcuts on PC
+- History log with undo context
+- Color customization per player panel
+- Game presets for recurring playgroups
+- Read-only OBS Browser Source overlay
+- Embeddable widget / iframe
+- Native Twitch extension
+- Short join codes and QR codes for fast room entry
+- 24-hour room data retention
 
-## Suggested first batch
-If you want a focused next step, I'd recommend: **optimistic life updates + sync status indicator + wake-lock** — three small, high-impact changes that make the core tracker feel dramatically better on mobile.
+Present these in semantic, scannable cards grouped by theme (Play, Stream, Customize) using existing design tokens.
 
-Tell me which items to plan in detail and I'll produce an implementation plan.
+### 3. "How it works" section
+Add a short 3-step HowItWorks block: Create room → Share code/QR → Track & stream.
+Use semantic ordered list markup.
+
+### 4. FAQ section for SEO
+Add a small FAQ with questions that match likely search queries:
+- What is LifeLink?
+- Does it support Commander / EDH?
+- How do players join the same room?
+- Can I use it with OBS or Twitch?
+- Is it free?
+- What devices does it work on?
+
+### 5. Metadata updates
+Update `index.html`:
+- Title: include MTG, Commander, EDH, life counter, OBS overlay, Twitch extension
+- Description: longer, feature-rich summary
+- Keywords: expand to cover commander damage, poison counters, stream overlay, etc.
+- JSON-LD: keep WebSite and SoftwareApplication, add FAQPage schema referencing the FAQ section
+
+Update `src/pages/Index.tsx` Helmet to mirror the enhanced title/description.
+
+### 6. Design constraints
+- Use existing Tailwind tokens and semantic colors; no hardcoded colors
+- Keep mobile-first spacing consistent with recent RoomSelector edits
+- Preserve all interactive behavior and route logic
+- Add semantic section/heading structure and alt text where icons are decorative
+
+## Verification
+- Run `tsgo` typecheck
+- Open preview and confirm the new sections render cleanly on desktop and mobile
+- Confirm no duplicate canonical tags or conflicting metadata
