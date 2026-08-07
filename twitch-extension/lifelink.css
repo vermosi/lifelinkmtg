@@ -109,7 +109,7 @@ body.overlay .wrap {
 }
 
 .sub {
-  font-size: 10px;
+  font-size: calc(10px * var(--ll-scale));
   color: var(--ll-muted);
   white-space: nowrap;
   overflow: hidden;
