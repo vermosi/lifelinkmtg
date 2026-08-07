@@ -1,5 +1,5 @@
 {
-  "name": "LifeLink — MTG Life Counter & OBS Overlay",
+  "name": "LifeLink \u2014 MTG Life Counter & OBS Overlay",
   "short_name": "LifeLink",
   "description": "Track life totals, commander damage and counters for Magic: The Gathering, with a live OBS stream overlay.",
   "id": "/",
@@ -37,6 +37,18 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "/android-chrome-192x192.png?v=3",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/android-chrome-512x512.png?v=3",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }
