@@ -236,8 +236,13 @@
       perRow: Math.round(perRow) + 'px / row',
       widthFit: widthFit.toFixed(3),
       heightFit: heightFit.toFixed(3),
-      limiter: widthFit <= heightFit ? 'width' : 'height',
-      clamped: rawFit < MIN_FIT ? 'clamped up to min ' + MIN_FIT : rawFit > MAX_FIT ? 'clamped down to max ' + MAX_FIT : 'within ' + MIN_FIT + '–' + MAX_FIT,
+      limiter: manual ? 'manual override' : widthFit <= heightFit ? 'width' : 'height',
+      clamped: manual
+        ? (config.scale / 100 < SCALE_MIN ? 'clamped up to min ' + SCALE_MIN
+          : config.scale / 100 > SCALE_MAX ? 'clamped down to max ' + SCALE_MAX
+            : 'within ' + SCALE_MIN + '–' + SCALE_MAX)
+        : rawFit < MIN_FIT ? 'clamped up to min ' + MIN_FIT : rawFit > MAX_FIT ? 'clamped down to max ' + MAX_FIT : 'within ' + MIN_FIT + '–' + MAX_FIT,
+      scaleMode: manual ? 'manual ' + config.scale + '% (auto would be ' + autoFit.toFixed(3) + ')' : 'auto-fit',
       fit: fit,
       density: density,
       densityReason: densityReason,
