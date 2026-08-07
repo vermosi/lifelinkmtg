@@ -22,6 +22,7 @@ const MainApp = () => (
           <Route path="/" element={<Index />} />
           <Route path="/room/:roomId" element={<RoomPage />} />
           <Route path="/room/:roomId/overlay" element={<OverlayPage />} />
+          <Route path="/embed/:roomId" element={<EmbedPage />} />
           <Route path="/favicon-check" element={<FaviconCheck />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
