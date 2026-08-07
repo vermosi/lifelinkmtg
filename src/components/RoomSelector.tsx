@@ -195,9 +195,33 @@ export function RoomSelector() {
           </div>
         )}
 
-        {/* OBS tip */}
+        {/* Feature highlights */}
+        <section aria-label="Features" className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
+          <div className="space-y-1 p-3 rounded-xl bg-secondary/50">
+            <RefreshCw className="w-5 h-5 text-accent" aria-hidden="true" />
+            <h2 className="text-sm font-semibold text-foreground">Real-time sync</h2>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Every phone, tablet, and PC in the room stays in sync as life totals change.
+            </p>
+          </div>
+          <div className="space-y-1 p-3 rounded-xl bg-secondary/50">
+            <Monitor className="w-5 h-5 text-accent" aria-hidden="true" />
+            <h2 className="text-sm font-semibold text-foreground">OBS overlay</h2>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Drop the read-only overlay into OBS or Twitch as a Browser Source and stream life totals instantly.
+            </p>
+          </div>
+          <div className="space-y-1 p-3 rounded-xl bg-secondary/50">
+            <Smartphone className="w-5 h-5 text-accent" aria-hidden="true" />
+            <h2 className="text-sm font-semibold text-foreground">Mobile-first</h2>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Big tap targets, no install required, and optimized for phones at the table.
+            </p>
+          </div>
+        </section>
+
         <p className="text-center text-xs sm:text-sm text-muted-foreground">
-          Rooms sync in real-time across all devices
+          Supports 2–6 players, Commander damage, poison, energy, and more.
         </p>
       </div>
     </div>
