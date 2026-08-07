@@ -145,6 +145,7 @@
       roomId: input.value.trim(),
       nameMode: pick(NAME_MODES, nameMode.value, 'full'),
       compact: compact.checked,
+      diagnostics: diagnostics.checked,
       // Kept for older installed viewers that only understand the boolean.
       showNames: nameMode.value !== 'hidden',
       counters: Object.assign({}, counterState),
