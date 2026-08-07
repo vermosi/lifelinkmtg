@@ -195,8 +195,8 @@ export function RoomSelector() {
         )}
 
         {/* Feature highlights */}
-        <section aria-label="Features" className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 w-full mb-4">
-          <div className="group p-5 sm:p-6 rounded-2xl transition-all hover:bg-card/50">
+        <section aria-label="Features" className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6 w-full mb-4">
+          <div className="group p-4 sm:p-6 rounded-2xl transition-all hover:bg-card/50">
             <div className="w-12 h-12 bg-card shadow-sm rounded-xl flex items-center justify-center text-accent mb-4 group-hover:scale-110 transition-transform">
               <RefreshCw className="w-6 h-6" aria-hidden="true" />
             </div>
@@ -206,7 +206,7 @@ export function RoomSelector() {
             </p>
           </div>
 
-          <div className="group p-5 sm:p-6 rounded-2xl transition-all hover:bg-card/50">
+          <div className="group p-4 sm:p-6 rounded-2xl transition-all hover:bg-card/50">
             <div className="w-12 h-12 bg-card shadow-sm rounded-xl flex items-center justify-center text-accent mb-4 group-hover:scale-110 transition-transform">
               <Monitor className="w-6 h-6" aria-hidden="true" />
             </div>
@@ -216,7 +216,7 @@ export function RoomSelector() {
             </p>
           </div>
 
-          <div className="group p-5 sm:p-6 rounded-2xl transition-all hover:bg-card/50">
+          <div className="group p-4 sm:p-6 rounded-2xl transition-all hover:bg-card/50">
             <div className="w-12 h-12 bg-card shadow-sm rounded-xl flex items-center justify-center text-accent mb-4 group-hover:scale-110 transition-transform">
               <Smartphone className="w-6 h-6" aria-hidden="true" />
             </div>
@@ -227,7 +227,7 @@ export function RoomSelector() {
           </div>
         </section>
 
-        <footer className="mt-10 sm:mt-14 pt-6 border-t border-border w-full text-center">
+        <footer className="mt-8 sm:mt-14 pt-6 border-t border-border w-full text-center">
           <p className="text-muted-foreground text-xs sm:text-sm">
             Supports 2–6 players, Commander damage, poison, energy, and more.
           </p>
