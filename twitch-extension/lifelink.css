@@ -462,3 +462,19 @@ body[data-theme='light'] .diag {
 .diag-row { display: flex; justify-content: space-between; gap: 10px; }
 .diag-row span { opacity: 0.7; }
 .diag-row b { font-weight: 600; text-align: right; }
+
+/* Manual scale override control (configuration page) */
+.scale-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.scale-row input[type="range"] { flex: 1; min-width: 0; }
+.scale-row output {
+  min-width: 48px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
