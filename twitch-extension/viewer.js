@@ -90,8 +90,19 @@
     var width = window.innerWidth || BASE_WIDTH;
     var height = window.innerHeight || 400;
     var isOverlay = body.classList.contains('overlay');
-    var boxWidth = isOverlay ? clamp(width * 0.28, 180, 420) : width;
-    var boxHeight = isOverlay ? height * 0.7 : height;
+
+    // Safe-area inset: a percentage of the live frame, so the widget keeps clear
+    // of Twitch chrome and letterboxing on any aspect ratio.
+    var pct = SAFE_AREAS[config.safeArea] || 0;
+    var safeX = Math.round(width * pct);
+    var safeY = Math.round(height * pct);
+    body.style.setProperty('--ll-safe-x', safeX + 'px');
+    body.style.setProperty('--ll-safe-y', safeY + 'px');
+
+    var innerWidth = Math.max(width - safeX * 2, 120);
+    var innerHeight = Math.max(height - safeY * 2, 120);
+    var boxWidth = isOverlay ? clamp(innerWidth * 0.28, 180, 420) : innerWidth;
+    var boxHeight = isOverlay ? innerHeight * 0.7 : innerHeight;
     var playerCount = lastRow ? Math.max(LifeLink.toPlayers(lastRow).length, 1) : 4;
 
     var widthFit = boxWidth / BASE_WIDTH;
@@ -106,6 +117,7 @@
     body.dataset.density = density;
     body.dataset.narrow = boxWidth < 240 ? '1' : '0';
   }
+
 
   var resizeTimer = null;
   window.addEventListener('resize', function () {
