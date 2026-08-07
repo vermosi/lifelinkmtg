@@ -67,11 +67,7 @@
       return;
     }
     setStatus('Checking the room…');
-    LifeLink.fetchRoom(config.roomId).then(function (row) {
-      if (!row) {
-        setStatus('No active LifeLink room with that code. Create or open the room first.', 'err');
-        return;
-      }
+    LifeLink.fetchRoom(config.roomId).then(function () {
       if (!window.Twitch || !window.Twitch.ext) {
         setStatus('Room found, but this page must run inside Twitch to save.', 'err');
         return;
@@ -80,7 +76,8 @@
       setStatus('Saved. Your panel and overlay now show room ' + config.roomId + '.', 'ok');
     }).catch(function (err) {
       console.error('LifeLink config save failed', err);
-      setStatus('Could not reach LifeLink. Check your connection and try again.', 'err');
+      var info = LifeLink.describeError(err);
+      setStatus(info.title + ' — ' + info.body, 'err');
     });
   });
 
@@ -92,10 +89,10 @@
     }
     setStatus('Testing…');
     LifeLink.fetchRoom(config.roomId).then(function (row) {
-      if (!row) setStatus('No active room with that code.', 'err');
-      else setStatus('Room found with ' + LifeLink.toPlayers(row).length + ' players.', 'ok');
-    }).catch(function () {
-      setStatus('Could not reach LifeLink.', 'err');
+      setStatus('Room found with ' + LifeLink.toPlayers(row).length + ' players.', 'ok');
+    }).catch(function (err) {
+      var info = LifeLink.describeError(err);
+      setStatus(info.title + ' — ' + info.body, 'err');
     });
   });
 

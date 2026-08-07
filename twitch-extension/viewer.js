@@ -16,21 +16,43 @@
     document.body.dataset.size = config.fontSize;
   }
   var stop = null;
+  var lastRow = null;
+  var failures = 0;
 
   function setState(message) {
+    lastRow = null;
     root.innerHTML = '<div class="state">' + LifeLink.escapeHtml(message) + '</div>';
   }
 
-  function render(row) {
-    if (!row) {
-      setState('That room is no longer active. Rooms are removed 24h after their last update.');
-      return;
-    }
+  var HELP_URL = 'https://lifelinkmtg.app/twitch-extension';
+
+  /** Renders an explicit failure banner naming the reason plus quick fixes. */
+  function bannerHtml(info, attempts) {
+    var fixes = info.fixes.map(function (fix) {
+      return '<li>' + LifeLink.escapeHtml(fix) + '</li>';
+    }).join('');
+    return (
+      '<div class="banner" role="alert">' +
+      '<div class="banner-title">' + LifeLink.escapeHtml(info.title) + '</div>' +
+      '<div class="banner-body">' + LifeLink.escapeHtml(info.body) + '</div>' +
+      '<ul class="banner-fixes">' + fixes + '</ul>' +
+      '<div class="banner-meta">' +
+      '<a class="banner-link" href="' + HELP_URL + '" target="_blank" rel="noopener noreferrer">Setup help</a>' +
+      '<span>' + LifeLink.escapeHtml(info.code) + ' · attempt ' + attempts + '</span>' +
+      '</div>' +
+      '</div>'
+    );
+  }
+
+  function renderError(err) {
+    var info = LifeLink.describeError(err);
+    var stale = lastRow ? '<div class="stale">Showing the last known totals.</div>' : '';
+    var previous = lastRow ? rowsHtml(lastRow) : '';
+    root.innerHTML = bannerHtml(info, failures) + stale + previous;
+  }
+
+  function rowsHtml(row) {
     var players = LifeLink.toPlayers(row);
-    if (!players.length) {
-      setState('Waiting for players…');
-      return;
-    }
 
     var rows = players.map(function (p) {
       var badges = '';
@@ -56,20 +78,40 @@
       );
     }).join('');
 
-    root.innerHTML =
+    return (
       '<ul class="rows">' + rows + '</ul>' +
-      '<div class="foot">LifeLink · ' + LifeLink.escapeHtml(row.id) + '</div>';
+      '<div class="foot">LifeLink · ' + LifeLink.escapeHtml(row.id) + '</div>'
+    );
+  }
+
+  function render(row) {
+    failures = 0;
+    if (!row) {
+      renderError(LifeLink.apiError('room_not_found', config.roomId));
+      return;
+    }
+    if (!LifeLink.toPlayers(row).length) {
+      setState('Waiting for players…');
+      lastRow = row;
+      return;
+    }
+    lastRow = row;
+    root.innerHTML = rowsHtml(row);
   }
 
   function start() {
     if (stop) { stop(); stop = null; }
+    failures = 0;
+    lastRow = null;
     if (!LifeLink.isValidRoomId(config.roomId)) {
-      setState('No room connected yet. The broadcaster can add a LifeLink room code in the extension configuration.');
+      renderError(LifeLink.apiError('invalid_room_id'));
       return;
     }
     setState('Connecting to room ' + config.roomId + '…');
     stop = LifeLink.pollRoom(config.roomId, 2000, render, function (err) {
       console.error('LifeLink poll failed', err);
+      failures += 1;
+      renderError(err);
     });
   }
 
