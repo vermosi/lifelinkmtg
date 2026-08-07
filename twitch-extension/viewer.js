@@ -492,6 +492,7 @@
     config.theme = pick(THEMES, parsed.theme, 'dark');
     config.fontSize = pick(SIZES, parsed.fontSize, 'medium');
     config.safeArea = pick(SAFE_KEYS, parsed.safeArea, 'small');
+    config.layoutPreset = pick(PRESET_KEYS, parsed.layoutPreset, 'auto');
 
     config.playerColors = normalizeColors(parsed.playerColors);
     applyAppearance();
