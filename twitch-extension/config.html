@@ -63,6 +63,24 @@
         </p>
       </div>
 
+      <div>
+        <label for="preset">Layout preset</label>
+        <select id="preset">
+          <option value="auto" selected>Auto — match the Twitch box</option>
+          <option value="panel">Panel column (320px)</option>
+          <option value="overlayCorner">Video overlay — corner card (16:9)</option>
+          <option value="overlaySidebar">Video overlay — tall sidebar</option>
+          <option value="overlayStrip">Video overlay — bottom strip</option>
+          <option value="ultrawide">Ultrawide / theatre player</option>
+          <option value="mobile">Mobile / narrow player</option>
+        </select>
+        <p class="help">
+          Auto detects the player box Twitch gives the extension (panel column, 16:9 overlay,
+          theatre-mode ultrawide, short strip or mobile) and uses a layout sized for it. Pick a
+          preset to lock one in if your stream always uses the same shape.
+        </p>
+      </div>
+
 
       <div class="colors">
         <div class="colors-head">
