@@ -430,6 +430,7 @@
       roomId: previewRoom,
       nameMode: params.get('nameMode') || (params.get('names') === '0' ? 'hidden' : 'full'),
       compact: params.get('compact') === '1',
+      diagnostics: params.get('diag') === '1',
       counters: params.get('counters')
         ? params.get('counters').split(',').reduce(function (acc, key) { acc[key] = true; return acc; }, {})
         : DEFAULT_COUNTERS,
