@@ -321,3 +321,21 @@ body[data-compact="1"] .foot { display: none; }
 body[data-compact="1"] .name { font-size: calc(11px * var(--ll-s)); }
 body[data-compact="1"] .life { font-size: calc(19px * var(--ll-s)); }
 body.config[data-compact="1"] .wrap { padding: 8px; }
+
+/* Secondary counter toggles (configuration page) */
+.counter-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.counter-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--ll-border);
+  border-radius: 8px;
+  background: var(--ll-card);
+  font-size: 12px;
+  color: var(--ll-muted);
+  cursor: pointer;
+}
+.counter-toggle input { accent-color: var(--ll-accent); }
+.counter-toggle:has(input:checked) { color: var(--ll-text); border-color: var(--ll-accent); }
+@media (max-width: 380px) { .counter-grid { grid-template-columns: 1fr; } }

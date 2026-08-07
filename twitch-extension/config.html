@@ -64,9 +64,16 @@
         <input id="compact" type="checkbox" />
         <label for="compact">Compact mode (tighter rows, smaller padding)</label>
       </div>
-      <div class="row-inline">
-        <input id="counters" type="checkbox" checked />
-        <label for="counters">Show poison, Monarch and Initiative badges</label>
+      <div class="colors">
+        <div class="colors-head">
+          <label>Secondary counters</label>
+          <button id="counters-none" class="link" type="button">Clear all</button>
+        </div>
+        <p class="help">
+          Pick which counters appear as badges next to each life total. A badge only shows when that
+          player actually has the counter.
+        </p>
+        <div id="counter-grid" class="counter-grid"></div>
       </div>
 
       <div class="row-inline">
