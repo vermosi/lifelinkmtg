@@ -553,7 +553,18 @@ export function getEmbedUrl(room: Room, options: EmbedUrlOptions = {}): string {
 /** Copy-ready iframe snippet for the embeddable widget. */
 export function getEmbedSnippet(room: Room, options: EmbedUrlOptions = {}): string {
   const url = getEmbedUrl(room, options);
-  return `<iframe src="${url}" title="LifeLink life totals" width="320" height="400" style="border:0;border-radius:12px" loading="lazy"></iframe>`;
+  const id = `lifelink-${room.id}`;
+  return [
+    `<iframe id="${id}" src="${url}" title="LifeLink life totals" width="320" height="400" style="border:0;border-radius:12px;width:100%;display:block" loading="lazy" scrolling="no"></iframe>`,
+    `<script>`,
+    `window.addEventListener("message", function (e) {`,
+    `  var d = e.data;`,
+    `  if (!d || d.type !== "lifelink:embed-size" || d.roomId !== "${room.id}") return;`,
+    `  var f = document.getElementById("${id}");`,
+    `  if (f) { f.style.height = d.height + "px"; }`,
+    `});`,
+    `</script>`,
+  ].join('\n');
 }
 
 // ============= LOCAL STORAGE =============

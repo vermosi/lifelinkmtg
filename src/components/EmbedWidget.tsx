@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { getCloudRoom, subscribeToRoom } from '@/lib/cloudRoomUtils';
 import { Room } from '@/lib/roomUtils';
+import { useIframeAutoResize } from '@/hooks/useIframeAutoResize';
 
 type EmbedTheme = 'dark' | 'light' | 'transparent';
 
@@ -45,7 +46,13 @@ export function EmbedWidget() {
   const theme = isTheme(themeParam) ? themeParam : 'dark';
   const compact = searchParams.get('compact') === '1';
   const showCounters = searchParams.get('counters') !== '0';
+  const autosize = searchParams.get('autosize') !== '0';
   const styles = THEMES[theme];
+  const measureRef = useIframeAutoResize(autosize, roomId);
+  // In autosize mode the widget hugs its content so the parent can fit it exactly.
+  const shellSize = autosize ? 'w-full' : 'h-screen w-full';
+  const listSize = autosize ? 'flex-col gap-1.5' : 'flex-1 flex-col gap-1.5 overflow-hidden';
+  const rowSize = autosize ? '' : 'min-h-0 max-h-24 flex-1';
 
   useEffect(() => {
     if (!roomId) {
@@ -81,7 +88,7 @@ export function EmbedWidget() {
 
   if (loading) {
     return (
-      <div className={`flex h-screen w-full items-center justify-center ${styles.shell}`}>
+      <div ref={measureRef} className={`flex ${autosize ? 'w-full py-8' : 'h-screen w-full'} items-center justify-center ${styles.shell}`}>
         <p className="text-sm text-muted-foreground">Loading life totals…</p>
       </div>
     );
@@ -89,7 +96,7 @@ export function EmbedWidget() {
 
   if (failed || !room) {
     return (
-      <div className={`flex h-screen w-full items-center justify-center px-4 text-center ${styles.shell}`}>
+      <div ref={measureRef} className={`flex ${autosize ? 'w-full py-8' : 'h-screen w-full'} items-center justify-center px-4 text-center ${styles.shell}`}>
         <p className="text-sm text-muted-foreground">
           Room not found. Check the room code in the embed URL.
         </p>
@@ -98,8 +105,8 @@ export function EmbedWidget() {
   }
 
   return (
-    <div className={`flex h-screen w-full flex-col gap-2 overflow-hidden p-2 ${styles.shell}`}>
-      <ul className="flex flex-1 flex-col gap-1.5 overflow-hidden" aria-label="Player life totals">
+    <div ref={measureRef} className={`flex ${shellSize} flex-col gap-2 overflow-hidden p-2 ${styles.shell}`}>
+      <ul className={`flex ${listSize}`} aria-label="Player life totals">
         {players.map((player) => {
           const counters = player.counters;
           const extras = showCounters
@@ -115,7 +122,7 @@ export function EmbedWidget() {
           return (
             <li
               key={player.id}
-              className={`flex min-h-0 max-h-24 flex-1 items-center justify-between gap-3 rounded-lg border px-3 py-2 ${styles.card}`}
+              className={`flex ${rowSize} items-center justify-between gap-3 rounded-lg border px-3 py-2 ${styles.card}`}
             >
               <div className="min-w-0">
                 <p className={`truncate font-semibold leading-tight ${styles.value} ${compact ? 'text-sm' : 'text-base'}`}>
