@@ -3,10 +3,14 @@
   'use strict';
 
   var root = document.getElementById('root');
-  var config = { roomId: '', nameMode: 'full', compact: false, showNames: true, showCounters: true, counters: { poison: true, monarch: true, initiative: true }, theme: 'dark', fontSize: 'medium', playerColors: [] };
+  var config = { roomId: '', nameMode: 'full', compact: false, showNames: true, showCounters: true, counters: { poison: true, monarch: true, initiative: true }, theme: 'dark', fontSize: 'medium', safeArea: 'small', playerColors: [] };
   var THEMES = ['dark', 'light', 'transparent'];
   var SIZES = ['small', 'medium', 'large', 'xlarge'];
+  // Safe-area inset as a fraction of the live frame width/height.
+  var SAFE_AREAS = { none: 0, small: 0.025, medium: 0.05, large: 0.08 };
+  var SAFE_KEYS = ['none', 'small', 'medium', 'large'];
   var NAME_MODES = ['full', 'initials', 'hidden'];
+
   var COUNTER_KEYS = ['poison', 'energy', 'experience', 'storm', 'commanderTax', 'monarch', 'initiative', 'custom'];
   var DEFAULT_COUNTERS = { poison: true, monarch: true, initiative: true };
 
