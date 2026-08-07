@@ -1,10 +1,95 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Cloud, Loader2, Infinity, Grid3X3, LogIn, Monitor, Users, RefreshCw, Smartphone } from 'lucide-react';
+import {
+  Cloud,
+  Loader2,
+  Grid3X3,
+  Monitor,
+  Users,
+  RefreshCw,
+  Smartphone,
+  Zap,
+  Moon,
+  Sun,
+  Palette,
+  Keyboard,
+  History,
+  Save,
+  Twitch,
+  QrCode,
+  ShieldCheck,
+  Crown,
+  Target,
+  Skull,
+  Sparkles,
+  ChevronDown,
+} from 'lucide-react';
 import { Room, PlayerCount } from '@/lib/roomUtils';
-import { createCloudRoom, getCloudRoom, getRecentCloudRooms, getStoredAdminKey, deleteCloudRoom, removeFromRecentRooms } from '@/lib/cloudRoomUtils';
+import {
+  createCloudRoom,
+  getCloudRoom,
+  getRecentCloudRooms,
+  getStoredAdminKey,
+  deleteCloudRoom,
+  removeFromRecentRooms,
+} from '@/lib/cloudRoomUtils';
 import { LayoutPicker } from './LayoutPicker';
 import { toast } from '@/hooks/use-toast';
+
+interface FeatureCardProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}
+
+function FeatureCard({ icon, title, description }: FeatureCardProps) {
+  return (
+    <div className="group p-4 sm:p-5 rounded-2xl bg-card/40 border border-border/50 hover:bg-card/70 hover:border-border transition-all">
+      <div className="w-10 h-10 bg-card shadow-sm rounded-xl flex items-center justify-center text-accent mb-3 group-hover:scale-110 transition-transform">
+        {icon}
+      </div>
+      <h3 className="font-bold text-foreground mb-1 text-sm sm:text-base">{title}</h3>
+      <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{description}</p>
+    </div>
+  );
+}
+
+interface StepProps {
+  number: string;
+  title: string;
+  description: string;
+}
+
+function Step({ number, title, description }: StepProps) {
+  return (
+    <li className="flex items-start gap-4">
+      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-accent/10 text-accent font-display font-bold text-lg flex items-center justify-center">
+        {number}
+      </div>
+      <div>
+        <h3 className="font-bold text-foreground mb-1">{title}</h3>
+        <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+      </div>
+    </li>
+  );
+}
+
+interface FaqItemProps {
+  question: string;
+  answer: string;
+}
+
+function FaqItem({ question, answer }: FaqItemProps) {
+  return (
+    <details className="group rounded-2xl bg-card/40 border border-border/50 open:bg-card/70 open:border-border transition-all">
+      <summary className="flex items-center justify-between p-4 cursor-pointer list-none">
+        <span className="font-semibold text-foreground text-sm sm:text-base pr-4">{question}</span>
+        <ChevronDown className="w-5 h-5 text-muted-foreground flex-shrink-0 group-open:rotate-180 transition-transform" aria-hidden="true" />
+      </summary>
+      <div className="px-4 pb-4 text-sm text-muted-foreground leading-relaxed">{answer}</div>
+    </details>
+  );
+}
 
 export function RoomSelector() {
   const navigate = useNavigate();
@@ -27,7 +112,7 @@ export function RoomSelector() {
     const room = await getCloudRoom(code);
     setIsJoining(false);
     if (!room) {
-      toast({ title: 'Room not found', description: `No active room matches “${code}”.` });
+      toast({ title: 'Room not found', description: `No active room matches "${code}".` });
       return;
     }
     const storedAdminKey = getStoredAdminKey(room.id);
@@ -68,18 +153,13 @@ export function RoomSelector() {
       const success = await deleteCloudRoom(roomId, adminKey);
       if (success) {
         removeFromRecentRooms(roomId);
-        setRecentRooms(prev => prev.filter(r => r.id !== roomId));
+        setRecentRooms((prev) => prev.filter((r) => r.id !== roomId));
       }
     }
   };
 
   if (showLayoutPicker) {
-    return (
-      <LayoutPicker 
-        onSelect={handleCreateRoom}
-        onClose={() => setShowLayoutPicker(false)}
-      />
-    );
+    return <LayoutPicker onSelect={handleCreateRoom} onClose={() => setShowLayoutPicker(false)} />;
   }
 
   return (
@@ -160,42 +240,42 @@ export function RoomSelector() {
           <div className="flex items-center justify-center py-6">
             <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin text-muted-foreground" />
           </div>
-        ) : recentRooms.length > 0 && (
-          <div className="w-full max-w-2xl mb-10 sm:mb-12">
-            <h2 className="text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2 mb-3">
-              <Cloud className="w-3 h-3" />
-              Recent Games
-            </h2>
-            <div className="space-y-2">
-              {recentRooms.slice(0, 5).map((room) => (
-                <button
-                  key={room.id}
-                  onClick={() => handleOpenRoom(room.id, room.adminKey)}
-                  className="w-full flex items-center justify-between p-3 sm:p-4 bg-secondary/60 rounded-xl hover:bg-secondary transition-colors group"
-                >
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="font-display text-xl sm:text-2xl text-foreground">
-                      {room.id}
-                    </div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">
-                      {room.playerCount}P · {room.settings.startingLife}
-                      {room.settings.enablePartnerTracking && ' · Partner'}
-                    </div>
-                  </div>
+        ) : (
+          recentRooms.length > 0 && (
+            <div className="w-full max-w-2xl mb-6 sm:mb-10">
+              <h2 className="text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2 mb-3">
+                <Cloud className="w-3 h-3" />
+                Recent Games
+              </h2>
+              <div className="space-y-2">
+                {recentRooms.slice(0, 5).map((room) => (
                   <button
-                    onClick={(e) => handleDeleteRoom(room.id, room.adminKey, e)}
-                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all text-xs sm:text-sm px-2 py-1"
+                    key={room.id}
+                    onClick={() => handleOpenRoom(room.id, room.adminKey)}
+                    className="w-full flex items-center justify-between p-3 sm:p-4 bg-secondary/60 rounded-xl hover:bg-secondary transition-colors group"
                   >
-                    Delete
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="font-display text-xl sm:text-2xl text-foreground">{room.id}</div>
+                      <div className="text-xs sm:text-sm text-muted-foreground">
+                        {room.playerCount}P · {room.settings.startingLife}
+                        {room.settings.enablePartnerTracking && ' · Partner'}
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => handleDeleteRoom(room.id, room.adminKey, e)}
+                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all text-xs sm:text-sm px-2 py-1"
+                    >
+                      Delete
+                    </button>
                   </button>
-                </button>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )
         )}
 
-        {/* Feature highlights */}
-        <section aria-label="Features" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 w-full mb-4">
+        {/* Top feature highlights */}
+        <section aria-label="Highlights" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 w-full mb-10 sm:mb-14">
           <div className="group p-4 sm:p-6 rounded-2xl transition-all hover:bg-card/50">
             <div className="w-12 h-12 bg-card shadow-sm rounded-xl flex items-center justify-center text-accent mb-4 group-hover:scale-110 transition-transform">
               <RefreshCw className="w-6 h-6" aria-hidden="true" />
@@ -216,7 +296,7 @@ export function RoomSelector() {
             </p>
           </div>
 
-          <div className="group p-4 sm:p-6 rounded-2xl transition-all hover:bg-card/50">
+          <div className="group p-4 sm:p-6 rounded-2xl transition-all hover:bg-card/50 sm:col-span-2 lg:col-span-1">
             <div className="w-12 h-12 bg-card shadow-sm rounded-xl flex items-center justify-center text-accent mb-4 group-hover:scale-110 transition-transform">
               <Smartphone className="w-6 h-6" aria-hidden="true" />
             </div>
@@ -224,6 +304,170 @@ export function RoomSelector() {
             <p className="text-sm text-muted-foreground leading-relaxed">
               Big tap targets, no install required, and optimized for phones at the table.
             </p>
+          </div>
+        </section>
+
+        {/* Full feature grid */}
+        <section aria-labelledby="features-heading" className="w-full mb-10 sm:mb-14">
+          <h2 id="features-heading" className="text-center font-display text-2xl sm:text-3xl text-foreground mb-2">
+            Built for Commander & EDH
+          </h2>
+          <p className="text-center text-sm text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto">
+            Everything you need for multiplayer Magic: life totals, counters, layouts, and streaming tools — all in one shared room.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            <FeatureCard
+              icon={<Users className="w-5 h-5" aria-hidden="true" />}
+              title="2–6 players"
+              description="Supports any pod size from casual duels to full Commander tables."
+            />
+            <FeatureCard
+              icon={<Sparkles className="w-5 h-5" aria-hidden="true" />}
+              title="Partner commanders"
+              description="Track both your commander and partner life totals separately."
+            />
+            <FeatureCard
+              icon={<Target className="w-5 h-5" aria-hidden="true" />}
+              title="Commander damage"
+              description="Log commander damage per player so 21-damage knockouts are clear."
+            />
+            <FeatureCard
+              icon={<Skull className="w-5 h-5" aria-hidden="true" />}
+              title="Poison & energy"
+              description="Toggle poison, energy, experience, Monarch, and Initiative counters."
+            />
+            <FeatureCard
+              icon={<Crown className="w-5 h-5" aria-hidden="true" />}
+              title="Monarch & Initiative"
+              description="Track who holds the Monarch and Initiative tokens during the game."
+            />
+            <FeatureCard
+              icon={<Sun className="w-5 h-5" aria-hidden="true" />}
+              title="Day / night tracker"
+              description="Flip between day and night for Innistrad-style mechanics."
+            />
+            <FeatureCard
+              icon={<Zap className="w-5 h-5" aria-hidden="true" />}
+              title="Haptic feedback"
+              description="Feel taps on supported phones so adjustments happen without looking."
+            />
+            <FeatureCard
+              icon={<Keyboard className="w-5 h-5" aria-hidden="true" />}
+              title="Keyboard shortcuts"
+              description="Speed up life changes on PC with hotkeys for every seat."
+            />
+            <FeatureCard
+              icon={<History className="w-5 h-5" aria-hidden="true" />}
+              title="History log"
+              description="Review the last 50 events with timestamps to settle any dispute."
+            />
+            <FeatureCard
+              icon={<Palette className="w-5 h-5" aria-hidden="true" />}
+              title="Color customization"
+              description="Pick panel colors for each player so the table matches your deck."
+            />
+            <FeatureCard
+              icon={<Save className="w-5 h-5" aria-hidden="true" />}
+              title="Game presets"
+              description="Save recurring room setups and jump back into your next game faster."
+            />
+            <FeatureCard
+              icon={<ShieldCheck className="w-5 h-5" aria-hidden="true" />}
+              title="24-hour rooms"
+              description="Rooms auto-delete after a day of inactivity to keep the database lean."
+            />
+          </div>
+        </section>
+
+        {/* Streaming section */}
+        <section aria-labelledby="stream-heading" className="w-full max-w-3xl mb-10 sm:mb-14">
+          <h2 id="stream-heading" className="text-center font-display text-2xl sm:text-3xl text-foreground mb-2">
+            Stream-ready out of the box
+          </h2>
+          <p className="text-center text-sm text-muted-foreground mb-6 sm:mb-8">
+            Three ways to show life totals to viewers — no OBS required if you do not want it.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+            <div className="p-4 sm:p-5 rounded-2xl bg-card/40 border border-border/50 text-center">
+              <Monitor className="w-6 h-6 text-accent mx-auto mb-3" aria-hidden="true" />
+              <h3 className="font-bold text-foreground mb-1">OBS Browser Source</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Read-only overlay URL with preset layouts, colors, and safe-area settings.
+              </p>
+            </div>
+            <div className="p-4 sm:p-5 rounded-2xl bg-card/40 border border-border/50 text-center">
+              <Twitch className="w-6 h-6 text-accent mx-auto mb-3" aria-hidden="true" />
+              <h3 className="font-bold text-foreground mb-1">Twitch Extension</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Native Twitch extension with panel, video overlay, and broadcaster config.
+              </p>
+            </div>
+            <div className="p-4 sm:p-5 rounded-2xl bg-card/40 border border-border/50 text-center">
+              <QrCode className="w-6 h-6 text-accent mx-auto mb-3" aria-hidden="true" />
+              <h3 className="font-bold text-foreground mb-1">Embed Widget</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Drop an iframe on any page with theme and auto-resize support.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* How it works */}
+        <section aria-labelledby="how-it-works-heading" className="w-full max-w-2xl mb-10 sm:mb-14">
+          <h2 id="how-it-works-heading" className="text-center font-display text-2xl sm:text-3xl text-foreground mb-6 sm:mb-8">
+            How it works
+          </h2>
+          <ol className="space-y-6">
+            <Step
+              number="1"
+              title="Create a room"
+              description="Tap NEW GAME, pick your player count and table layout, and your shared room is ready."
+            />
+            <Step
+              number="2"
+              title="Share the code or QR"
+              description="Friends join from any phone or browser with the short room code or a quick scan."
+            />
+            <Step
+              number="3"
+              title="Track & stream"
+              description="Update life totals together, then copy the overlay URL for OBS or Twitch."
+            />
+          </ol>
+        </section>
+
+        {/* FAQ */}
+        <section aria-labelledby="faq-heading" className="w-full max-w-2xl mb-10 sm:mb-14">
+          <h2 id="faq-heading" className="text-center font-display text-2xl sm:text-3xl text-foreground mb-6 sm:mb-8">
+            Frequently asked questions
+          </h2>
+          <div className="space-y-3">
+            <FaqItem
+              question="What is LifeLink?"
+              answer="LifeLink is a free, cloud-synced life counter for Magic: The Gathering. It lets 2–6 players share a room from any device and stream life totals through OBS or Twitch."
+            />
+            <FaqItem
+              question="Does it support Commander / EDH?"
+              answer="Yes. LifeLink supports commander damage, partner commanders, poison, energy, experience, Monarch, Initiative, and a day/night tracker for Commander games."
+            />
+            <FaqItem
+              question="How do players join the same room?"
+              answer="Each room gets a short code and a QR code. Anyone can enter the code on the home page or scan the QR from the room's share screen."
+            />
+            <FaqItem
+              question="Can I use it with OBS or Twitch?"
+              answer="Yes. Every room has a read-only overlay URL for OBS Browser Source, a native Twitch extension, and an embeddable widget for other sites."
+            />
+            <FaqItem
+              question="Is LifeLink free?"
+              answer="Yes. LifeLink is free to use for tracking life totals and streaming overlays."
+            />
+            <FaqItem
+              question="What devices does it work on?"
+              answer="LifeLink runs in any modern web browser on iOS, Android, Windows, macOS, and Linux. No app install is required."
+            />
           </div>
         </section>
 
