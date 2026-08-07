@@ -6,6 +6,7 @@ import { Routes, Route } from 'react-router-dom';
 import Index from './pages/Index';
 import RoomPage from './pages/RoomPage';
 import OverlayPage from './pages/OverlayPage';
+import EmbedPage from './pages/EmbedPage';
 import FaviconCheck from './pages/FaviconCheck';
 import NotFound from './pages/NotFound';
 
@@ -21,6 +22,7 @@ const MainApp = () => (
           <Route path="/" element={<Index />} />
           <Route path="/room/:roomId" element={<RoomPage />} />
           <Route path="/room/:roomId/overlay" element={<OverlayPage />} />
+          <Route path="/embed/:roomId" element={<EmbedPage />} />
           <Route path="/favicon-check" element={<FaviconCheck />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -6,7 +6,7 @@ import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuf
 import { ToolsDrawer } from './ToolsDrawer';
 import { useCloudRoomState } from '@/hooks/useCloudRoomState';
 import { useWakeLock } from '@/hooks/useWakeLock';
-import { getControlUrl, getOverlayUrl, getOverlayEditUrl, PLAYER_COLORS, formatTimestamp, HistoryEntry, DUNGEON_ROOMS, loadPresets, savePreset, deletePreset, createPresetFromRoom, GamePreset, LAYOUTS, OVERLAY_PRESETS } from '@/lib/roomUtils';
+import { getControlUrl, getOverlayUrl, getOverlayEditUrl, getEmbedUrl, getEmbedSnippet, EmbedTheme, PLAYER_COLORS, formatTimestamp, HistoryEntry, DUNGEON_ROOMS, loadPresets, savePreset, deletePreset, createPresetFromRoom, GamePreset, LAYOUTS, OVERLAY_PRESETS } from '@/lib/roomUtils';
 import { FullScreenPlayerPanel } from './FullScreenPlayerPanel';
 import { DiceRoller } from './DiceRoller';
 import { cn } from '@/lib/utils';
@@ -122,7 +122,9 @@ export function RoomControl() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuTab, setMenuTab] = useState<'settings' | 'history' | 'dice' | 'presets' | 'share'>('settings');
-  const [copiedUrl, setCopiedUrl] = useState<'control' | 'overlay' | null>(null);
+  const [copiedUrl, setCopiedUrl] = useState<'control' | 'overlay' | 'embed-url' | 'embed-code' | null>(null);
+  const [embedTheme, setEmbedTheme] = useState<EmbedTheme>('dark');
+  const [embedCompact, setEmbedCompact] = useState(false);
   const [copiedChecklist, setCopiedChecklist] = useState(false);
   const [highlightedPlayer, setHighlightedPlayer] = useState<number | null>(null);
   const [presets, setPresets] = useState<GamePreset[]>(() => loadPresets());
@@ -182,6 +184,14 @@ export function RoomControl() {
     () => (room ? getOverlayEditUrl(room, shareStyle) : ''),
     [room?.id, room?.adminKey, shareStyle]
   );
+  const embedUrl = useMemo(
+    () => (room ? getEmbedUrl(room, { theme: embedTheme, compact: embedCompact }) : ''),
+    [room?.id, embedTheme, embedCompact]
+  );
+  const embedSnippet = useMemo(
+    () => (room ? getEmbedSnippet(room, { theme: embedTheme, compact: embedCompact }) : ''),
+    [room?.id, embedTheme, embedCompact]
+  );
 
   // Convert hex to HSL for color picker
   const hexToHsl = (hex: string): string => {
@@ -230,6 +240,20 @@ export function RoomControl() {
     }
     const toHex = (x: number) => Math.round(x * 255).toString(16).padStart(2, '0');
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  };
+
+  const copyText = async (type: NonNullable<typeof copiedUrl>, value: string) => {
+    if (!navigator.clipboard) {
+      toast({ title: 'Copy failed', description: 'Clipboard access is unavailable in this browser.' });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedUrl(type);
+      setTimeout(() => setCopiedUrl(null), 2000);
+    } catch {
+      toast({ title: 'Copy failed', description: 'Could not write to the clipboard.' });
+    }
   };
 
   const copyUrl = async (type: 'control' | 'overlay') => {
@@ -1259,6 +1283,64 @@ Overlay URL: ${overlayUrl}`;
                   </a>
                   <p className="text-xs text-muted-foreground text-center">
                     Read-only, safe to share. No admin access.
+                  </p>
+                </div>
+
+                {/* Embeddable widget — Twitch panels / websites, no OBS needed */}
+                <div className="bg-secondary/50 rounded-xl p-3 space-y-2">
+                  <div className="text-xs font-semibold text-foreground flex items-center gap-2">
+                    <ExternalLink className="w-3.5 h-3.5" /> Embed widget (no OBS needed)
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Drop this into a Twitch panel, stream layout tool, or any website. Read-only and updates live.
+                  </p>
+                  <div className="flex gap-1.5">
+                    {(['dark', 'light', 'transparent'] as const).map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => setEmbedTheme(t)}
+                        className={`flex-1 py-1.5 rounded-lg text-xs capitalize ${
+                          embedTheme === t ? 'bg-accent text-accent-foreground' : 'bg-secondary text-muted-foreground'
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={embedCompact}
+                      onChange={(e) => setEmbedCompact(e.target.checked)}
+                      className="accent-current"
+                    />
+                    Compact mode (small panels)
+                  </label>
+                  <div className="rounded-lg overflow-hidden border border-border bg-background" style={{ height: 220 }}>
+                    <iframe
+                      key={embedUrl}
+                      src={embedUrl}
+                      title="LifeLink embed preview"
+                      className="w-full h-full"
+                    />
+                  </div>
+                  <button
+                    onClick={() => copyText('embed-url', embedUrl)}
+                    className="w-full flex items-center justify-center gap-2 py-2 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80"
+                  >
+                    {copiedUrl === 'embed-url' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    Copy widget URL
+                  </button>
+                  <button
+                    onClick={() => copyText('embed-code', embedSnippet)}
+                    className="w-full flex items-center justify-center gap-2 py-2 bg-secondary rounded-xl text-foreground text-sm hover:bg-secondary/80"
+                  >
+                    {copiedUrl === 'embed-code' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    Copy embed code (iframe)
+                  </button>
+                  <p className="text-[11px] text-muted-foreground">
+                    Twitch panel: use the widget URL as the panel link, or paste the iframe into any layout tool that
+                    accepts custom HTML.
                   </p>
                 </div>
 

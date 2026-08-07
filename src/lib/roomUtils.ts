@@ -530,6 +530,32 @@ export function getOverlayEditUrl(room: Room, options: ShareUrlOptions = {}): st
 // Legacy alias kept for older imports.
 export type OverlayUrlOptions = ShareUrlOptions;
 
+export type EmbedTheme = 'dark' | 'light' | 'transparent';
+
+export interface EmbedUrlOptions {
+  theme?: EmbedTheme;
+  compact?: boolean;
+  showCounters?: boolean;
+}
+
+/**
+ * Read-only widget URL for Twitch panels / website embeds — no OBS required.
+ */
+export function getEmbedUrl(room: Room, options: EmbedUrlOptions = {}): string {
+  const params = new URLSearchParams();
+  if (options.theme && options.theme !== 'dark') params.set('theme', options.theme);
+  if (options.compact) params.set('compact', '1');
+  if (options.showCounters === false) params.set('counters', '0');
+  const qs = params.toString();
+  return `${window.location.origin}/embed/${room.id}${qs ? `?${qs}` : ''}`;
+}
+
+/** Copy-ready iframe snippet for the embeddable widget. */
+export function getEmbedSnippet(room: Room, options: EmbedUrlOptions = {}): string {
+  const url = getEmbedUrl(room, options);
+  return `<iframe src="${url}" title="LifeLink life totals" width="320" height="400" style="border:0;border-radius:12px" loading="lazy"></iframe>`;
+}
+
 // ============= LOCAL STORAGE =============
 
 export function loadRoomsState(): RoomsState {
