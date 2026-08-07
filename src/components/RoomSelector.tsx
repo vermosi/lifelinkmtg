@@ -313,7 +313,7 @@ export function RoomSelector() {
             Built for Commander & OTHER MAGIC THE GATHERING FORMATS
           </h2>
           <p className="text-center text-sm text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto">
-            Everything you need for multiplayer Magic: life totals, counters, layouts, and streaming tools — all in one shared room.
+            Everything you need for multiplayer play
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
