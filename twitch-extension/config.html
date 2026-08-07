@@ -155,6 +155,27 @@
 
       <div>
         <div class="colors-head">
+          <label>Room links</label>
+          <button id="links-refresh" class="link" type="button">Refresh</button>
+        </div>
+        <p class="help">
+          Copy the read-only overlay URL for an OBS Browser Source, or the broadcaster control URL
+          to run the game. Paste your admin key (from LifeLink's Share tab) to get a control link
+          that unlocks editing.
+        </p>
+        <input id="admin-key" type="text" autocomplete="off" spellcheck="false" placeholder="Admin key (optional)" />
+        <div class="link-row">
+          <code id="overlay-url" class="link-url">—</code>
+          <button id="copy-overlay" class="secondary" type="button">Copy overlay URL</button>
+        </div>
+        <div class="link-row">
+          <code id="control-url" class="link-url">—</code>
+          <button id="copy-control" class="secondary" type="button">Copy control URL</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="colors-head">
           <label for="backup">Backup &amp; sharing</label>
           <button id="backup-copy" class="link" type="button">Copy JSON</button>
         </div>
