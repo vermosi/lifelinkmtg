@@ -24,6 +24,7 @@ const MainApp = () => (
           <Route path="/room/:roomId" element={<RoomPage />} />
           <Route path="/room/:roomId/overlay" element={<OverlayPage />} />
           <Route path="/embed/:roomId" element={<EmbedPage />} />
+          <Route path="/twitch-extension" element={<TwitchExtensionPage />} />
           <Route path="/favicon-check" element={<FaviconCheck />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
