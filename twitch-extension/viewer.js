@@ -77,7 +77,18 @@
 
   setState('Loading LifeLink…');
 
-  if (window.Twitch && window.Twitch.ext) {
+  // Preview override: works locally and inside Twitch's test rig.
+  var params = new URLSearchParams(window.location.search);
+  var previewRoom = params.get('room') || '';
+
+  if (LifeLink.isValidRoomId(previewRoom)) {
+    applyConfig({
+      roomId: previewRoom,
+      showNames: params.get('names') !== '0',
+      showCounters: params.get('counters') !== '0',
+    });
+    start();
+  } else if (window.Twitch && window.Twitch.ext) {
     window.Twitch.ext.onAuthorized(function () {
       var broadcasterSegment = window.Twitch.ext.configuration.broadcaster;
       if (broadcasterSegment && applyConfig(broadcasterSegment.content)) start();
