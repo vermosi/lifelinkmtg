@@ -339,3 +339,32 @@ body.config[data-compact="1"] .wrap { padding: 8px; }
 .counter-toggle input { accent-color: var(--ll-accent); }
 .counter-toggle:has(input:checked) { color: var(--ll-text); border-color: var(--ll-accent); }
 @media (max-width: 380px) { .counter-grid { grid-template-columns: 1fr; } }
+
+/* ---- Config: live room connection / sync indicator ---- */
+.live {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(148, 163, 184, 0.08);
+  margin: 4px 0 8px;
+}
+.live-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex: 0 0 auto;
+  background: #94a3b8;
+}
+.live-title { font-size: 13px; font-weight: 600; }
+.live-detail { font-size: 12px; opacity: 0.75; margin-top: 2px; }
+.live[data-state='checking'] .live-dot { background: #facc15; animation: ll-pulse 1.1s ease-in-out infinite; }
+.live[data-state='checking'] { border-color: rgba(250, 204, 21, 0.4); }
+.live[data-state='ok'] .live-dot { background: #4ade80; animation: ll-pulse 2s ease-in-out infinite; }
+.live[data-state='ok'] { border-color: rgba(74, 222, 128, 0.4); background: rgba(74, 222, 128, 0.1); }
+.live[data-state='err'] .live-dot { background: #f87171; }
+.live[data-state='err'] { border-color: rgba(248, 113, 113, 0.45); background: rgba(248, 113, 113, 0.1); }
+@keyframes ll-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }

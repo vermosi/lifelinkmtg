@@ -20,6 +20,15 @@
         <input id="room" type="text" autocomplete="off" spellcheck="false" placeholder="e.g. k2FCPgCqcT" />
       </div>
 
+      <div id="live" class="live" data-state="idle" role="status" aria-live="polite">
+        <span class="live-dot" aria-hidden="true"></span>
+        <div class="live-text">
+          <div id="live-title" class="live-title">Enter a room code to check the connection</div>
+          <div id="live-detail" class="live-detail"></div>
+        </div>
+      </div>
+
+
       <div>
         <label for="theme">Theme</label>
         <select id="theme">
