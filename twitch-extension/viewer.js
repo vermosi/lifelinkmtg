@@ -175,7 +175,7 @@
     var playerCount = lastRow ? Math.max(LifeLink.toPlayers(lastRow).length, 1) : 4;
 
     var signature = width + 'x' + height + '|' + playerCount + '|' + config.safeArea + '|' +
-      (config.compact ? 1 : 0) + '|' + config.layoutPreset;
+      (config.compact ? 1 : 0) + '|' + config.layoutPreset + '|' + config.scaleMode + '|' + config.scale;
     if (signature === lastMetrics) return;
     lastMetrics = signature;
     recomputes += 1;
@@ -197,7 +197,14 @@
     var widthFit = boxWidth / BASE_WIDTH;
     var heightFit = (boxHeight - 28) / (playerCount * BASE_ROW_HEIGHT);
     var rawFit = Math.min(widthFit, heightFit);
-    var fit = clamp(rawFit, MIN_FIT, Math.min(MAX_FIT, preset.maxFit)).toFixed(3);
+
+    // Manual override wins over auto-fit: the broadcaster picked an exact scale,
+    // so only the hard safety bounds apply.
+    var manual = config.scaleMode === 'manual';
+    var autoFit = clamp(rawFit, MIN_FIT, Math.min(MAX_FIT, preset.maxFit));
+    var fitValue = manual ? clamp(config.scale / 100, SCALE_MIN, SCALE_MAX) : autoFit;
+    var fit = fitValue.toFixed(3);
+
 
     var perRow = boxHeight / playerCount;
     var density = perRow < 30 || Number(fit) <= 0.72 ? 'minimal' : perRow < 44 ? 'tight' : 'comfortable';
