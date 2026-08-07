@@ -6,6 +6,9 @@
   --ll-muted: #a1a1aa;
   --ll-accent: #7dd3fc;
   --ll-scale: 1;
+  /* Auto-fit factor set by viewer.js for the current Twitch player / panel size */
+  --ll-fit: 1;
+  --ll-s: calc(var(--ll-scale) * var(--ll-fit));
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
@@ -59,7 +62,7 @@ body.overlay .wrap {
   position: absolute;
   left: 16px;
   bottom: 16px;
-  width: calc(300px * var(--ll-scale));
+  width: calc(300px * var(--ll-s));
   padding: 0;
   gap: 4px;
 }
@@ -86,7 +89,7 @@ body.overlay .wrap {
   border-radius: 10px;
   background: var(--ll-card);
   min-height: 0;
-  max-height: calc(64px * var(--ll-scale));
+  max-height: calc(64px * var(--ll-s));
   flex: 1;
   backdrop-filter: blur(6px);
 }
@@ -101,7 +104,7 @@ body.overlay .wrap {
 }
 
 .name {
-  font-size: calc(13px * var(--ll-scale));
+  font-size: calc(13px * var(--ll-s));
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -109,7 +112,7 @@ body.overlay .wrap {
 }
 
 .sub {
-  font-size: calc(10px * var(--ll-scale));
+  font-size: calc(10px * var(--ll-s));
   color: var(--ll-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -117,7 +120,7 @@ body.overlay .wrap {
 }
 
 .life {
-  font-size: calc(22px * var(--ll-scale));
+  font-size: calc(22px * var(--ll-s));
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   line-height: 1;
@@ -126,7 +129,7 @@ body.overlay .wrap {
 .badges { display: flex; gap: 4px; margin-top: 2px; }
 
 .badge {
-  font-size: calc(9px * var(--ll-scale));
+  font-size: calc(9px * var(--ll-s));
   padding: 1px 5px;
   border-radius: 999px;
   border: 1px solid var(--ll-border);
@@ -136,7 +139,7 @@ body.overlay .wrap {
 .foot {
   flex: none;
   text-align: center;
-  font-size: calc(10px * var(--ll-scale));
+  font-size: calc(10px * var(--ll-s));
   letter-spacing: 0.06em;
   color: var(--ll-muted);
 }
@@ -148,7 +151,7 @@ body.overlay .wrap {
   height: 100%;
   padding: 16px;
   text-align: center;
-  font-size: calc(12px * var(--ll-scale));
+  font-size: calc(12px * var(--ll-s));
   color: var(--ll-muted);
 }
 
@@ -214,17 +217,17 @@ button.secondary { background: transparent; color: var(--ll-text); }
 }
 
 .banner-title {
-  font-size: calc(12px * var(--ll-scale));
+  font-size: calc(12px * var(--ll-s));
   font-weight: 700;
   color: #fca5a5;
 }
 
-.banner-body { font-size: calc(11px * var(--ll-scale)); color: var(--ll-text); line-height: 1.4; }
+.banner-body { font-size: calc(11px * var(--ll-s)); color: var(--ll-text); line-height: 1.4; }
 
 .banner-fixes {
   margin: 2px 0 0;
   padding-left: 16px;
-  font-size: calc(10px * var(--ll-scale));
+  font-size: calc(10px * var(--ll-s));
   color: var(--ll-muted);
   line-height: 1.45;
 }
@@ -234,7 +237,7 @@ button.secondary { background: transparent; color: var(--ll-text); }
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  font-size: calc(9px * var(--ll-scale));
+  font-size: calc(9px * var(--ll-s));
   color: var(--ll-muted);
 }
 
@@ -243,7 +246,33 @@ button.secondary { background: transparent; color: var(--ll-text); }
 
 .stale {
   flex: none;
-  font-size: calc(10px * var(--ll-scale));
+  font-size: calc(10px * var(--ll-s));
   color: var(--ll-muted);
   text-align: center;
 }
+
+/* Responsive density — set by viewer.js from the live viewport size */
+body[data-density="tight"] .wrap { padding: 6px; gap: 4px; }
+body[data-density="tight"] .rows { gap: 4px; }
+body[data-density="tight"] .row { padding: 5px 8px; border-radius: 8px; }
+body[data-density="tight"] .badges { display: none; }
+
+body[data-density="minimal"] .wrap { padding: 4px; gap: 3px; }
+body[data-density="minimal"] .rows { gap: 3px; }
+body[data-density="minimal"] .row { padding: 3px 6px; border-radius: 6px; }
+body[data-density="minimal"] .badges,
+body[data-density="minimal"] .sub,
+body[data-density="minimal"] .foot { display: none; }
+
+/* Very narrow panels / small player sizes: stack name above life */
+body[data-narrow="1"] .row { gap: 6px; }
+body[data-narrow="1"] .sub { display: none; }
+
+/* Overlay hugs the bottom-left but never exceeds the player box */
+body.overlay .wrap {
+  max-width: 46vw;
+  max-height: 78vh;
+  overflow: hidden;
+}
+
+body.overlay[data-density="minimal"] .wrap { left: 8px; bottom: 8px; }

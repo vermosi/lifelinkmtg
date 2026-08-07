@@ -14,6 +14,51 @@
   function applyAppearance() {
     document.body.dataset.theme = config.theme;
     document.body.dataset.size = config.fontSize;
+    applyResponsive();
+  }
+
+  // Reference box the layout was designed against (a standard Twitch panel).
+  var BASE_WIDTH = 320;
+  var BASE_ROW_HEIGHT = 46;
+  var MIN_FIT = 0.6;
+  var MAX_FIT = 1.6;
+
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  /**
+   * Scales the widget to the live Twitch player / panel box: width drives the
+   * type scale, available height divided by the player count keeps every row
+   * visible, and very small boxes switch to denser layouts.
+   */
+  function applyResponsive() {
+    var body = document.body;
+    var width = window.innerWidth || BASE_WIDTH;
+    var height = window.innerHeight || 400;
+    var isOverlay = body.classList.contains('overlay');
+    var boxWidth = isOverlay ? clamp(width * 0.28, 180, 420) : width;
+    var boxHeight = isOverlay ? height * 0.7 : height;
+    var playerCount = lastRow ? Math.max(LifeLink.toPlayers(lastRow).length, 1) : 4;
+
+    var widthFit = boxWidth / BASE_WIDTH;
+    var heightFit = (boxHeight - 28) / (playerCount * BASE_ROW_HEIGHT);
+    var fit = clamp(Math.min(widthFit, heightFit), MIN_FIT, MAX_FIT);
+
+    body.style.setProperty('--ll-fit', fit.toFixed(3));
+
+    var perRow = boxHeight / playerCount;
+    body.dataset.density = perRow < 30 || fit <= 0.72 ? 'minimal' : perRow < 44 ? 'tight' : 'comfortable';
+    body.dataset.narrow = boxWidth < 240 ? '1' : '0';
+  }
+
+  var resizeTimer = null;
+  window.addEventListener('resize', function () {
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(applyResponsive, 80);
+  });
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(function () { applyResponsive(); }).observe(document.documentElement);
   }
   var stop = null;
   var lastRow = null;
@@ -97,6 +142,7 @@
     }
     lastRow = row;
     root.innerHTML = rowsHtml(row);
+    applyResponsive();
   }
 
   function start() {
