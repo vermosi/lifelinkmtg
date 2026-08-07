@@ -310,7 +310,7 @@ export function RoomSelector() {
         {/* Full feature grid */}
         <section aria-labelledby="features-heading" className="w-full mb-10 sm:mb-14">
           <h2 id="features-heading" className="text-center font-display text-2xl sm:text-3xl text-foreground mb-2">
-            Built for Commander & EDH
+            Built for Commander & OTHER MAGIC THE GATHERING FORMATS
           </h2>
           <p className="text-center text-sm text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto">
             Everything you need for multiplayer Magic: life totals, counters, layouts, and streaming tools — all in one shared room.
