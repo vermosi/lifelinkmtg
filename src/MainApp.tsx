@@ -21,6 +21,7 @@ const MainApp = () => (
           <Route path="/" element={<Index />} />
           <Route path="/room/:roomId" element={<RoomPage />} />
           <Route path="/room/:roomId/overlay" element={<OverlayPage />} />
+          <Route path="/favicon-check" element={<FaviconCheck />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
