@@ -242,6 +242,83 @@
     });
   });
 
+  // ---- Live connection + sync monitor -------------------------------------
+  var live = document.getElementById('live');
+  var liveTitle = document.getElementById('live-title');
+  var liveDetail = document.getElementById('live-detail');
+  var stopPolling = null;
+  var lastOkAt = null;
+  var tickTimer = null;
+
+  function setLive(state, title, detail) {
+    live.dataset.state = state;
+    liveTitle.textContent = title;
+    liveDetail.textContent = detail || '';
+  }
+
+  function agoText() {
+    if (!lastOkAt) return '';
+    var secs = Math.max(0, Math.round((Date.now() - lastOkAt) / 1000));
+    if (secs < 2) return 'updated just now';
+    if (secs < 60) return 'updated ' + secs + 's ago';
+    return 'updated ' + Math.round(secs / 60) + 'm ago';
+  }
+
+  function stopMonitor() {
+    if (stopPolling) { stopPolling(); stopPolling = null; }
+    if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
+  }
+
+  function startMonitor() {
+    stopMonitor();
+    lastOkAt = null;
+    var roomId = input.value.trim();
+    if (!roomId) {
+      setLive('idle', 'Enter a room code to check the connection');
+      return;
+    }
+    if (!LifeLink.isValidRoomId(roomId)) {
+      setLive('err', 'Invalid room code', 'Room codes are 4–32 letters or numbers, no spaces or symbols.');
+      return;
+    }
+    setLive('checking', 'Connecting to room ' + roomId + '…', 'Checking that the room exists and is live.');
+    stopPolling = LifeLink.pollRoom(roomId, 3000, function (row) {
+      lastOkAt = Date.now();
+      var players = LifeLink.toPlayers(row);
+      syncRoomSeats(row);
+      setLive(
+        'ok',
+        'Connected — ' + players.length + (players.length === 1 ? ' player' : ' players'),
+        'Room ' + roomId + ' is syncing every 3s · ' + agoText()
+      );
+    }, function (err) {
+      var info = LifeLink.describeError(err);
+      var detail = info.body;
+      if (lastOkAt) detail += ' Last good sync ' + agoText() + '.';
+      setLive('err', info.title, detail);
+    });
+    tickTimer = setInterval(function () {
+      if (live.dataset.state === 'ok' && lastOkAt) {
+        liveDetail.textContent = 'Room ' + roomId + ' is syncing every 3s · ' + agoText();
+      }
+    }, 1000);
+  }
+
+  var monitorDebounce = null;
+  input.addEventListener('input', function () {
+    setLive('checking', 'Waiting for the room code…');
+    clearTimeout(monitorDebounce);
+    monitorDebounce = setTimeout(startMonitor, 500);
+  });
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) stopMonitor();
+    else startMonitor();
+  });
+
+  startMonitor();
+
+
   if (window.Twitch && window.Twitch.ext) {
     window.Twitch.ext.onAuthorized(load);
     window.Twitch.ext.configuration.onChanged(load);
