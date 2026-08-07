@@ -518,7 +518,7 @@ Overlay URL: ${overlayUrl}`;
       {/* Menu overlay */}
       {menuOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-background/98 backdrop-blur-sm flex items-center justify-center overflow-y-auto py-6"
+          className="fixed inset-0 z-[100] pointer-events-auto bg-background/98 backdrop-blur-sm flex items-center justify-center overflow-y-auto py-6"
           onClick={() => { setMenuOpen(false); }}
           role="dialog"
           aria-label="Settings menu"
