@@ -478,3 +478,19 @@ body[data-theme='light'] .diag {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
 }
+
+/* Config: backup & sharing */
+.config textarea#backup {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--ll-border, rgba(255, 255, 255, 0.18));
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--ll-text);
+}
+.config .row-inline { flex-wrap: wrap; gap: 8px; }

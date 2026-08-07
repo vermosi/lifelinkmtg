@@ -182,34 +182,40 @@
     };
   }
 
+  // Fill the form from a stored/imported config object. Every field is
+  // validated through pick()/normalize helpers so bad JSON can't corrupt the UI.
+  function applyToForm(parsed) {
+    if (!parsed || typeof parsed !== 'object') return false;
+    input.value = typeof parsed.roomId === 'string' ? parsed.roomId.trim() : '';
+    nameMode.value = pick(NAME_MODES, parsed.nameMode, parsed.showNames === false ? 'hidden' : 'full');
+    commanderMode.value = pick(COMMANDER_MODES, parsed.commanderMode, 'auto');
+    compact.checked = parsed.compact === true;
+    diagnostics.checked = parsed.diagnostics === true;
+    counterState = normalizeCounters(
+      parsed.counters,
+      parsed.showCounters === false ? {} : DEFAULT_COUNTERS
+    );
+    renderCounterGrid();
+    theme.value = pick(THEMES, parsed.theme, 'dark');
+    size.value = pick(SIZES, parsed.fontSize, 'medium');
+    safe.value = pick(SAFE_KEYS, parsed.safeArea, 'small');
+    layoutPreset.value = pick(PRESET_KEYS, parsed.layoutPreset, 'auto');
+    scaleMode.value = parsed.scaleMode === 'manual' ? 'manual' : 'auto';
+    scale.value = String(Number(parsed.scale) > 0 ? Math.min(SCALE_MAX, Math.max(SCALE_MIN, Number(parsed.scale))) : 100);
+
+    playerColors = normalizeColors(parsed.playerColors);
+    renderColorGrid();
+    applyPreview();
+    startMonitor();
+    return true;
+  }
+
   function load() {
     if (!window.Twitch || !window.Twitch.ext) return;
     var segment = window.Twitch.ext.configuration.broadcaster;
     if (!segment || !segment.content) return;
     try {
-      var parsed = JSON.parse(segment.content);
-      input.value = parsed.roomId || '';
-      nameMode.value = pick(NAME_MODES, parsed.nameMode, parsed.showNames === false ? 'hidden' : 'full');
-      commanderMode.value = pick(COMMANDER_MODES, parsed.commanderMode, 'auto');
-      compact.checked = parsed.compact === true;
-      diagnostics.checked = parsed.diagnostics === true;
-      counterState = normalizeCounters(
-        parsed.counters,
-        parsed.showCounters === false ? {} : DEFAULT_COUNTERS
-      );
-      renderCounterGrid();
-      theme.value = pick(THEMES, parsed.theme, 'dark');
-      size.value = pick(SIZES, parsed.fontSize, 'medium');
-      safe.value = pick(SAFE_KEYS, parsed.safeArea, 'small');
-      layoutPreset.value = pick(PRESET_KEYS, parsed.layoutPreset, 'auto');
-      scaleMode.value = parsed.scaleMode === 'manual' ? 'manual' : 'auto';
-      scale.value = String(Number(parsed.scale) > 0 ? Math.min(SCALE_MAX, Math.max(SCALE_MIN, Number(parsed.scale))) : 100);
-
-      playerColors = normalizeColors(parsed.playerColors);
-      renderColorGrid();
-      applyPreview();
-      startMonitor();
-
+      applyToForm(JSON.parse(segment.content));
     } catch (e) {
       /* ignore malformed config */
     }
@@ -261,6 +267,115 @@
     applyPreview();
   });
   applyPreview();
+
+  // ---- Export / import broadcaster setup as JSON -------------------------
+  var backup = document.getElementById('backup');
+  var backupExport = document.getElementById('backup-export');
+  var backupImport = document.getElementById('backup-import');
+  var backupCopy = document.getElementById('backup-copy');
+  var backupDownload = document.getElementById('backup-download');
+  var backupFile = document.getElementById('backup-file');
+  var backupInput = document.getElementById('backup-input');
+
+  var BACKUP_KIND = 'lifelink-twitch-config';
+
+  function backupPayload() {
+    return Object.assign({ kind: BACKUP_KIND, version: 1 }, currentConfig());
+  }
+
+  function fillBackup() {
+    backup.value = JSON.stringify(backupPayload(), null, 2);
+    return backup.value;
+  }
+
+  function parseBackup(text) {
+    var parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch (e) {
+      return { error: 'That is not valid JSON. Paste the full exported text.' };
+    }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return { error: 'That JSON is not a LifeLink setup.' };
+    }
+    if (parsed.kind && parsed.kind !== BACKUP_KIND) {
+      return { error: 'That file is for a different app, not LifeLink.' };
+    }
+    return { config: parsed };
+  }
+
+  function importText(text) {
+    if (!text || !text.trim()) {
+      setStatus('Paste an exported setup first, or load a file.', 'err');
+      return;
+    }
+    var result = parseBackup(text);
+    if (result.error) {
+      setStatus(result.error, 'err');
+      return;
+    }
+    applyToForm(result.config);
+    if (!LifeLink.isValidRoomId(input.value.trim())) {
+      setStatus('Setup imported, but the room code is missing or invalid — enter one, then Save.', 'err');
+      return;
+    }
+    setStatus('Setup imported. Press Save to make it live.', 'ok');
+  }
+
+  backupExport.addEventListener('click', function () {
+    fillBackup();
+    setStatus('Setup exported below — copy it or download the file.', 'ok');
+  });
+
+  backupCopy.addEventListener('click', function () {
+    var text = fillBackup();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        setStatus('Setup JSON copied to your clipboard.', 'ok');
+      }).catch(function () {
+        backup.select();
+        setStatus('Copy failed — the JSON is selected below, press Ctrl/Cmd+C.', 'err');
+      });
+      return;
+    }
+    backup.select();
+    setStatus('The JSON is selected below, press Ctrl/Cmd+C to copy.');
+  });
+
+  backupDownload.addEventListener('click', function () {
+    var text = fillBackup();
+    try {
+      var blob = new Blob([text], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      link.href = url;
+      link.download = 'lifelink-twitch-setup.json';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      setStatus('Downloaded lifelink-twitch-setup.json.', 'ok');
+    } catch (e) {
+      setStatus('Download blocked here — copy the JSON below instead.', 'err');
+    }
+  });
+
+  backupImport.addEventListener('click', function () { importText(backup.value); });
+
+  backupFile.addEventListener('click', function () { backupInput.click(); });
+
+  backupInput.addEventListener('change', function () {
+    var file = backupInput.files && backupInput.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      backup.value = String(reader.result || '');
+      importText(backup.value);
+    };
+    reader.onerror = function () { setStatus('That file could not be read.', 'err'); };
+    reader.readAsText(file);
+    backupInput.value = '';
+  });
 
   save.addEventListener('click', function () {
     var config = currentConfig();
