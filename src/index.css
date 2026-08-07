@@ -71,6 +71,7 @@
 
   #root {
     @apply h-full w-full m-0 p-0 overflow-auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   body {
