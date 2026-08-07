@@ -62,6 +62,7 @@
     document.body.dataset.compact = config.compact ? '1' : '0';
     document.body.dataset.safe = config.safeArea;
 
+    invalidateResponsive();
     applyResponsive();
   }
 
