@@ -175,6 +175,8 @@
       renderCounterGrid();
       theme.value = pick(THEMES, parsed.theme, 'dark');
       size.value = pick(SIZES, parsed.fontSize, 'medium');
+      safe.value = pick(SAFE_KEYS, parsed.safeArea, 'small');
+
       playerColors = normalizeColors(parsed.playerColors);
       renderColorGrid();
       applyPreview();
