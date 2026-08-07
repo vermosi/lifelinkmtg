@@ -83,87 +83,86 @@ export function RoomSelector() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-sm space-y-6 sm:space-y-10">
-        {/* Logo */}
-        <div className="text-center">
-          <Infinity className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-accent mb-2 animate-infinity-glow" strokeWidth={1.5} />
-          <h1 className="font-display text-4xl sm:text-6xl text-foreground tracking-tight">
-            <span aria-hidden="true">LifeLink</span>
-            <span className="sr-only">LifeLink — MTG Life Counter &amp; OBS Overlay</span>
-          </h1>
-          <p className="text-accent font-medium text-base sm:text-lg mt-1">
-            Track. Play. Win.
-          </p>
-          <p className="text-muted-foreground text-xs sm:text-sm mt-1 flex items-center justify-center gap-1">
+    <div className="min-h-screen w-full bg-background flex flex-col items-center p-6 sm:p-12">
+      {/* Soft ambient background blobs */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-accent/10 blur-3xl" />
+        <div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] rounded-full bg-primary/5 blur-3xl" />
+      </div>
+
+      <div className="relative w-full max-w-4xl flex flex-col items-center py-8 sm:py-12">
+        {/* Hero */}
+        <div className="text-center mb-10 sm:mb-12">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/10 text-accent text-xs font-semibold tracking-wide uppercase mb-6">
             <Cloud className="w-3 h-3" />
             Cloud Synced Counter & OBS Overlay
+          </div>
+          <h1 className="font-display text-5xl sm:text-6xl text-foreground tracking-tight mb-4">
+            LifeLink
+          </h1>
+          <p className="text-xl sm:text-2xl font-medium text-transparent bg-clip-text bg-gradient-to-r from-accent to-primary">
+            Track. Play. Win.
           </p>
         </div>
 
-        {/* New Game Button */}
-        <div className="space-y-3 sm:space-y-4">
-          <button
-            onClick={() => setShowLayoutPicker(true)}
-            disabled={isCreating}
-            className="w-full py-5 sm:py-6 bg-accent text-accent-foreground rounded-xl sm:rounded-2xl font-display text-2xl sm:text-3xl flex items-center justify-center gap-3 hover:bg-accent/90 transition-colors disabled:opacity-50"
-          >
-            {isCreating ? (
-              <Loader2 className="w-6 h-6 sm:w-7 sm:h-7 animate-spin" />
-            ) : (
-              <Grid3X3 className="w-6 h-6 sm:w-7 sm:h-7" />
-            )}
-            {isCreating ? 'CREATING...' : 'NEW GAME'}
-          </button>
-          
-          <p className="text-center text-xs text-muted-foreground">
+        {/* Main actions — glass panel */}
+        <div className="w-full max-w-2xl bg-card/70 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl p-6 sm:p-10 mb-8 sm:mb-10">
+          <div className="flex flex-col sm:flex-row gap-4 items-stretch">
+            <button
+              onClick={() => setShowLayoutPicker(true)}
+              disabled={isCreating}
+              className="flex-[1.5] py-4 sm:py-5 px-6 bg-accent text-accent-foreground rounded-2xl font-display text-2xl sm:text-3xl font-bold shadow-lg shadow-accent/20 hover:bg-accent/90 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3"
+            >
+              {isCreating ? (
+                <Loader2 className="w-6 h-6 sm:w-7 sm:h-7 animate-spin" />
+              ) : (
+                <Grid3X3 className="w-6 h-6 sm:w-7 sm:h-7" />
+              )}
+              {isCreating ? 'CREATING...' : 'NEW GAME'}
+            </button>
+
+            <form onSubmit={handleJoinByCode} className="flex-1 relative group">
+              <label htmlFor="join-code" className="sr-only">
+                Join with code
+              </label>
+              <input
+                id="join-code"
+                type="text"
+                inputMode="text"
+                autoComplete="off"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                maxLength={32}
+                placeholder="Join with code"
+                value={joinCode}
+                onChange={(e) => setJoinCode(e.target.value.replace(/\s+/g, ''))}
+                aria-label="Room join code"
+                className="w-full h-full py-4 px-5 pr-[5.5rem] bg-secondary/50 border-2 border-transparent focus:border-accent focus:bg-secondary rounded-2xl outline-none transition-all text-foreground font-display text-xl tracking-widest text-center placeholder:text-muted-foreground placeholder:tracking-normal placeholder:font-body"
+              />
+              <button
+                type="submit"
+                disabled={isJoining || joinCode.trim().length < 4}
+                className="absolute right-2 top-2 bottom-2 px-5 bg-card text-accent font-bold rounded-xl shadow-sm hover:shadow-md hover:bg-secondary active:scale-95 transition-all disabled:opacity-50"
+              >
+                {isJoining ? <Loader2 className="w-4 h-4 animate-spin" /> : 'JOIN'}
+              </button>
+            </form>
+          </div>
+
+          <p className="text-center text-xs text-muted-foreground mt-4">
             2-6 players · Partner commanders · Multiple layouts
           </p>
         </div>
 
-        {/* Join by code */}
-        <form onSubmit={handleJoinByCode} className="space-y-2">
-          <label htmlFor="join-code" className="text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-            <LogIn className="w-3 h-3" />
-            Join with code
-          </label>
-          <div className="flex gap-2">
-            <input
-              id="join-code"
-              type="text"
-              inputMode="text"
-              autoComplete="off"
-              autoCapitalize="off"
-              autoCorrect="off"
-              spellCheck={false}
-              maxLength={32}
-              placeholder="e.g. A7kP2q"
-              value={joinCode}
-              onChange={(e) => setJoinCode(e.target.value.replace(/\s+/g, ''))}
-              className="flex-1 px-3 py-3 bg-secondary rounded-lg sm:rounded-xl text-foreground font-display text-xl tracking-widest text-center placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent"
-              aria-label="Room join code"
-            />
-            <button
-              type="submit"
-              disabled={isJoining || joinCode.trim().length < 4}
-              className="px-4 py-3 bg-accent text-accent-foreground rounded-lg sm:rounded-xl font-medium hover:bg-accent/90 transition-colors disabled:opacity-50 flex items-center justify-center min-w-[72px]"
-            >
-              {isJoining ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Join'}
-            </button>
-          </div>
-          <p className="text-center text-xs text-muted-foreground">
-            Enter the code shown on the host's screen or scan their QR.
-          </p>
-        </form>
-
         {/* Recent rooms */}
         {isLoading ? (
-          <div className="flex items-center justify-center py-4 sm:py-6">
+          <div className="flex items-center justify-center py-6">
             <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin text-muted-foreground" />
           </div>
         ) : recentRooms.length > 0 && (
-          <div className="space-y-2 sm:space-y-3">
-            <h2 className="text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+          <div className="w-full max-w-2xl mb-10 sm:mb-12">
+            <h2 className="text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2 mb-3">
               <Cloud className="w-3 h-3" />
               Recent Games
             </h2>
@@ -172,7 +171,7 @@ export function RoomSelector() {
                 <button
                   key={room.id}
                   onClick={() => handleOpenRoom(room.id, room.adminKey)}
-                  className="w-full flex items-center justify-between p-3 sm:p-4 bg-secondary rounded-lg sm:rounded-xl hover:bg-secondary/80 transition-colors group"
+                  className="w-full flex items-center justify-between p-3 sm:p-4 bg-secondary/60 rounded-xl hover:bg-secondary transition-colors group"
                 >
                   <div className="flex items-center gap-2 sm:gap-3">
                     <div className="font-display text-xl sm:text-2xl text-foreground">
@@ -196,33 +195,43 @@ export function RoomSelector() {
         )}
 
         {/* Feature highlights */}
-        <section aria-label="Features" className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
-          <div className="space-y-1 p-3 rounded-xl bg-secondary/50">
-            <RefreshCw className="w-5 h-5 text-accent" aria-hidden="true" />
-            <h2 className="text-sm font-semibold text-foreground">Real-time sync</h2>
-            <p className="text-xs text-muted-foreground leading-relaxed">
+        <section aria-label="Features" className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 w-full mb-4">
+          <div className="group p-5 sm:p-6 rounded-2xl transition-all hover:bg-card/50">
+            <div className="w-12 h-12 bg-card shadow-sm rounded-xl flex items-center justify-center text-accent mb-4 group-hover:scale-110 transition-transform">
+              <RefreshCw className="w-6 h-6" aria-hidden="true" />
+            </div>
+            <h2 className="font-bold text-foreground mb-2">Real-time sync</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
               Every phone, tablet, and PC in the room stays in sync as life totals change.
             </p>
           </div>
-          <div className="space-y-1 p-3 rounded-xl bg-secondary/50">
-            <Monitor className="w-5 h-5 text-accent" aria-hidden="true" />
-            <h2 className="text-sm font-semibold text-foreground">OBS overlay</h2>
-            <p className="text-xs text-muted-foreground leading-relaxed">
+
+          <div className="group p-5 sm:p-6 rounded-2xl transition-all hover:bg-card/50">
+            <div className="w-12 h-12 bg-card shadow-sm rounded-xl flex items-center justify-center text-accent mb-4 group-hover:scale-110 transition-transform">
+              <Monitor className="w-6 h-6" aria-hidden="true" />
+            </div>
+            <h2 className="font-bold text-foreground mb-2">OBS overlay</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
               Drop the read-only overlay into OBS or Twitch as a Browser Source and stream life totals instantly.
             </p>
           </div>
-          <div className="space-y-1 p-3 rounded-xl bg-secondary/50">
-            <Smartphone className="w-5 h-5 text-accent" aria-hidden="true" />
-            <h2 className="text-sm font-semibold text-foreground">Mobile-first</h2>
-            <p className="text-xs text-muted-foreground leading-relaxed">
+
+          <div className="group p-5 sm:p-6 rounded-2xl transition-all hover:bg-card/50">
+            <div className="w-12 h-12 bg-card shadow-sm rounded-xl flex items-center justify-center text-accent mb-4 group-hover:scale-110 transition-transform">
+              <Smartphone className="w-6 h-6" aria-hidden="true" />
+            </div>
+            <h2 className="font-bold text-foreground mb-2">Mobile-first</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
               Big tap targets, no install required, and optimized for phones at the table.
             </p>
           </div>
         </section>
 
-        <p className="text-center text-xs sm:text-sm text-muted-foreground">
-          Supports 2–6 players, Commander damage, poison, energy, and more.
-        </p>
+        <footer className="mt-10 sm:mt-14 pt-6 border-t border-border w-full text-center">
+          <p className="text-muted-foreground text-xs sm:text-sm">
+            Supports 2–6 players, Commander damage, poison, energy, and more.
+          </p>
+        </footer>
       </div>
     </div>
   );
