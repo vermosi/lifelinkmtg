@@ -48,9 +48,13 @@
   }
   var theme = document.getElementById('theme');
   var size = document.getElementById('size');
+  var safe = document.getElementById('safe');
+
 
   var THEMES = ['dark', 'light', 'transparent'];
   var SIZES = ['small', 'medium', 'large', 'xlarge'];
+  var SAFE_KEYS = ['none', 'small', 'medium', 'large'];
+
   var NAME_MODES = ['full', 'initials', 'hidden'];
 
   function pick(list, value, fallback) {
@@ -148,6 +152,8 @@
       showCounters: COUNTER_OPTIONS.some(function (o) { return counterState[o.key]; }),
       theme: pick(THEMES, theme.value, 'dark'),
       fontSize: pick(SIZES, size.value, 'medium'),
+      safeArea: pick(SAFE_KEYS, safe.value, 'small'),
+
       playerColors: playerColors.slice(0, MAX_SEATS),
     };
   }
@@ -168,6 +174,8 @@
       renderCounterGrid();
       theme.value = pick(THEMES, parsed.theme, 'dark');
       size.value = pick(SIZES, parsed.fontSize, 'medium');
+      safe.value = pick(SAFE_KEYS, parsed.safeArea, 'small');
+
       playerColors = normalizeColors(parsed.playerColors);
       renderColorGrid();
       applyPreview();
@@ -183,7 +191,12 @@
     document.body.dataset.theme = pick(THEMES, theme.value, 'dark');
     document.body.dataset.size = pick(SIZES, size.value, 'medium');
     document.body.dataset.compact = compact.checked ? '1' : '0';
+    // The config form itself keeps its own padding; the viewer computes the real
+    // inset from the live Twitch frame, so only record the choice here.
+    document.body.dataset.safe = pick(SAFE_KEYS, safe.value, 'small');
   }
+
+
 
   colorsReset.addEventListener('click', function () {
     playerColors = new Array(MAX_SEATS).fill(null);
@@ -203,7 +216,8 @@
 
   compact.addEventListener('change', applyPreview);
   theme.addEventListener('change', applyPreview);
-  size.addEventListener('change', applyPreview);
+  size.addEventListener("change", applyPreview);
+  safe.addEventListener("change", applyPreview);
   applyPreview();
 
   save.addEventListener('click', function () {

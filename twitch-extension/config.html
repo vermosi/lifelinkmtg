@@ -48,6 +48,22 @@
         </select>
       </div>
 
+      <div>
+        <label for="safe">Safe-area padding</label>
+        <select id="safe">
+          <option value="none">None (edge to edge)</option>
+          <option value="small" selected>Small (2.5%)</option>
+          <option value="medium">Medium (5%)</option>
+          <option value="large">Large (8%)</option>
+        </select>
+        <p class="help">
+          Keeps the overlay clear of the Twitch player edges, chat bar and letterboxing so it is
+          never clipped on ultrawide or vertical layouts. Increase it if the totals sit too close
+          to the edge on your stream.
+        </p>
+      </div>
+
+
       <div class="colors">
         <div class="colors-head">
           <label>Player colors</label>
