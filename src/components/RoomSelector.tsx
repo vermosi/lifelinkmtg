@@ -195,7 +195,7 @@ export function RoomSelector() {
         )}
 
         {/* Feature highlights */}
-        <section aria-label="Features" className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6 w-full mb-4">
+        <section aria-label="Features" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 w-full mb-4">
           <div className="group p-4 sm:p-6 rounded-2xl transition-all hover:bg-card/50">
             <div className="w-12 h-12 bg-card shadow-sm rounded-xl flex items-center justify-center text-accent mb-4 group-hover:scale-110 transition-transform">
               <RefreshCw className="w-6 h-6" aria-hidden="true" />
