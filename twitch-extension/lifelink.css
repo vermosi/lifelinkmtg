@@ -377,3 +377,7 @@ body.config[data-compact="1"] .wrap { padding: 8px; }
 .live[data-state='err'] .live-dot { background: #f87171; }
 .live[data-state='err'] { border-color: rgba(248, 113, 113, 0.45); background: rgba(248, 113, 113, 0.1); }
 @keyframes ll-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+/* While the Twitch frame is actively resizing, suppress transitions/animations
+   so rapid layout changes stay smooth instead of queueing tweens. */
+body[data-resizing='1'] * { transition: none !important; animation-duration: 0s !important; }
