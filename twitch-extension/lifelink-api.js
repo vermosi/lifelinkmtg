@@ -13,11 +13,29 @@
     return typeof id === 'string' && ROOM_ID_RE.test(id);
   }
 
+  var REQUEST_TIMEOUT_MS = 8000;
+
+  /** Error carrying a machine-readable reason the UI can explain to viewers. */
+  function apiError(code, detail) {
+    var err = new Error(detail ? code + ': ' + detail : code);
+    err.code = code;
+    err.detail = detail || '';
+    return err;
+  }
+
   /** Reads a room through the public, read-only RPC. Never exposes admin keys. */
   function fetchRoom(roomId) {
     if (!isValidRoomId(roomId)) {
-      return Promise.reject(new Error('invalid_room_id'));
+      return Promise.reject(apiError('invalid_room_id'));
     }
+
+    var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timedOut = false;
+    var timer = setTimeout(function () {
+      timedOut = true;
+      if (controller) controller.abort();
+    }, REQUEST_TIMEOUT_MS);
+
     return fetch(SUPABASE_URL + '/rest/v1/rpc/get_room_public', {
       method: 'POST',
       headers: {
@@ -26,15 +44,21 @@
         Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
       },
       body: JSON.stringify({ room_id_param: roomId }),
+      signal: controller ? controller.signal : undefined,
     }).then(function (res) {
+      clearTimeout(timer);
       if (!res.ok) {
         return res.text().then(function (body) {
-          throw new Error('room_fetch_failed_' + res.status + ': ' + body);
+          throw apiError('server_error', res.status + ' ' + body);
         });
       }
       return res.json();
+    }, function (err) {
+      clearTimeout(timer);
+      if (timedOut || (err && err.name === 'AbortError')) throw apiError('timeout');
+      throw apiError('network_error', err && err.message);
     }).then(function (rows) {
-      if (!rows || !rows.length) return null;
+      if (!rows || !rows.length) throw apiError('room_not_found', roomId);
       return rows[0];
     });
   }
@@ -67,6 +91,62 @@
     return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
+  }
+
+  var ERROR_COPY = {
+    invalid_room_id: {
+      title: 'Invalid room code',
+      body: 'The saved code is not a valid LifeLink room code (4-32 letters or numbers).',
+      fixes: [
+        'Broadcaster: open the extension configuration and paste the code from the LifeLink Share tab.',
+      ],
+    },
+    room_not_found: {
+      title: 'Room not found',
+      body: 'No active LifeLink room matches this code. Rooms are deleted 24h after their last update.',
+      fixes: [
+        'Broadcaster: reopen the room in LifeLink, or create a new one and save the new code.',
+      ],
+    },
+    timeout: {
+      title: 'Connection timed out',
+      body: 'LifeLink did not answer in time. Retrying automatically.',
+      fixes: [
+        'Check your internet connection.',
+        'Broadcaster: make sure lifelinkmtg.app and the LifeLink data domain are allowed in the extension URL-fetching list.',
+      ],
+    },
+    network_error: {
+      title: 'Cannot reach LifeLink',
+      body: 'The request was blocked or the network is offline. Retrying automatically.',
+      fixes: [
+        'Check your internet connection or disable blockers for twitch.tv.',
+        'Broadcaster: confirm the extension allowlist includes the LifeLink data domain.',
+      ],
+    },
+    server_error: {
+      title: 'LifeLink returned an error',
+      body: 'The life totals service responded with an error. Retrying automatically.',
+      fixes: ['Wait a moment — this usually clears on its own.', 'If it persists, check status at lifelinkmtg.app.'],
+    },
+    unknown: {
+      title: 'Connection failed',
+      body: 'Something went wrong while loading life totals. Retrying automatically.',
+      fixes: ['Reload the panel or refresh the Twitch page.'],
+    },
+  };
+
+  /** Maps an error to viewer-friendly copy plus quick fixes. */
+  function describeError(err) {
+    var code = (err && err.code) || 'unknown';
+    var copy = ERROR_COPY[code] || ERROR_COPY.unknown;
+    return {
+      code: code,
+      title: copy.title,
+      body: copy.body,
+      fixes: copy.fixes,
+      detail: (err && err.detail) || '',
+    };
   }
 
   /**
@@ -109,5 +189,7 @@
     toPlayers: toPlayers,
     escapeHtml: escapeHtml,
     pollRoom: pollRoom,
+    apiError: apiError,
+    describeError: describeError,
   };
 })(window);
