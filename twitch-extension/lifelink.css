@@ -276,3 +276,38 @@ body.overlay .wrap {
 }
 
 body.overlay[data-density="minimal"] .wrap { left: 8px; bottom: 8px; }
+
+/* Per-player color pickers (configuration page) */
+.colors { display: flex; flex-direction: column; gap: 6px; }
+.colors-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.color-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.color-seat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--ll-border);
+  border-radius: 8px;
+  background: var(--ll-card);
+}
+.color-seat span { flex: 1; font-size: 12px; color: var(--ll-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.color-seat input[type="color"] { width: 30px; height: 26px; padding: 0; border: none; background: none; cursor: pointer; }
+.color-seat .clear {
+  border: none;
+  background: none;
+  color: var(--ll-muted);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 4px;
+}
+.color-seat[data-custom="1"] span { color: var(--ll-text); }
+button.link {
+  background: none;
+  border: none;
+  color: var(--ll-accent);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+}
+@media (max-width: 380px) { .color-grid { grid-template-columns: 1fr; } }
