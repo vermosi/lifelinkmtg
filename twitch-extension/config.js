@@ -5,7 +5,47 @@
   var input = document.getElementById('room');
   var nameMode = document.getElementById('nameMode');
   var compact = document.getElementById('compact');
-  var counters = document.getElementById('counters');
+  var counterGrid = document.getElementById('counter-grid');
+  var countersNone = document.getElementById('counters-none');
+
+  // Secondary counters the broadcaster can surface as badges.
+  var COUNTER_OPTIONS = [
+    { key: 'poison', label: 'Poison' },
+    { key: 'energy', label: 'Energy' },
+    { key: 'experience', label: 'Experience' },
+    { key: 'storm', label: 'Storm' },
+    { key: 'commanderTax', label: 'Commander tax' },
+    { key: 'monarch', label: 'Monarch' },
+    { key: 'initiative', label: 'Initiative' },
+    { key: 'custom', label: 'Custom counters' },
+  ];
+  var DEFAULT_COUNTERS = { poison: true, monarch: true, initiative: true };
+
+  var counterState = Object.assign({}, DEFAULT_COUNTERS);
+
+  function normalizeCounters(value, fallback) {
+    if (!value || typeof value !== 'object') return Object.assign({}, fallback);
+    var out = {};
+    COUNTER_OPTIONS.forEach(function (option) { out[option.key] = value[option.key] === true; });
+    return out;
+  }
+
+  function renderCounterGrid() {
+    counterGrid.innerHTML = '';
+    COUNTER_OPTIONS.forEach(function (option) {
+      var label = document.createElement('label');
+      label.className = 'counter-toggle';
+      var box = document.createElement('input');
+      box.type = 'checkbox';
+      box.checked = counterState[option.key] === true;
+      box.addEventListener('change', function () { counterState[option.key] = box.checked; });
+      var text = document.createElement('span');
+      text.textContent = option.label;
+      label.appendChild(box);
+      label.appendChild(text);
+      counterGrid.appendChild(label);
+    });
+  }
   var theme = document.getElementById('theme');
   var size = document.getElementById('size');
 
@@ -86,6 +126,7 @@
     renderColorGrid();
   }
 
+
   var save = document.getElementById('save');
   var test = document.getElementById('test');
   var status = document.getElementById('status');
@@ -102,7 +143,9 @@
       compact: compact.checked,
       // Kept for older installed viewers that only understand the boolean.
       showNames: nameMode.value !== 'hidden',
-      showCounters: counters.checked,
+      counters: Object.assign({}, counterState),
+      // Kept for older installed viewers that only understand the boolean.
+      showCounters: COUNTER_OPTIONS.some(function (o) { return counterState[o.key]; }),
       theme: pick(THEMES, theme.value, 'dark'),
       fontSize: pick(SIZES, size.value, 'medium'),
       playerColors: playerColors.slice(0, MAX_SEATS),
@@ -118,7 +161,11 @@
       input.value = parsed.roomId || '';
       nameMode.value = pick(NAME_MODES, parsed.nameMode, parsed.showNames === false ? 'hidden' : 'full');
       compact.checked = parsed.compact === true;
-      counters.checked = parsed.showCounters !== false;
+      counterState = normalizeCounters(
+        parsed.counters,
+        parsed.showCounters === false ? {} : DEFAULT_COUNTERS
+      );
+      renderCounterGrid();
       theme.value = pick(THEMES, parsed.theme, 'dark');
       size.value = pick(SIZES, parsed.fontSize, 'medium');
       playerColors = normalizeColors(parsed.playerColors);
@@ -142,7 +189,15 @@
     setStatus('Player colors reset to the room defaults. Save to apply.');
   });
 
+  countersNone.addEventListener('click', function () {
+    counterState = {};
+    renderCounterGrid();
+    setStatus('All counter badges hidden. Save to apply.');
+  });
+
   renderColorGrid();
+  renderCounterGrid();
+
 
   compact.addEventListener('change', applyPreview);
   theme.addEventListener('change', applyPreview);

@@ -3,10 +3,42 @@
   'use strict';
 
   var root = document.getElementById('root');
-  var config = { roomId: '', nameMode: 'full', compact: false, showNames: true, showCounters: true, theme: 'dark', fontSize: 'medium', playerColors: [] };
+  var config = { roomId: '', nameMode: 'full', compact: false, showNames: true, showCounters: true, counters: { poison: true, monarch: true, initiative: true }, theme: 'dark', fontSize: 'medium', playerColors: [] };
   var THEMES = ['dark', 'light', 'transparent'];
   var SIZES = ['small', 'medium', 'large', 'xlarge'];
   var NAME_MODES = ['full', 'initials', 'hidden'];
+  var COUNTER_KEYS = ['poison', 'energy', 'experience', 'storm', 'commanderTax', 'monarch', 'initiative', 'custom'];
+  var DEFAULT_COUNTERS = { poison: true, monarch: true, initiative: true };
+
+  function normalizeCounters(value, fallback) {
+    if (!value || typeof value !== 'object') return Object.assign({}, fallback);
+    var out = {};
+    COUNTER_KEYS.forEach(function (key) { out[key] = value[key] === true; });
+    return out;
+  }
+
+  function badge(label, value) {
+    return '<span class="badge">' + LifeLink.escapeHtml(label) + ' ' + LifeLink.escapeHtml(String(value)) + '</span>';
+  }
+
+  /** Badges for the counters the broadcaster enabled, skipping zero values. */
+  function badgesHtml(p) {
+    var on = config.counters;
+    var out = '';
+    if (on.poison && p.poison > 0) out += badge('\u2620', p.poison);
+    if (on.energy && p.energy > 0) out += badge('\u26a1', p.energy);
+    if (on.experience && p.experience > 0) out += badge('XP', p.experience);
+    if (on.storm && p.storm > 0) out += badge('Storm', p.storm);
+    if (on.commanderTax && p.commanderTax > 0) out += badge('Tax', p.commanderTax);
+    if (on.monarch && p.isMonarch) out += '<span class="badge">Monarch</span>';
+    if (on.initiative && p.hasInitiative) out += '<span class="badge">Initiative</span>';
+    if (on.custom && p.custom) {
+      p.custom.forEach(function (counter) {
+        if (counter.value) out += badge(counter.name, counter.value);
+      });
+    }
+    return out;
+  }
 
   /** "Alice Green" -> "AG"; falls back to the first two characters. */
   function toInitials(name) {
@@ -124,12 +156,7 @@
 
     var rows = players.map(function (p, index) {
       var color = HEX.test(config.playerColors[index] || '') ? config.playerColors[index] : p.color;
-      var badges = '';
-      if (config.showCounters) {
-        if (p.poison > 0) badges += '<span class="badge">☠ ' + p.poison + '</span>';
-        if (p.isMonarch) badges += '<span class="badge">Monarch</span>';
-        if (p.hasInitiative) badges += '<span class="badge">Initiative</span>';
-      }
+      var badges = badgesHtml(p);
       var showCommander = config.nameMode === 'full';
       var commander = showCommander && p.commanders.length
         ? '<div class="sub">' + LifeLink.escapeHtml(p.commanders.join(' & ')) + '</div>'
@@ -197,7 +224,10 @@
     config.roomId = parsed.roomId;
     config.nameMode = pick(NAME_MODES, parsed.nameMode, parsed.showNames === false ? 'hidden' : 'full');
     config.compact = parsed.compact === true;
-    config.showCounters = parsed.showCounters !== false;
+    config.counters = normalizeCounters(
+      parsed.counters,
+      parsed.showCounters === false ? {} : DEFAULT_COUNTERS
+    );
     config.theme = pick(THEMES, parsed.theme, 'dark');
     config.fontSize = pick(SIZES, parsed.fontSize, 'medium');
     config.playerColors = normalizeColors(parsed.playerColors);
@@ -217,7 +247,9 @@
       roomId: previewRoom,
       nameMode: params.get('nameMode') || (params.get('names') === '0' ? 'hidden' : 'full'),
       compact: params.get('compact') === '1',
-      showCounters: params.get('counters') !== '0',
+      counters: params.get('counters')
+        ? params.get('counters').split(',').reduce(function (acc, key) { acc[key] = true; return acc; }, {})
+        : DEFAULT_COUNTERS,
       theme: params.get('theme'),
       fontSize: params.get('size'),
       playerColors: (params.get('colors') || '').split(',').map(function (c) {

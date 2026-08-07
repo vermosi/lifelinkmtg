@@ -80,6 +80,15 @@
         color: p.color || '#7dd3fc',
         commanders: Array.isArray(p.commanders) ? p.commanders.filter(Boolean) : [],
         poison: counters.poison || p.poison || 0,
+        energy: counters.energy || p.energy || 0,
+        experience: counters.experience || p.experience || 0,
+        storm: counters.storm || 0,
+        commanderTax: counters.commanderTax || 0,
+        custom: Array.isArray(counters.custom)
+          ? counters.custom
+              .filter(function (c) { return c && c.name; })
+              .map(function (c) { return { name: String(c.name), value: Number(c.value) || 0 }; })
+          : [],
         isMonarch: !!counters.isMonarch,
         hasInitiative: !!counters.hasInitiative,
       };
