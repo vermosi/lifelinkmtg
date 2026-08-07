@@ -7,6 +7,7 @@ import Index from './pages/Index';
 import RoomPage from './pages/RoomPage';
 import OverlayPage from './pages/OverlayPage';
 import EmbedPage from './pages/EmbedPage';
+import TwitchExtensionPage from './pages/TwitchExtensionPage';
 import FaviconCheck from './pages/FaviconCheck';
 import NotFound from './pages/NotFound';
 
