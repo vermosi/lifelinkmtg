@@ -89,7 +89,8 @@ export function RoomSelector() {
         <div className="text-center">
           <Infinity className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-accent mb-2 animate-infinity-glow" strokeWidth={1.5} />
           <h1 className="font-display text-4xl sm:text-6xl text-foreground tracking-tight">
-            LifeLink
+            <span aria-hidden="true">LifeLink</span>
+            <span className="sr-only">LifeLink — MTG Life Counter &amp; OBS Overlay</span>
           </h1>
           <p className="text-accent font-medium text-base sm:text-lg mt-1">
             Track. Play. Win.
