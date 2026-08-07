@@ -81,6 +81,25 @@
         </p>
       </div>
 
+      <div>
+        <label for="scale-mode">Scaling</label>
+        <select id="scale-mode">
+          <option value="auto" selected>Auto-fit to the Twitch box</option>
+          <option value="manual">Fixed scale (override)</option>
+        </select>
+        <div id="scale-row" class="scale-row" hidden>
+          <input id="scale" type="range" min="40" max="250" step="5" value="100"
+                 aria-label="Overlay scale percentage" />
+          <output id="scale-value" for="scale">100%</output>
+          <button id="scale-reset" class="link" type="button">Reset to 100%</button>
+        </div>
+        <p class="help">
+          Auto-fit sizes the overlay to the live player box. Choose a fixed scale to lock the
+          overlay at an exact size (40%–250%) regardless of the box — useful when you already
+          size and position the extension yourself.
+        </p>
+      </div>
+
 
       <div class="colors">
         <div class="colors-head">
