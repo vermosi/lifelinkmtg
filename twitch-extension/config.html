@@ -153,6 +153,26 @@
         <div id="counter-grid" class="counter-grid"></div>
       </div>
 
+      <div>
+        <div class="colors-head">
+          <label for="backup">Backup &amp; sharing</label>
+          <button id="backup-copy" class="link" type="button">Copy JSON</button>
+        </div>
+        <p class="help">
+          Export your setup as JSON to move it to another device or share it with a co-streamer,
+          then paste it here and press Import to apply. Importing fills the form — press Save to
+          make it live.
+        </p>
+        <textarea id="backup" rows="4" spellcheck="false" placeholder="Paste a LifeLink setup JSON here"></textarea>
+        <div class="row-inline">
+          <button id="backup-export" class="secondary" type="button">Export JSON</button>
+          <button id="backup-download" class="secondary" type="button">Download file</button>
+          <button id="backup-import" class="secondary" type="button">Import</button>
+          <button id="backup-file" class="secondary" type="button">Load file…</button>
+          <input id="backup-input" type="file" accept="application/json,.json" hidden />
+        </div>
+      </div>
+
       <div class="row-inline">
         <button id="save" type="button">Save</button>
         <button id="test" class="secondary" type="button">Test connection</button>
