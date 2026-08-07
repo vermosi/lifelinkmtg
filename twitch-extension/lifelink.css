@@ -273,14 +273,18 @@ body[data-density="minimal"] .foot { display: none; }
 body[data-narrow="1"] .row { gap: 6px; }
 body[data-narrow="1"] .sub { display: none; }
 
-/* Overlay hugs the bottom-left but never exceeds the player box */
+/* Overlay hugs the bottom-left but never exceeds the player box (minus safe area) */
 body.overlay .wrap {
-  max-width: 46vw;
-  max-height: 78vh;
+  max-width: calc(46vw - var(--ll-safe-x));
+  max-height: calc(78vh - var(--ll-safe-y));
   overflow: hidden;
 }
 
-body.overlay[data-density="minimal"] .wrap { left: 8px; bottom: 8px; }
+body.overlay[data-density="minimal"] .wrap {
+  left: calc(8px + var(--ll-safe-x));
+  bottom: calc(8px + var(--ll-safe-y));
+}
+
 
 /* Per-player color pickers (configuration page) */
 .colors { display: flex; flex-direction: column; gap: 6px; }
