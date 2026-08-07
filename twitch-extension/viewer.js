@@ -100,17 +100,8 @@
       if (segment && applyConfig(segment.content)) start();
     });
 
-    window.Twitch.ext.onContext(function (ctx) {
-      if (ctx && ctx.arePlayerControlsVisible === false) return;
-    });
   } else {
-    // Local preview outside Twitch: ?room=CODE
-    var params = new URLSearchParams(window.location.search);
-    if (applyConfig({
-      roomId: params.get('room') || '',
-      showNames: params.get('names') !== '0',
-      showCounters: params.get('counters') !== '0',
-    })) start();
-    else setState('Add ?room=YOUR_ROOM_CODE to preview this outside Twitch.');
+    setState('Add ?room=YOUR_ROOM_CODE to preview this outside Twitch.');
   }
+
 })();
