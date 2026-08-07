@@ -135,7 +135,7 @@ export function EmbedWidget() {
           );
         })}
       </ul>
-      <p className={`shrink-0 text-center text-[10px] uppercase tracking-wide ${styles.label}`}>
+      <p className={`shrink-0 text-center text-[10px] tracking-wide ${styles.label}`}>
         LifeLink · {room.id}
       </p>
     </div>
