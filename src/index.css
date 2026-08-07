@@ -143,11 +143,14 @@
 
   /* Center menu button */
   .menu-button {
-    @apply absolute z-50 flex items-center justify-center rounded-full;
+    @apply absolute z-[60] flex items-center justify-center rounded-full;
     @apply bg-background/95 backdrop-blur-md;
     @apply shadow-2xl border border-white/10;
+    pointer-events: auto;
+    touch-action: manipulation;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
+
 
   .menu-button:hover {
     transform: translate(-50%, -50%) scale(1.05);
