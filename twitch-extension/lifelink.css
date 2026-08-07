@@ -6,6 +6,10 @@
   --ll-muted: #a1a1aa;
   --ll-accent: #7dd3fc;
   --ll-scale: 1;
+  /* Safe-area inset (px) set by viewer.js from the live Twitch frame */
+  --ll-safe-x: 0px;
+  --ll-safe-y: 0px;
+
   /* Auto-fit factor set by viewer.js for the current Twitch player / panel size */
   --ll-fit: 1;
   --ll-s: calc(var(--ll-scale) * var(--ll-fit));
