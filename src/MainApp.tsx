@@ -9,6 +9,9 @@ import OverlayPage from './pages/OverlayPage';
 import EmbedPage from './pages/EmbedPage';
 import TwitchExtensionPage from './pages/TwitchExtensionPage';
 import FaviconCheck from './pages/FaviconCheck';
+import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
+import CookiesPage from './pages/CookiesPage';
 import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient();
@@ -26,6 +29,9 @@ const MainApp = () => (
           <Route path="/embed/:roomId" element={<EmbedPage />} />
           <Route path="/twitch-extension" element={<TwitchExtensionPage />} />
           <Route path="/favicon-check" element={<FaviconCheck />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/cookies" element={<CookiesPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

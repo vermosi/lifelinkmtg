@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   Cloud,
   Loader2,
@@ -410,8 +410,15 @@ export function RoomSelector() {
         </section>
 
         <footer className="mt-8 sm:mt-14 pt-6 border-t border-border w-full text-center">
-          <p className="text-muted-foreground text-xs sm:text-sm">
-            Supports 2–6 players, Commander damage, poison, energy, and more.
+          <nav className="flex flex-wrap items-center justify-center gap-3 text-xs sm:text-sm text-muted-foreground">
+            <Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
+            <span aria-hidden="true">·</span>
+            <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+            <span aria-hidden="true">·</span>
+            <Link to="/cookies" className="hover:text-foreground transition-colors">Cookie Policy</Link>
+          </nav>
+          <p className="text-muted-foreground text-xs mt-3">
+            Free MTG life counter for 2–6 players.
           </p>
         </footer>
       </div>
