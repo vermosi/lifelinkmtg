@@ -60,6 +60,8 @@
     document.body.dataset.theme = config.theme;
     document.body.dataset.size = config.fontSize;
     document.body.dataset.compact = config.compact ? '1' : '0';
+    document.body.dataset.safe = config.safeArea;
+
     applyResponsive();
   }
 
