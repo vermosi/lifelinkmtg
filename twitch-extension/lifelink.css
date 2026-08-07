@@ -200,3 +200,50 @@ button.secondary { background: transparent; color: var(--ll-text); }
 .status.err { color: #fca5a5; }
 
 .row-inline { display: flex; gap: 8px; align-items: center; }
+
+/* Connection failure banner */
+.banner {
+  flex: none;
+  border: 1px solid rgba(252, 165, 165, 0.5);
+  background: var(--ll-card);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.banner-title {
+  font-size: calc(12px * var(--ll-scale));
+  font-weight: 700;
+  color: #fca5a5;
+}
+
+.banner-body { font-size: calc(11px * var(--ll-scale)); color: var(--ll-text); line-height: 1.4; }
+
+.banner-fixes {
+  margin: 2px 0 0;
+  padding-left: 16px;
+  font-size: calc(10px * var(--ll-scale));
+  color: var(--ll-muted);
+  line-height: 1.45;
+}
+
+.banner-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: calc(9px * var(--ll-scale));
+  color: var(--ll-muted);
+}
+
+.banner-link { color: var(--ll-accent); text-decoration: none; font-weight: 600; }
+.banner-link:hover { text-decoration: underline; }
+
+.stale {
+  flex: none;
+  font-size: calc(10px * var(--ll-scale));
+  color: var(--ll-muted);
+  text-align: center;
+}
