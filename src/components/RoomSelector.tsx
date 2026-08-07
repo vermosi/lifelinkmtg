@@ -111,7 +111,7 @@ export function RoomSelector() {
             <button
               onClick={() => setShowLayoutPicker(true)}
               disabled={isCreating}
-              className="flex-[1.5] py-2.5 sm:py-4 px-4 sm:px-5 bg-accent text-accent-foreground rounded-2xl font-display text-base sm:text-lg lg:text-xl font-bold shadow-lg shadow-accent/20 hover:bg-accent/90 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 py-2.5 sm:py-4 px-4 sm:px-5 bg-accent text-accent-foreground rounded-2xl font-display text-base sm:text-lg lg:text-xl font-bold shadow-lg shadow-accent/20 hover:bg-accent/90 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isCreating ? (
                 <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" />
