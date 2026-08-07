@@ -1,26 +1,21 @@
-User-agent: Googlebot
-Allow: /
-Disallow: /room/
-Disallow: /overlay
-
-User-agent: Bingbot
-Allow: /
-Disallow: /room/
-Disallow: /overlay
-
-User-agent: Twitterbot
-Allow: /
-Disallow: /room/
-Disallow: /overlay
-
-User-agent: facebookexternalhit
-Allow: /
-Disallow: /room/
-Disallow: /overlay
-
 User-agent: *
 Allow: /
+
+# App pages that should not be indexed
 Disallow: /room/
 Disallow: /overlay
+Disallow: /embed/
+Disallow: /twitch-extension
+Disallow: /favicon-check
+Disallow: /lovable/
+Disallow: /not-found
+
+# Keep URLs with sensitive or presentation-only query parameters out of search results
+Disallow: /*?adminKey=
+Disallow: /*?fit=
+Disallow: /*?safe=
+Disallow: /*?scale=
+Disallow: /*?commanderMode=
+Disallow: /*?theme=
 
 Sitemap: https://lifelinkmtg.app/sitemap.xml
