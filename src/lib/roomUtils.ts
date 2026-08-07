@@ -524,6 +524,8 @@ export function getOverlayEditUrl(room: Room, options: ShareUrlOptions = {}): st
   // Admin-only URL that unlocks Edit Layout mode in the overlay page.
   const params = buildShareParams(options);
   params.set('adminKey', room.adminKey);
+  // Start the overlay with Edit Layout already unlocked.
+  params.set('edit', '1');
   return `${window.location.origin}/room/${room.id}/overlay?${params.toString()}`;
 }
 
