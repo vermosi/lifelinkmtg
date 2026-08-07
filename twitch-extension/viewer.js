@@ -3,7 +3,7 @@
   'use strict';
 
   var root = document.getElementById('root');
-  var config = { roomId: '', nameMode: 'full', compact: false, showNames: true, showCounters: true, counters: { poison: true, monarch: true, initiative: true }, theme: 'dark', fontSize: 'medium', safeArea: 'small', playerColors: [] };
+  var config = { roomId: '', nameMode: 'full', compact: false, showNames: true, showCounters: true, counters: { poison: true, monarch: true, initiative: true }, theme: 'dark', fontSize: 'medium', safeArea: 'small', playerColors: [], diagnostics: false };
   var THEMES = ['dark', 'light', 'transparent'];
   var SIZES = ['small', 'medium', 'large', 'xlarge'];
   // Safe-area inset as a fraction of the live frame width/height.
@@ -90,6 +90,10 @@
   // Cache of the last inputs/outputs so repeated resize ticks do no DOM work.
   var lastMetrics = null;
   var lastApplied = { fit: '', density: '', narrow: '', safeX: -1, safeY: -1 };
+  // Last full resize decision, surfaced by the diagnostics readout.
+  var lastDecision = null;
+  var resizeEvents = 0;
+  var recomputes = 0;
 
   /**
    * Scales the widget to the live Twitch player / panel box: width drives the
@@ -109,6 +113,7 @@
     var signature = width + 'x' + height + '|' + playerCount + '|' + config.safeArea + '|' + (config.compact ? 1 : 0);
     if (signature === lastMetrics) return;
     lastMetrics = signature;
+    recomputes += 1;
 
     // Safe-area inset: a percentage of the live frame, so the widget keeps clear
     // of Twitch chrome and letterboxing on any aspect ratio.
@@ -123,12 +128,41 @@
 
     var widthFit = boxWidth / BASE_WIDTH;
     var heightFit = (boxHeight - 28) / (playerCount * BASE_ROW_HEIGHT);
-    var fit = clamp(Math.min(widthFit, heightFit), MIN_FIT, MAX_FIT).toFixed(3);
+    var rawFit = Math.min(widthFit, heightFit);
+    var fit = clamp(rawFit, MIN_FIT, MAX_FIT).toFixed(3);
 
     var perRow = boxHeight / playerCount;
     var density = perRow < 30 || Number(fit) <= 0.72 ? 'minimal' : perRow < 44 ? 'tight' : 'comfortable';
-    if (config.compact && density === 'comfortable') density = 'tight';
+    var densityReason = perRow < 30
+      ? 'row height < 30px'
+      : Number(fit) <= 0.72
+        ? 'scale <= 0.72'
+        : perRow < 44
+          ? 'row height < 44px'
+          : 'room to breathe';
+    if (config.compact && density === 'comfortable') {
+      density = 'tight';
+      densityReason = 'compact mode forces tight';
+    }
     var narrow = boxWidth < 240 ? '1' : '0';
+
+    lastDecision = {
+      mode: isOverlay ? 'video overlay' : 'panel',
+      frame: Math.round(width) + '×' + Math.round(height),
+      safe: config.safeArea + ' (' + Math.round(pct * 1000) / 10 + '% → ' + safeX + '×' + safeY + 'px)',
+      box: Math.round(boxWidth) + '×' + Math.round(boxHeight),
+      players: playerCount,
+      perRow: Math.round(perRow) + 'px / row',
+      widthFit: widthFit.toFixed(3),
+      heightFit: heightFit.toFixed(3),
+      limiter: widthFit <= heightFit ? 'width' : 'height',
+      clamped: rawFit < MIN_FIT ? 'clamped up to min ' + MIN_FIT : rawFit > MAX_FIT ? 'clamped down to max ' + MAX_FIT : 'within ' + MIN_FIT + '–' + MAX_FIT,
+      fit: fit,
+      density: density,
+      densityReason: densityReason,
+      narrow: narrow === '1' ? 'yes (box < 240px)' : 'no',
+      at: new Date(),
+    };
 
     // Batched writes — skip anything that is already correct to avoid style thrash.
     if (safeX !== lastApplied.safeX) {
@@ -151,7 +185,69 @@
       body.dataset.narrow = narrow;
       lastApplied.narrow = narrow;
     }
+
+    renderDiagnostics();
   }
+
+  /* ---------------- diagnostics readout ---------------- */
+
+  var diagEl = null;
+
+  function diagRow(label, value) {
+    return '<div class="diag-row"><span>' + LifeLink.escapeHtml(label) + '</span><b>' +
+      LifeLink.escapeHtml(String(value)) + '</b></div>';
+  }
+
+  /**
+   * Explains, in plain language, the resize decision the widget just made so a
+   * broadcaster can tell whether the layout is width-limited, height-limited or
+   * clamped before asking for help.
+   */
+  function renderDiagnostics() {
+    if (!config.diagnostics) {
+      if (diagEl) { diagEl.remove(); diagEl = null; }
+      return;
+    }
+    if (!diagEl) {
+      diagEl = document.createElement('div');
+      diagEl.className = 'diag';
+      diagEl.setAttribute('role', 'status');
+      diagEl.setAttribute('aria-live', 'polite');
+      document.body.appendChild(diagEl);
+    }
+    var d = lastDecision;
+    if (!d) {
+      diagEl.innerHTML = '<div class="diag-title">Layout diagnostics</div>' +
+        '<div class="diag-row"><span>Waiting for first measurement…</span></div>';
+      return;
+    }
+    diagEl.innerHTML =
+      '<div class="diag-title">Layout diagnostics <span class="diag-hint">press D to hide</span></div>' +
+      diagRow('View', d.mode) +
+      diagRow('Frame', d.frame) +
+      diagRow('Safe area', d.safe) +
+      diagRow('Layout box', d.box) +
+      diagRow('Players / rows', d.players + ' (' + d.perRow + ')') +
+      diagRow('Width fit', d.widthFit) +
+      diagRow('Height fit', d.heightFit) +
+      diagRow('Scale used', d.fit + ' — ' + d.limiter + '-limited, ' + d.clamped) +
+      diagRow('Breakpoint', d.density + ' — ' + d.densityReason) +
+      diagRow('Narrow mode', d.narrow) +
+      diagRow('Resizes / recomputes', resizeEvents + ' / ' + recomputes) +
+      diagRow('Last decision', d.at.toLocaleTimeString());
+  }
+
+  function setDiagnostics(on) {
+    config.diagnostics = !!on;
+    renderDiagnostics();
+  }
+
+  // Local escape hatch: press "D" to toggle the readout without re-saving config.
+  window.addEventListener('keydown', function (event) {
+    if ((event.key === 'd' || event.key === 'D') && !event.metaKey && !event.ctrlKey && !event.altKey) {
+      setDiagnostics(!config.diagnostics);
+    }
+  });
 
   /** Forces the next scheduled pass to recompute (config or player count changed). */
   function invalidateResponsive() {
@@ -172,6 +268,7 @@
   }
 
   function scheduleResponsive() {
+    resizeEvents += 1;
     if (rafId === null) {
       rafId = typeof requestAnimationFrame === 'function'
         ? requestAnimationFrame(runResponsive)
@@ -195,6 +292,7 @@
   if (window.Twitch && window.Twitch.ext && window.Twitch.ext.onContext) {
     window.Twitch.ext.onContext(function () { scheduleResponsive(); });
   }
+
 
   var stop = null;
   var lastRow = null;
@@ -306,6 +404,7 @@
     config.roomId = parsed.roomId;
     config.nameMode = pick(NAME_MODES, parsed.nameMode, parsed.showNames === false ? 'hidden' : 'full');
     config.compact = parsed.compact === true;
+    config.diagnostics = parsed.diagnostics === true;
     config.counters = normalizeCounters(
       parsed.counters,
       parsed.showCounters === false ? {} : DEFAULT_COUNTERS
@@ -331,6 +430,7 @@
       roomId: previewRoom,
       nameMode: params.get('nameMode') || (params.get('names') === '0' ? 'hidden' : 'full'),
       compact: params.get('compact') === '1',
+      diagnostics: params.get('diag') === '1',
       counters: params.get('counters')
         ? params.get('counters').split(',').reduce(function (acc, key) { acc[key] = true; return acc; }, {})
         : DEFAULT_COUNTERS,

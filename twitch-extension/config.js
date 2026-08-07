@@ -5,6 +5,7 @@
   var input = document.getElementById('room');
   var nameMode = document.getElementById('nameMode');
   var compact = document.getElementById('compact');
+  var diagnostics = document.getElementById('diagnostics');
   var counterGrid = document.getElementById('counter-grid');
   var countersNone = document.getElementById('counters-none');
 
@@ -145,6 +146,7 @@
       roomId: input.value.trim(),
       nameMode: pick(NAME_MODES, nameMode.value, 'full'),
       compact: compact.checked,
+      diagnostics: diagnostics.checked,
       // Kept for older installed viewers that only understand the boolean.
       showNames: nameMode.value !== 'hidden',
       counters: Object.assign({}, counterState),
@@ -167,6 +169,7 @@
       input.value = parsed.roomId || '';
       nameMode.value = pick(NAME_MODES, parsed.nameMode, parsed.showNames === false ? 'hidden' : 'full');
       compact.checked = parsed.compact === true;
+      diagnostics.checked = parsed.diagnostics === true;
       counterState = normalizeCounters(
         parsed.counters,
         parsed.showCounters === false ? {} : DEFAULT_COUNTERS
