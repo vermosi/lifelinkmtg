@@ -311,3 +311,13 @@ button.link {
   padding: 0;
 }
 @media (max-width: 380px) { .color-grid { grid-template-columns: 1fr; } }
+
+/* Compact mode (broadcaster toggle, independent of the automatic density) */
+body[data-compact="1"] .wrap { padding: 5px; gap: 4px; }
+body[data-compact="1"] .rows { gap: 3px; }
+body[data-compact="1"] .row { padding: 4px 8px; border-radius: 8px; }
+body[data-compact="1"] .sub { display: none; }
+body[data-compact="1"] .foot { display: none; }
+body[data-compact="1"] .name { font-size: calc(11px * var(--ll-s)); }
+body[data-compact="1"] .life { font-size: calc(19px * var(--ll-s)); }
+body.config[data-compact="1"] .wrap { padding: 8px; }

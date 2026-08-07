@@ -3,9 +3,18 @@
   'use strict';
 
   var root = document.getElementById('root');
-  var config = { roomId: '', showNames: true, showCounters: true, theme: 'dark', fontSize: 'medium', playerColors: [] };
+  var config = { roomId: '', nameMode: 'full', compact: false, showNames: true, showCounters: true, theme: 'dark', fontSize: 'medium', playerColors: [] };
   var THEMES = ['dark', 'light', 'transparent'];
   var SIZES = ['small', 'medium', 'large', 'xlarge'];
+  var NAME_MODES = ['full', 'initials', 'hidden'];
+
+  /** "Alice Green" -> "AG"; falls back to the first two characters. */
+  function toInitials(name) {
+    var parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return '?';
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
 
   function pick(list, value, fallback) {
     return list.indexOf(value) === -1 ? fallback : value;
@@ -14,6 +23,7 @@
   function applyAppearance() {
     document.body.dataset.theme = config.theme;
     document.body.dataset.size = config.fontSize;
+    document.body.dataset.compact = config.compact ? '1' : '0';
     applyResponsive();
   }
 
@@ -59,7 +69,9 @@
     body.style.setProperty('--ll-fit', fit.toFixed(3));
 
     var perRow = boxHeight / playerCount;
-    body.dataset.density = perRow < 30 || fit <= 0.72 ? 'minimal' : perRow < 44 ? 'tight' : 'comfortable';
+    var density = perRow < 30 || fit <= 0.72 ? 'minimal' : perRow < 44 ? 'tight' : 'comfortable';
+    if (config.compact && density === 'comfortable') density = 'tight';
+    body.dataset.density = density;
     body.dataset.narrow = boxWidth < 240 ? '1' : '0';
   }
 
@@ -118,13 +130,15 @@
         if (p.isMonarch) badges += '<span class="badge">Monarch</span>';
         if (p.hasInitiative) badges += '<span class="badge">Initiative</span>';
       }
-      var commander = p.commanders.length
+      var showCommander = config.nameMode === 'full';
+      var commander = showCommander && p.commanders.length
         ? '<div class="sub">' + LifeLink.escapeHtml(p.commanders.join(' & ')) + '</div>'
         : '';
-      var who = config.showNames
-        ? '<div><div class="name">' + LifeLink.escapeHtml(p.name) + '</div>' + commander +
+      var label = config.nameMode === 'initials' ? toInitials(p.name) : p.name;
+      var who = config.nameMode !== 'hidden'
+        ? '<div><div class="name">' + LifeLink.escapeHtml(label) + '</div>' + commander +
           (badges ? '<div class="badges">' + badges + '</div>' : '') + '</div>'
-        : '';
+        : (badges ? '<div><div class="badges">' + badges + '</div></div>' : '');
       return (
         '<li class="row">' +
         '<div class="who"><span class="dot" style="background:' +
@@ -181,7 +195,8 @@
     }
     if (!parsed || !LifeLink.isValidRoomId(parsed.roomId)) return false;
     config.roomId = parsed.roomId;
-    config.showNames = parsed.showNames !== false;
+    config.nameMode = pick(NAME_MODES, parsed.nameMode, parsed.showNames === false ? 'hidden' : 'full');
+    config.compact = parsed.compact === true;
     config.showCounters = parsed.showCounters !== false;
     config.theme = pick(THEMES, parsed.theme, 'dark');
     config.fontSize = pick(SIZES, parsed.fontSize, 'medium');
@@ -200,7 +215,8 @@
   if (LifeLink.isValidRoomId(previewRoom)) {
     applyConfig({
       roomId: previewRoom,
-      showNames: params.get('names') !== '0',
+      nameMode: params.get('nameMode') || (params.get('names') === '0' ? 'hidden' : 'full'),
+      compact: params.get('compact') === '1',
       showCounters: params.get('counters') !== '0',
       theme: params.get('theme'),
       fontSize: params.get('size'),

@@ -3,13 +3,15 @@
   'use strict';
 
   var input = document.getElementById('room');
-  var names = document.getElementById('names');
+  var nameMode = document.getElementById('nameMode');
+  var compact = document.getElementById('compact');
   var counters = document.getElementById('counters');
   var theme = document.getElementById('theme');
   var size = document.getElementById('size');
 
   var THEMES = ['dark', 'light', 'transparent'];
   var SIZES = ['small', 'medium', 'large', 'xlarge'];
+  var NAME_MODES = ['full', 'initials', 'hidden'];
 
   function pick(list, value, fallback) {
     return list.indexOf(value) === -1 ? fallback : value;
@@ -96,7 +98,10 @@
   function currentConfig() {
     return {
       roomId: input.value.trim(),
-      showNames: names.checked,
+      nameMode: pick(NAME_MODES, nameMode.value, 'full'),
+      compact: compact.checked,
+      // Kept for older installed viewers that only understand the boolean.
+      showNames: nameMode.value !== 'hidden',
       showCounters: counters.checked,
       theme: pick(THEMES, theme.value, 'dark'),
       fontSize: pick(SIZES, size.value, 'medium'),
@@ -111,7 +116,8 @@
     try {
       var parsed = JSON.parse(segment.content);
       input.value = parsed.roomId || '';
-      names.checked = parsed.showNames !== false;
+      nameMode.value = pick(NAME_MODES, parsed.nameMode, parsed.showNames === false ? 'hidden' : 'full');
+      compact.checked = parsed.compact === true;
       counters.checked = parsed.showCounters !== false;
       theme.value = pick(THEMES, parsed.theme, 'dark');
       size.value = pick(SIZES, parsed.fontSize, 'medium');
@@ -127,6 +133,7 @@
   function applyPreview() {
     document.body.dataset.theme = pick(THEMES, theme.value, 'dark');
     document.body.dataset.size = pick(SIZES, size.value, 'medium');
+    document.body.dataset.compact = compact.checked ? '1' : '0';
   }
 
   colorsReset.addEventListener('click', function () {
@@ -137,6 +144,7 @@
 
   renderColorGrid();
 
+  compact.addEventListener('change', applyPreview);
   theme.addEventListener('change', applyPreview);
   size.addEventListener('change', applyPreview);
   applyPreview();

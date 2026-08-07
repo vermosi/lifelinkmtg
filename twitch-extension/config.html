@@ -51,9 +51,18 @@
         <div id="color-grid" class="color-grid"></div>
       </div>
 
+      <div>
+        <label for="nameMode">Player names</label>
+        <select id="nameMode">
+          <option value="full" selected>Full names and commanders</option>
+          <option value="initials">Initials only (saves space)</option>
+          <option value="hidden">Hide names — life totals only</option>
+        </select>
+      </div>
+
       <div class="row-inline">
-        <input id="names" type="checkbox" checked />
-        <label for="names">Show player names and commanders</label>
+        <input id="compact" type="checkbox" />
+        <label for="compact">Compact mode (tighter rows, smaller padding)</label>
       </div>
       <div class="row-inline">
         <input id="counters" type="checkbox" checked />
