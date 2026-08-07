@@ -3,7 +3,7 @@
   'use strict';
 
   var root = document.getElementById('root');
-  var config = { roomId: '', nameMode: 'full', compact: false, showNames: true, showCounters: true, counters: { poison: true, monarch: true, initiative: true }, theme: 'dark', fontSize: 'medium', safeArea: 'small', playerColors: [], diagnostics: false };
+  var config = { roomId: '', nameMode: 'full', compact: false, showNames: true, showCounters: true, counters: { poison: true, monarch: true, initiative: true }, theme: 'dark', fontSize: 'medium', safeArea: 'small', layoutPreset: 'auto', playerColors: [], diagnostics: false };
   var THEMES = ['dark', 'light', 'transparent'];
   var SIZES = ['small', 'medium', 'large', 'xlarge'];
   // Safe-area inset as a fraction of the live frame width/height.
