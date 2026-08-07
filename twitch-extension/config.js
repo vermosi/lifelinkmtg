@@ -206,6 +206,7 @@
     playerColors = normalizeColors(parsed.playerColors);
     renderColorGrid();
     applyPreview();
+    renderLinks();
     startMonitor();
     return true;
   }
@@ -267,6 +268,66 @@
     applyPreview();
   });
   applyPreview();
+
+  // ---- Room links (overlay + broadcaster control) ------------------------
+  var APP_ORIGIN = 'https://lifelinkmtg.app';
+  var adminKeyInput = document.getElementById('admin-key');
+  var overlayUrlEl = document.getElementById('overlay-url');
+  var controlUrlEl = document.getElementById('control-url');
+  var copyOverlay = document.getElementById('copy-overlay');
+  var copyControl = document.getElementById('copy-control');
+  var linksRefresh = document.getElementById('links-refresh');
+
+  function roomLinks() {
+    var roomId = input.value.trim();
+    if (!LifeLink.isValidRoomId(roomId)) return null;
+    var key = adminKeyInput.value.trim();
+    var base = APP_ORIGIN + '/room/' + encodeURIComponent(roomId);
+    return {
+      overlay: base + '/overlay',
+      control: base + (key ? '?adminKey=' + encodeURIComponent(key) : ''),
+    };
+  }
+
+  function renderLinks() {
+    var links = roomLinks();
+    overlayUrlEl.textContent = links ? links.overlay : 'Enter a valid room code above';
+    controlUrlEl.textContent = links ? links.control : 'Enter a valid room code above';
+  }
+
+  function copyText(text, okMessage) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        setStatus(okMessage, 'ok');
+      }).catch(function () {
+        setStatus('Copy failed — select the link above and copy it manually.', 'err');
+      });
+      return;
+    }
+    setStatus('Copy is unavailable here — select the link above and copy it manually.', 'err');
+  }
+
+  function copyLink(which, okMessage) {
+    var links = roomLinks();
+    if (!links) {
+      setStatus('Enter a valid room code first.', 'err');
+      return;
+    }
+    copyText(links[which], okMessage);
+  }
+
+  input.addEventListener('input', renderLinks);
+  adminKeyInput.addEventListener('input', renderLinks);
+  linksRefresh.addEventListener('click', renderLinks);
+  copyOverlay.addEventListener('click', function () {
+    copyLink('overlay', 'Read-only overlay URL copied — paste it into an OBS Browser Source.');
+  });
+  copyControl.addEventListener('click', function () {
+    copyLink('control', adminKeyInput.value.trim()
+      ? 'Broadcaster control URL copied (includes your admin key — keep it private).'
+      : 'Control URL copied. Add your admin key above for editing rights.');
+  });
+  renderLinks();
 
   // ---- Export / import broadcaster setup as JSON -------------------------
   var backup = document.getElementById('backup');
