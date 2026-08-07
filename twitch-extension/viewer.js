@@ -3,13 +3,14 @@
   'use strict';
 
   var root = document.getElementById('root');
-  var config = { roomId: '', nameMode: 'full', compact: false, showNames: true, showCounters: true, counters: { poison: true, monarch: true, initiative: true }, theme: 'dark', fontSize: 'medium', safeArea: 'small', layoutPreset: 'auto', scaleMode: 'auto', scale: 100, playerColors: [], diagnostics: false };
+  var config = { roomId: '', nameMode: 'full', commanderMode: 'auto', compact: false, showNames: true, showCounters: true, counters: { poison: true, monarch: true, initiative: true }, theme: 'dark', fontSize: 'medium', safeArea: 'small', layoutPreset: 'auto', scaleMode: 'auto', scale: 100, playerColors: [], diagnostics: false };
   var THEMES = ['dark', 'light', 'transparent'];
   var SIZES = ['small', 'medium', 'large', 'xlarge'];
   // Safe-area inset as a fraction of the live frame width/height.
   var SAFE_AREAS = { none: 0, small: 0.025, medium: 0.05, large: 0.08 };
   var SAFE_KEYS = ['none', 'small', 'medium', 'large'];
   var NAME_MODES = ['full', 'initials', 'hidden'];
+  var COMMANDER_MODES = ['auto', 'full', 'initials', 'hidden'];
 
   var COUNTER_KEYS = ['poison', 'energy', 'experience', 'storm', 'commanderTax', 'monarch', 'initiative', 'custom'];
   var DEFAULT_COUNTERS = { poison: true, monarch: true, initiative: true };
@@ -432,15 +433,27 @@
     var rows = players.map(function (p, index) {
       var color = HEX.test(config.playerColors[index] || '') ? config.playerColors[index] : p.color;
       var badges = badgesHtml(p);
-      var showCommander = config.nameMode === 'full';
-      var commander = showCommander && p.commanders.length
-        ? '<div class="sub">' + LifeLink.escapeHtml(p.commanders.join(' & ')) + '</div>'
+      // Commander label is independent from the player-name setting.
+      // 'auto' keeps the legacy behaviour (only shown with full names).
+      var commanderMode = config.commanderMode === 'auto'
+        ? (config.nameMode === 'full' ? 'full' : 'hidden')
+        : config.commanderMode;
+      var commanderText = p.commanders.length
+        ? (commanderMode === 'initials'
+            ? p.commanders.map(toInitials).join(' & ')
+            : p.commanders.join(' & '))
+        : '';
+      var commander = commanderMode !== 'hidden' && commanderText
+        ? '<div class="sub">' + LifeLink.escapeHtml(commanderText) + '</div>'
         : '';
       var label = config.nameMode === 'initials' ? toInitials(p.name) : p.name;
-      var who = config.nameMode !== 'hidden'
-        ? '<div><div class="name">' + LifeLink.escapeHtml(label) + '</div>' + commander +
-          (badges ? '<div class="badges">' + badges + '</div>' : '') + '</div>'
-        : (badges ? '<div><div class="badges">' + badges + '</div></div>' : '');
+      var nameHtml = config.nameMode !== 'hidden'
+        ? '<div class="name">' + LifeLink.escapeHtml(label) + '</div>'
+        : '';
+      var badgesHtmlBlock = badges ? '<div class="badges">' + badges + '</div>' : '';
+      var who = (nameHtml || commander || badgesHtmlBlock)
+        ? '<div>' + nameHtml + commander + badgesHtmlBlock + '</div>'
+        : '';
       return (
         '<li class="row">' +
         '<div class="who"><span class="dot" style="background:' +
@@ -499,6 +512,7 @@
     if (!parsed || !LifeLink.isValidRoomId(parsed.roomId)) return false;
     config.roomId = parsed.roomId;
     config.nameMode = pick(NAME_MODES, parsed.nameMode, parsed.showNames === false ? 'hidden' : 'full');
+    config.commanderMode = pick(COMMANDER_MODES, parsed.commanderMode, 'auto');
     config.compact = parsed.compact === true;
     config.diagnostics = parsed.diagnostics === true;
     config.counters = normalizeCounters(
@@ -531,6 +545,7 @@
     applyConfig({
       roomId: previewRoom,
       nameMode: params.get('nameMode') || (params.get('names') === '0' ? 'hidden' : 'full'),
+      commanderMode: params.get('commanderMode') || 'auto',
       compact: params.get('compact') === '1',
       diagnostics: params.get('diag') === '1',
       counters: params.get('counters')

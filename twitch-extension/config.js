@@ -4,6 +4,7 @@
 
   var input = document.getElementById('room');
   var nameMode = document.getElementById('nameMode');
+  var commanderMode = document.getElementById('commanderMode');
   var compact = document.getElementById('compact');
   var diagnostics = document.getElementById('diagnostics');
   var counterGrid = document.getElementById('counter-grid');
@@ -73,6 +74,7 @@
   var PRESET_KEYS = ['auto', 'panel', 'overlayCorner', 'overlaySidebar', 'overlayStrip', 'ultrawide', 'mobile'];
 
   var NAME_MODES = ['full', 'initials', 'hidden'];
+  var COMMANDER_MODES = ['auto', 'full', 'initials', 'hidden'];
 
   function pick(list, value, fallback) {
     return list.indexOf(value) === -1 ? fallback : value;
@@ -161,6 +163,7 @@
     return {
       roomId: input.value.trim(),
       nameMode: pick(NAME_MODES, nameMode.value, 'full'),
+      commanderMode: pick(COMMANDER_MODES, commanderMode.value, 'auto'),
       compact: compact.checked,
       diagnostics: diagnostics.checked,
       // Kept for older installed viewers that only understand the boolean.
@@ -187,6 +190,7 @@
       var parsed = JSON.parse(segment.content);
       input.value = parsed.roomId || '';
       nameMode.value = pick(NAME_MODES, parsed.nameMode, parsed.showNames === false ? 'hidden' : 'full');
+      commanderMode.value = pick(COMMANDER_MODES, parsed.commanderMode, 'auto');
       compact.checked = parsed.compact === true;
       diagnostics.checked = parsed.diagnostics === true;
       counterState = normalizeCounters(
