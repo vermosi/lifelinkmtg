@@ -221,6 +221,7 @@
 
     lastDecision = {
       mode: isOverlay ? 'video overlay' : 'panel',
+      preset: preset.label + (config.layoutPreset === 'auto' ? ' (auto-matched)' : ' (forced)'),
       frame: Math.round(width) + '×' + Math.round(height),
       safe: config.safeArea + ' (' + Math.round(pct * 1000) / 10 + '% → ' + safeX + '×' + safeY + 'px)',
       box: Math.round(boxWidth) + '×' + Math.round(boxHeight),
