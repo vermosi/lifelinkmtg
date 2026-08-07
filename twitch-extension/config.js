@@ -171,6 +171,8 @@
       playerColors = normalizeColors(parsed.playerColors);
       renderColorGrid();
       applyPreview();
+      startMonitor();
+
     } catch (e) {
       /* ignore malformed config */
     }
