@@ -3,7 +3,7 @@
   'use strict';
 
   var root = document.getElementById('root');
-  var config = { roomId: '', nameMode: 'full', compact: false, showNames: true, showCounters: true, counters: { poison: true, monarch: true, initiative: true }, theme: 'dark', fontSize: 'medium', safeArea: 'small', playerColors: [], diagnostics: false };
+  var config = { roomId: '', nameMode: 'full', compact: false, showNames: true, showCounters: true, counters: { poison: true, monarch: true, initiative: true }, theme: 'dark', fontSize: 'medium', safeArea: 'small', layoutPreset: 'auto', playerColors: [], diagnostics: false };
   var THEMES = ['dark', 'light', 'transparent'];
   var SIZES = ['small', 'medium', 'large', 'xlarge'];
   // Safe-area inset as a fraction of the live frame width/height.
@@ -87,18 +87,82 @@
     return Math.min(max, Math.max(min, value));
   }
 
+  /**
+   * Preset layouts tuned to the boxes Twitch actually gives an extension:
+   * the fixed 320px panel column, the standard 16:9 video overlay, tall
+   * sidebar-style overlays, bottom strips, ultrawide/theatre players and the
+   * narrow mobile player. Each preset says how much of the frame the widget
+   * may occupy and how dense its rows should be.
+   */
+  var LAYOUT_PRESETS = {
+    panel: {
+      label: 'Panel column (320px)',
+      widthRatio: 1, heightRatio: 1, maxWidth: 340, minWidth: 200,
+      maxFit: 1.2, densityBias: 0,
+    },
+    overlayCorner: {
+      label: 'Video overlay — corner card (16:9)',
+      widthRatio: 0.28, heightRatio: 0.7, maxWidth: 420, minWidth: 180,
+      maxFit: 1.6, densityBias: 0,
+    },
+    overlaySidebar: {
+      label: 'Video overlay — tall sidebar',
+      widthRatio: 0.22, heightRatio: 0.94, maxWidth: 360, minWidth: 170,
+      maxFit: 1.4, densityBias: 0,
+    },
+    overlayStrip: {
+      label: 'Video overlay — bottom strip',
+      widthRatio: 0.96, heightRatio: 0.24, maxWidth: 1600, minWidth: 240,
+      maxFit: 1.2, densityBias: 1,
+    },
+    ultrawide: {
+      label: 'Ultrawide / theatre player',
+      widthRatio: 0.2, heightRatio: 0.66, maxWidth: 380, minWidth: 180,
+      maxFit: 1.5, densityBias: 0,
+    },
+    mobile: {
+      label: 'Mobile / narrow player',
+      widthRatio: 0.92, heightRatio: 0.6, maxWidth: 420, minWidth: 160,
+      maxFit: 1.1, densityBias: 1,
+    },
+  };
+  var PRESET_KEYS = ['auto', 'panel', 'overlayCorner', 'overlaySidebar', 'overlayStrip', 'ultrawide', 'mobile'];
+
+  /**
+   * Picks the preset that matches the live Twitch box: panels always use the
+   * column layout, overlays branch on aspect ratio and size so a theatre-mode
+   * ultrawide, a short bottom strip and a phone player each get a layout that
+   * was designed for that shape.
+   */
+  function detectPreset(width, height, isOverlay) {
+    if (!isOverlay) return 'panel';
+    var aspect = width / Math.max(height, 1);
+    if (width < 520) return 'mobile';
+    if (height < 260) return 'overlayStrip';
+    if (aspect >= 2.1) return 'ultrawide';
+    if (aspect <= 1.4) return 'overlaySidebar';
+    return 'overlayCorner';
+  }
+
+  function resolvePreset(width, height, isOverlay) {
+    var chosen = config.layoutPreset;
+    if (chosen === 'auto' || !LAYOUT_PRESETS[chosen]) chosen = detectPreset(width, height, isOverlay);
+    return chosen;
+  }
+
   // Cache of the last inputs/outputs so repeated resize ticks do no DOM work.
   var lastMetrics = null;
-  var lastApplied = { fit: '', density: '', narrow: '', safeX: -1, safeY: -1 };
+  var lastApplied = { fit: '', density: '', narrow: '', safeX: -1, safeY: -1, preset: '' };
   // Last full resize decision, surfaced by the diagnostics readout.
   var lastDecision = null;
   var resizeEvents = 0;
   var recomputes = 0;
 
   /**
-   * Scales the widget to the live Twitch player / panel box: width drives the
-   * type scale, available height divided by the player count keeps every row
-   * visible, and very small boxes switch to denser layouts.
+   * Scales the widget to the live Twitch player / panel box: the matched preset
+   * defines the layout box, width drives the type scale, available height
+   * divided by the player count keeps every row visible, and very small boxes
+   * switch to denser layouts.
    *
    * Cheap to call repeatedly — it reads layout once, bails when nothing that
    * affects the result changed, and only writes the properties that differ.
@@ -110,7 +174,8 @@
     var isOverlay = body.classList.contains('overlay');
     var playerCount = lastRow ? Math.max(LifeLink.toPlayers(lastRow).length, 1) : 4;
 
-    var signature = width + 'x' + height + '|' + playerCount + '|' + config.safeArea + '|' + (config.compact ? 1 : 0);
+    var signature = width + 'x' + height + '|' + playerCount + '|' + config.safeArea + '|' +
+      (config.compact ? 1 : 0) + '|' + config.layoutPreset;
     if (signature === lastMetrics) return;
     lastMetrics = signature;
     recomputes += 1;
@@ -123,13 +188,16 @@
 
     var innerWidth = Math.max(width - safeX * 2, 120);
     var innerHeight = Math.max(height - safeY * 2, 120);
-    var boxWidth = isOverlay ? clamp(innerWidth * 0.28, 180, 420) : innerWidth;
-    var boxHeight = isOverlay ? innerHeight * 0.7 : innerHeight;
+
+    var presetKey = resolvePreset(width, height, isOverlay);
+    var preset = LAYOUT_PRESETS[presetKey];
+    var boxWidth = clamp(innerWidth * preset.widthRatio, Math.min(preset.minWidth, innerWidth), preset.maxWidth);
+    var boxHeight = Math.max(innerHeight * preset.heightRatio, 100);
 
     var widthFit = boxWidth / BASE_WIDTH;
     var heightFit = (boxHeight - 28) / (playerCount * BASE_ROW_HEIGHT);
     var rawFit = Math.min(widthFit, heightFit);
-    var fit = clamp(rawFit, MIN_FIT, MAX_FIT).toFixed(3);
+    var fit = clamp(rawFit, MIN_FIT, Math.min(MAX_FIT, preset.maxFit)).toFixed(3);
 
     var perRow = boxHeight / playerCount;
     var density = perRow < 30 || Number(fit) <= 0.72 ? 'minimal' : perRow < 44 ? 'tight' : 'comfortable';
@@ -140,14 +208,20 @@
         : perRow < 44
           ? 'row height < 44px'
           : 'room to breathe';
+    if (preset.densityBias && density === 'comfortable') {
+      density = 'tight';
+      densityReason = presetKey + ' preset prefers tight rows';
+    }
     if (config.compact && density === 'comfortable') {
       density = 'tight';
       densityReason = 'compact mode forces tight';
     }
     var narrow = boxWidth < 240 ? '1' : '0';
 
+
     lastDecision = {
       mode: isOverlay ? 'video overlay' : 'panel',
+      preset: preset.label + (config.layoutPreset === 'auto' ? ' (auto-matched)' : ' (forced)'),
       frame: Math.round(width) + '×' + Math.round(height),
       safe: config.safeArea + ' (' + Math.round(pct * 1000) / 10 + '% → ' + safeX + '×' + safeY + 'px)',
       box: Math.round(boxWidth) + '×' + Math.round(boxHeight),
@@ -185,6 +259,11 @@
       body.dataset.narrow = narrow;
       lastApplied.narrow = narrow;
     }
+    if (presetKey !== lastApplied.preset) {
+      body.dataset.preset = presetKey;
+      lastApplied.preset = presetKey;
+    }
+
 
     renderDiagnostics();
   }
@@ -224,6 +303,7 @@
     diagEl.innerHTML =
       '<div class="diag-title">Layout diagnostics <span class="diag-hint">press D to hide</span></div>' +
       diagRow('View', d.mode) +
+      diagRow('Layout preset', d.preset) +
       diagRow('Frame', d.frame) +
       diagRow('Safe area', d.safe) +
       diagRow('Layout box', d.box) +
@@ -412,6 +492,7 @@
     config.theme = pick(THEMES, parsed.theme, 'dark');
     config.fontSize = pick(SIZES, parsed.fontSize, 'medium');
     config.safeArea = pick(SAFE_KEYS, parsed.safeArea, 'small');
+    config.layoutPreset = pick(PRESET_KEYS, parsed.layoutPreset, 'auto');
 
     config.playerColors = normalizeColors(parsed.playerColors);
     applyAppearance();
@@ -437,6 +518,7 @@
       theme: params.get('theme'),
       fontSize: params.get('size'),
       safeArea: params.get('safe'),
+      layoutPreset: params.get('preset'),
 
       playerColors: (params.get('colors') || '').split(',').map(function (c) {
         return c ? '#' + c.replace(/^#/, '') : null;

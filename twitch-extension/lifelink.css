@@ -285,6 +285,46 @@ body.overlay[data-density="minimal"] .wrap {
   bottom: calc(8px + var(--ll-safe-y));
 }
 
+/* Preset layouts matched to the common Twitch boxes (set by viewer.js) */
+body.overlay[data-preset="overlaySidebar"] .wrap {
+  top: calc(10px + var(--ll-safe-y));
+  bottom: calc(10px + var(--ll-safe-y));
+  max-width: calc(26vw - var(--ll-safe-x));
+  max-height: none;
+}
+
+body.overlay[data-preset="overlayStrip"] .wrap {
+  left: calc(10px + var(--ll-safe-x));
+  right: calc(10px + var(--ll-safe-x));
+  max-width: none;
+  max-height: calc(30vh - var(--ll-safe-y));
+}
+
+body.overlay[data-preset="overlayStrip"] .rows {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+body.overlay[data-preset="overlayStrip"] .rows > * {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+body.overlay[data-preset="ultrawide"] .wrap {
+  max-width: calc(24vw - var(--ll-safe-x));
+  max-height: calc(70vh - var(--ll-safe-y));
+}
+
+body.overlay[data-preset="mobile"] .wrap {
+  left: calc(6px + var(--ll-safe-x));
+  right: calc(6px + var(--ll-safe-x));
+  max-width: none;
+  max-height: calc(62vh - var(--ll-safe-y));
+}
+
+
+
 
 /* Per-player color pickers (configuration page) */
 .colors { display: flex; flex-direction: column; gap: 6px; }
