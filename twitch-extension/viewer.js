@@ -404,6 +404,7 @@
     config.roomId = parsed.roomId;
     config.nameMode = pick(NAME_MODES, parsed.nameMode, parsed.showNames === false ? 'hidden' : 'full');
     config.compact = parsed.compact === true;
+    config.diagnostics = parsed.diagnostics === true;
     config.counters = normalizeCounters(
       parsed.counters,
       parsed.showCounters === false ? {} : DEFAULT_COUNTERS
