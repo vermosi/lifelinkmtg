@@ -64,6 +64,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_stale_rooms: { Args: never; Returns: number }
       delete_room_as_admin: {
         Args: { provided_admin_key: string; room_id: string }
         Returns: boolean
