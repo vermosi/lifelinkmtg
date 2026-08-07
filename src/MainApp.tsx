@@ -6,6 +6,7 @@ import { Routes, Route } from 'react-router-dom';
 import Index from './pages/Index';
 import RoomPage from './pages/RoomPage';
 import OverlayPage from './pages/OverlayPage';
+import EmbedPage from './pages/EmbedPage';
 import FaviconCheck from './pages/FaviconCheck';
 import NotFound from './pages/NotFound';
 
