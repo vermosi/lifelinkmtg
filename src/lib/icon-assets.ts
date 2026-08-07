@@ -19,6 +19,8 @@ export const ICON_ASSETS: IconAsset[] = [
   { path: '/icon-192.png', label: 'icon-192.png', size: 192, usage: 'Android home screen' },
   { path: '/apple-touch-icon.png', label: 'apple-touch-icon.png', size: 180, usage: 'iOS home screen' },
   { path: '/icon-512.png', label: 'icon-512.png', size: 512, usage: 'Install prompt / splash' },
+  { path: '/android-chrome-192x192.png', label: 'android-chrome-192x192.png', size: 192, usage: 'Android Chrome home screen' },
+  { path: '/android-chrome-512x512.png', label: 'android-chrome-512x512.png', size: 512, usage: 'Android Chrome splash / install' },
   { path: '/icon-maskable-512.png', label: 'icon-maskable-512.png', size: 512, usage: 'Android adaptive (maskable)' },
 ];
 
