@@ -248,6 +248,8 @@
     );
     config.theme = pick(THEMES, parsed.theme, 'dark');
     config.fontSize = pick(SIZES, parsed.fontSize, 'medium');
+    config.safeArea = pick(SAFE_KEYS, parsed.safeArea, 'small');
+
     config.playerColors = normalizeColors(parsed.playerColors);
     applyAppearance();
     return true;
