@@ -189,7 +189,15 @@
     setStatus('Player colors reset to the room defaults. Save to apply.');
   });
 
+  countersNone.addEventListener('click', function () {
+    counterState = {};
+    renderCounterGrid();
+    setStatus('All counter badges hidden. Save to apply.');
+  });
+
   renderColorGrid();
+  renderCounterGrid();
+
 
   compact.addEventListener('change', applyPreview);
   theme.addEventListener('change', applyPreview);
