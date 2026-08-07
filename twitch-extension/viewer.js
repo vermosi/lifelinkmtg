@@ -3,7 +3,7 @@
   'use strict';
 
   var root = document.getElementById('root');
-  var config = { roomId: '', showNames: true, showCounters: true, theme: 'dark', fontSize: 'medium' };
+  var config = { roomId: '', showNames: true, showCounters: true, theme: 'dark', fontSize: 'medium', playerColors: [] };
   var THEMES = ['dark', 'light', 'transparent'];
   var SIZES = ['small', 'medium', 'large', 'xlarge'];
 
@@ -18,6 +18,17 @@
   }
 
   // Reference box the layout was designed against (a standard Twitch panel).
+  var HEX = /^#[0-9a-fA-F]{6}$/;
+
+  /** Broadcaster per-seat color overrides; null entries keep the room's own color. */
+  function normalizeColors(list) {
+    var out = [];
+    for (var i = 0; i < 8; i += 1) {
+      out.push(Array.isArray(list) && HEX.test(list[i]) ? String(list[i]).toLowerCase() : null);
+    }
+    return out;
+  }
+
   var BASE_WIDTH = 320;
   var BASE_ROW_HEIGHT = 46;
   var MIN_FIT = 0.6;
@@ -99,7 +110,8 @@
   function rowsHtml(row) {
     var players = LifeLink.toPlayers(row);
 
-    var rows = players.map(function (p) {
+    var rows = players.map(function (p, index) {
+      var color = HEX.test(config.playerColors[index] || '') ? config.playerColors[index] : p.color;
       var badges = '';
       if (config.showCounters) {
         if (p.poison > 0) badges += '<span class="badge">☠ ' + p.poison + '</span>';
@@ -116,9 +128,9 @@
       return (
         '<li class="row">' +
         '<div class="who"><span class="dot" style="background:' +
-        LifeLink.escapeHtml(p.color) +
+        LifeLink.escapeHtml(color) +
         '"></span>' + who + '</div>' +
-        '<span class="life" style="color:' + LifeLink.escapeHtml(p.color) + '">' + p.life + '</span>' +
+        '<span class="life" style="color:' + LifeLink.escapeHtml(color) + '">' + p.life + '</span>' +
         '</li>'
       );
     }).join('');
@@ -173,6 +185,7 @@
     config.showCounters = parsed.showCounters !== false;
     config.theme = pick(THEMES, parsed.theme, 'dark');
     config.fontSize = pick(SIZES, parsed.fontSize, 'medium');
+    config.playerColors = normalizeColors(parsed.playerColors);
     applyAppearance();
     return true;
   }
@@ -191,6 +204,9 @@
       showCounters: params.get('counters') !== '0',
       theme: params.get('theme'),
       fontSize: params.get('size'),
+      playerColors: (params.get('colors') || '').split(',').map(function (c) {
+        return c ? '#' + c.replace(/^#/, '') : null;
+      }),
     });
     start();
   } else if (window.Twitch && window.Twitch.ext) {
