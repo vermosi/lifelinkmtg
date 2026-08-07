@@ -259,6 +259,11 @@
       body.dataset.narrow = narrow;
       lastApplied.narrow = narrow;
     }
+    if (presetKey !== lastApplied.preset) {
+      body.dataset.preset = presetKey;
+      lastApplied.preset = presetKey;
+    }
+
 
     renderDiagnostics();
   }
