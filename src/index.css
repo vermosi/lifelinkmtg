@@ -61,12 +61,16 @@
     @apply border-border;
   }
 
-  html, body, #root {
+  html, body {
     @apply h-full w-full m-0 p-0 overflow-hidden;
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
+  }
+
+  #root {
+    @apply h-full w-full m-0 p-0 overflow-auto;
   }
 
   body {
