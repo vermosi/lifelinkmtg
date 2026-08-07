@@ -5,8 +5,8 @@ const Index = () => {
   return (
     <>
       <Helmet>
-        <title>LifeLink — Free MTG Life Counter &amp; OBS Overlay for Commander</title>
-        <meta name="description" content="Track Magic: The Gathering life totals in real time. Free Commander/EDH counter with cloud sync, player counters, and a streaming-ready OBS overlay." />
+        <title>LifeLink — Free MTG Life Counter, Commander EDH Tracker &amp; OBS/Twitch Overlay</title>
+        <meta name="description" content="Free Magic: The Gathering life counter for 2–6 players. Track Commander/EDH life totals, commander damage, poison, energy, Monarch, and Initiative. Share rooms via QR code, then stream with the OBS Browser Source overlay or native Twitch extension." />
         <link rel="canonical" href="https://lifelinkmtg.app/" />
       </Helmet>
       <RoomSelector />
