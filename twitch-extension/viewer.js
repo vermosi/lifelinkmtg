@@ -3,7 +3,18 @@
   'use strict';
 
   var root = document.getElementById('root');
-  var config = { roomId: '', showNames: true, showCounters: true };
+  var config = { roomId: '', showNames: true, showCounters: true, theme: 'dark', fontSize: 'medium' };
+  var THEMES = ['dark', 'light', 'transparent'];
+  var SIZES = ['small', 'medium', 'large', 'xlarge'];
+
+  function pick(list, value, fallback) {
+    return list.indexOf(value) === -1 ? fallback : value;
+  }
+
+  function applyAppearance() {
+    document.body.dataset.theme = config.theme;
+    document.body.dataset.size = config.fontSize;
+  }
   var stop = null;
 
   function setState(message) {
@@ -72,9 +83,13 @@
     config.roomId = parsed.roomId;
     config.showNames = parsed.showNames !== false;
     config.showCounters = parsed.showCounters !== false;
+    config.theme = pick(THEMES, parsed.theme, 'dark');
+    config.fontSize = pick(SIZES, parsed.fontSize, 'medium');
+    applyAppearance();
     return true;
   }
 
+  applyAppearance();
   setState('Loading LifeLink…');
 
   // Preview override: works locally and inside Twitch's test rig.
@@ -86,6 +101,8 @@
       roomId: previewRoom,
       showNames: params.get('names') !== '0',
       showCounters: params.get('counters') !== '0',
+      theme: params.get('theme'),
+      fontSize: params.get('size'),
     });
     start();
   } else if (window.Twitch && window.Twitch.ext) {

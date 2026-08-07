@@ -5,6 +5,7 @@
   --ll-text: #f5f5f7;
   --ll-muted: #a1a1aa;
   --ll-accent: #7dd3fc;
+  --ll-scale: 1;
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
@@ -21,6 +22,29 @@ html, body {
 body.panel { background: var(--ll-bg); }
 body.overlay { background: transparent; }
 
+/* Themes (set via data-theme on <body> by viewer.js) */
+body[data-theme="light"] {
+  --ll-bg: rgba(246, 246, 248, 0.94);
+  --ll-card: rgba(255, 255, 255, 0.95);
+  --ll-border: rgba(9, 9, 11, 0.14);
+  --ll-text: #101014;
+  --ll-muted: #52525b;
+}
+
+body[data-theme="transparent"] {
+  --ll-bg: transparent;
+  --ll-card: rgba(10, 10, 14, 0.45);
+  --ll-border: rgba(255, 255, 255, 0.18);
+}
+
+body.panel[data-theme="transparent"] { background: transparent; }
+
+/* Font size scale (set via data-size on <body>) */
+body[data-size="small"] { --ll-scale: 0.85; }
+body[data-size="medium"] { --ll-scale: 1; }
+body[data-size="large"] { --ll-scale: 1.25; }
+body[data-size="xlarge"] { --ll-scale: 1.5; }
+
 .wrap {
   display: flex;
   flex-direction: column;
@@ -35,7 +59,7 @@ body.overlay .wrap {
   position: absolute;
   left: 16px;
   bottom: 16px;
-  width: 300px;
+  width: calc(300px * var(--ll-scale));
   padding: 0;
   gap: 4px;
 }
@@ -62,7 +86,7 @@ body.overlay .wrap {
   border-radius: 10px;
   background: var(--ll-card);
   min-height: 0;
-  max-height: 64px;
+  max-height: calc(64px * var(--ll-scale));
   flex: 1;
   backdrop-filter: blur(6px);
 }
@@ -77,7 +101,7 @@ body.overlay .wrap {
 }
 
 .name {
-  font-size: 13px;
+  font-size: calc(13px * var(--ll-scale));
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -85,7 +109,7 @@ body.overlay .wrap {
 }
 
 .sub {
-  font-size: 10px;
+  font-size: calc(10px * var(--ll-scale));
   color: var(--ll-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -93,7 +117,7 @@ body.overlay .wrap {
 }
 
 .life {
-  font-size: 22px;
+  font-size: calc(22px * var(--ll-scale));
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   line-height: 1;
@@ -102,7 +126,7 @@ body.overlay .wrap {
 .badges { display: flex; gap: 4px; margin-top: 2px; }
 
 .badge {
-  font-size: 9px;
+  font-size: calc(9px * var(--ll-scale));
   padding: 1px 5px;
   border-radius: 999px;
   border: 1px solid var(--ll-border);
@@ -112,7 +136,7 @@ body.overlay .wrap {
 .foot {
   flex: none;
   text-align: center;
-  font-size: 10px;
+  font-size: calc(10px * var(--ll-scale));
   letter-spacing: 0.06em;
   color: var(--ll-muted);
 }
@@ -124,7 +148,7 @@ body.overlay .wrap {
   height: 100%;
   padding: 16px;
   text-align: center;
-  font-size: 12px;
+  font-size: calc(12px * var(--ll-scale));
   color: var(--ll-muted);
 }
 

@@ -5,6 +5,15 @@
   var input = document.getElementById('room');
   var names = document.getElementById('names');
   var counters = document.getElementById('counters');
+  var theme = document.getElementById('theme');
+  var size = document.getElementById('size');
+
+  var THEMES = ['dark', 'light', 'transparent'];
+  var SIZES = ['small', 'medium', 'large', 'xlarge'];
+
+  function pick(list, value, fallback) {
+    return list.indexOf(value) === -1 ? fallback : value;
+  }
   var save = document.getElementById('save');
   var test = document.getElementById('test');
   var status = document.getElementById('status');
@@ -19,6 +28,8 @@
       roomId: input.value.trim(),
       showNames: names.checked,
       showCounters: counters.checked,
+      theme: pick(THEMES, theme.value, 'dark'),
+      fontSize: pick(SIZES, size.value, 'medium'),
     };
   }
 
@@ -31,10 +42,23 @@
       input.value = parsed.roomId || '';
       names.checked = parsed.showNames !== false;
       counters.checked = parsed.showCounters !== false;
+      theme.value = pick(THEMES, parsed.theme, 'dark');
+      size.value = pick(SIZES, parsed.fontSize, 'medium');
+      applyPreview();
     } catch (e) {
       /* ignore malformed config */
     }
   }
+
+  // Live-preview the chosen look on the config page itself.
+  function applyPreview() {
+    document.body.dataset.theme = pick(THEMES, theme.value, 'dark');
+    document.body.dataset.size = pick(SIZES, size.value, 'medium');
+  }
+
+  theme.addEventListener('change', applyPreview);
+  size.addEventListener('change', applyPreview);
+  applyPreview();
 
   save.addEventListener('click', function () {
     var config = currentConfig();
