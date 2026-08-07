@@ -5,6 +5,7 @@
   var input = document.getElementById('room');
   var nameMode = document.getElementById('nameMode');
   var compact = document.getElementById('compact');
+  var diagnostics = document.getElementById('diagnostics');
   var counterGrid = document.getElementById('counter-grid');
   var countersNone = document.getElementById('counters-none');
 
