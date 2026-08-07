@@ -53,19 +53,20 @@ body[data-size="xlarge"] { --ll-scale: 1.5; }
   flex-direction: column;
   gap: 6px;
   height: 100%;
-  padding: 8px;
+  padding: calc(8px + var(--ll-safe-y)) calc(8px + var(--ll-safe-x));
   overflow: hidden;
 }
 
 body.overlay .wrap {
   height: auto;
   position: absolute;
-  left: 16px;
-  bottom: 16px;
+  left: calc(16px + var(--ll-safe-x));
+  bottom: calc(16px + var(--ll-safe-y));
   width: calc(300px * var(--ll-s));
   padding: 0;
   gap: 4px;
 }
+
 
 .rows {
   display: flex;
