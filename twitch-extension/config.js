@@ -50,11 +50,13 @@
   var theme = document.getElementById('theme');
   var size = document.getElementById('size');
   var safe = document.getElementById('safe');
+  var layoutPreset = document.getElementById('preset');
 
 
   var THEMES = ['dark', 'light', 'transparent'];
   var SIZES = ['small', 'medium', 'large', 'xlarge'];
   var SAFE_KEYS = ['none', 'small', 'medium', 'large'];
+  var PRESET_KEYS = ['auto', 'panel', 'overlayCorner', 'overlaySidebar', 'overlayStrip', 'ultrawide', 'mobile'];
 
   var NAME_MODES = ['full', 'initials', 'hidden'];
 
@@ -155,6 +157,7 @@
       theme: pick(THEMES, theme.value, 'dark'),
       fontSize: pick(SIZES, size.value, 'medium'),
       safeArea: pick(SAFE_KEYS, safe.value, 'small'),
+      layoutPreset: pick(PRESET_KEYS, layoutPreset.value, 'auto'),
 
       playerColors: playerColors.slice(0, MAX_SEATS),
     };
@@ -178,6 +181,7 @@
       theme.value = pick(THEMES, parsed.theme, 'dark');
       size.value = pick(SIZES, parsed.fontSize, 'medium');
       safe.value = pick(SAFE_KEYS, parsed.safeArea, 'small');
+      layoutPreset.value = pick(PRESET_KEYS, parsed.layoutPreset, 'auto');
 
       playerColors = normalizeColors(parsed.playerColors);
       renderColorGrid();
@@ -197,6 +201,7 @@
     // The config form itself keeps its own padding; the viewer computes the real
     // inset from the live Twitch frame, so only record the choice here.
     document.body.dataset.safe = pick(SAFE_KEYS, safe.value, 'small');
+    document.body.dataset.preset = pick(PRESET_KEYS, layoutPreset.value, 'auto');
   }
 
 
@@ -221,6 +226,7 @@
   theme.addEventListener('change', applyPreview);
   size.addEventListener("change", applyPreview);
   safe.addEventListener("change", applyPreview);
+  layoutPreset.addEventListener("change", applyPreview);
   applyPreview();
 
   save.addEventListener('click', function () {
