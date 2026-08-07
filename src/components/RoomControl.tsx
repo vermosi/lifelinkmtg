@@ -6,7 +6,7 @@ import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuf
 import { ToolsDrawer } from './ToolsDrawer';
 import { useCloudRoomState } from '@/hooks/useCloudRoomState';
 import { useWakeLock } from '@/hooks/useWakeLock';
-import { getControlUrl, getOverlayUrl, getOverlayEditUrl, PLAYER_COLORS, formatTimestamp, HistoryEntry, DUNGEON_ROOMS, loadPresets, savePreset, deletePreset, createPresetFromRoom, GamePreset, LAYOUTS, OVERLAY_PRESETS } from '@/lib/roomUtils';
+import { getControlUrl, getOverlayUrl, getOverlayEditUrl, getEmbedUrl, getEmbedSnippet, EmbedTheme, PLAYER_COLORS, formatTimestamp, HistoryEntry, DUNGEON_ROOMS, loadPresets, savePreset, deletePreset, createPresetFromRoom, GamePreset, LAYOUTS, OVERLAY_PRESETS } from '@/lib/roomUtils';
 import { FullScreenPlayerPanel } from './FullScreenPlayerPanel';
 import { DiceRoller } from './DiceRoller';
 import { cn } from '@/lib/utils';
