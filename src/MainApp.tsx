@@ -29,6 +29,9 @@ const MainApp = () => (
           <Route path="/embed/:roomId" element={<EmbedPage />} />
           <Route path="/twitch-extension" element={<TwitchExtensionPage />} />
           <Route path="/favicon-check" element={<FaviconCheck />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/cookies" element={<CookiesPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
