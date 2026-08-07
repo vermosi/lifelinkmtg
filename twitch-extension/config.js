@@ -192,7 +192,14 @@
     document.body.dataset.theme = pick(THEMES, theme.value, 'dark');
     document.body.dataset.size = pick(SIZES, size.value, 'medium');
     document.body.dataset.compact = compact.checked ? '1' : '0';
+    var key = pick(SAFE_KEYS, safe.value, 'small');
+    document.body.dataset.safe = key;
+    var pct = SAFE_AREAS[key] || 0;
+    // Previewed against a 1920x1080 frame so the inset reads like it will on stream.
+    document.body.style.setProperty('--ll-safe-x', Math.round(1920 * pct) + 'px');
+    document.body.style.setProperty('--ll-safe-y', Math.round(1080 * pct) + 'px');
   }
+
 
   colorsReset.addEventListener('click', function () {
     playerColors = new Array(MAX_SEATS).fill(null);
