@@ -184,6 +184,14 @@ export function RoomControl() {
     () => (room ? getOverlayEditUrl(room, shareStyle) : ''),
     [room?.id, room?.adminKey, shareStyle]
   );
+  const embedUrl = useMemo(
+    () => (room ? getEmbedUrl(room, { theme: embedTheme, compact: embedCompact }) : ''),
+    [room?.id, embedTheme, embedCompact]
+  );
+  const embedSnippet = useMemo(
+    () => (room ? getEmbedSnippet(room, { theme: embedTheme, compact: embedCompact }) : ''),
+    [room?.id, embedTheme, embedCompact]
+  );
 
   // Convert hex to HSL for color picker
   const hexToHsl = (hex: string): string => {
