@@ -303,6 +303,7 @@
     diagEl.innerHTML =
       '<div class="diag-title">Layout diagnostics <span class="diag-hint">press D to hide</span></div>' +
       diagRow('View', d.mode) +
+      diagRow('Layout preset', d.preset) +
       diagRow('Frame', d.frame) +
       diagRow('Safe area', d.safe) +
       diagRow('Layout box', d.box) +
