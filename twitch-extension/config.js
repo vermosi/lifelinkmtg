@@ -182,34 +182,40 @@
     };
   }
 
+  // Fill the form from a stored/imported config object. Every field is
+  // validated through pick()/normalize helpers so bad JSON can't corrupt the UI.
+  function applyToForm(parsed) {
+    if (!parsed || typeof parsed !== 'object') return false;
+    input.value = typeof parsed.roomId === 'string' ? parsed.roomId.trim() : '';
+    nameMode.value = pick(NAME_MODES, parsed.nameMode, parsed.showNames === false ? 'hidden' : 'full');
+    commanderMode.value = pick(COMMANDER_MODES, parsed.commanderMode, 'auto');
+    compact.checked = parsed.compact === true;
+    diagnostics.checked = parsed.diagnostics === true;
+    counterState = normalizeCounters(
+      parsed.counters,
+      parsed.showCounters === false ? {} : DEFAULT_COUNTERS
+    );
+    renderCounterGrid();
+    theme.value = pick(THEMES, parsed.theme, 'dark');
+    size.value = pick(SIZES, parsed.fontSize, 'medium');
+    safe.value = pick(SAFE_KEYS, parsed.safeArea, 'small');
+    layoutPreset.value = pick(PRESET_KEYS, parsed.layoutPreset, 'auto');
+    scaleMode.value = parsed.scaleMode === 'manual' ? 'manual' : 'auto';
+    scale.value = String(Number(parsed.scale) > 0 ? Math.min(SCALE_MAX, Math.max(SCALE_MIN, Number(parsed.scale))) : 100);
+
+    playerColors = normalizeColors(parsed.playerColors);
+    renderColorGrid();
+    applyPreview();
+    startMonitor();
+    return true;
+  }
+
   function load() {
     if (!window.Twitch || !window.Twitch.ext) return;
     var segment = window.Twitch.ext.configuration.broadcaster;
     if (!segment || !segment.content) return;
     try {
-      var parsed = JSON.parse(segment.content);
-      input.value = parsed.roomId || '';
-      nameMode.value = pick(NAME_MODES, parsed.nameMode, parsed.showNames === false ? 'hidden' : 'full');
-      commanderMode.value = pick(COMMANDER_MODES, parsed.commanderMode, 'auto');
-      compact.checked = parsed.compact === true;
-      diagnostics.checked = parsed.diagnostics === true;
-      counterState = normalizeCounters(
-        parsed.counters,
-        parsed.showCounters === false ? {} : DEFAULT_COUNTERS
-      );
-      renderCounterGrid();
-      theme.value = pick(THEMES, parsed.theme, 'dark');
-      size.value = pick(SIZES, parsed.fontSize, 'medium');
-      safe.value = pick(SAFE_KEYS, parsed.safeArea, 'small');
-      layoutPreset.value = pick(PRESET_KEYS, parsed.layoutPreset, 'auto');
-      scaleMode.value = parsed.scaleMode === 'manual' ? 'manual' : 'auto';
-      scale.value = String(Number(parsed.scale) > 0 ? Math.min(SCALE_MAX, Math.max(SCALE_MIN, Number(parsed.scale))) : 100);
-
-      playerColors = normalizeColors(parsed.playerColors);
-      renderColorGrid();
-      applyPreview();
-      startMonitor();
-
+      applyToForm(JSON.parse(segment.content));
     } catch (e) {
       /* ignore malformed config */
     }
