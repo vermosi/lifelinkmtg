@@ -276,6 +276,7 @@
     }
     lastRow = row;
     root.innerHTML = rowsHtml(row);
+    invalidateResponsive();
     applyResponsive();
   }
 
