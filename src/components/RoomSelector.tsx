@@ -83,17 +83,17 @@ export function RoomSelector() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-background flex flex-col items-center p-6 sm:p-12">
+    <div className="min-h-screen w-full bg-background flex flex-col items-center p-4 sm:p-8 lg:p-12">
       {/* Soft ambient background blobs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-accent/10 blur-3xl" />
         <div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] rounded-full bg-primary/5 blur-3xl" />
       </div>
 
-      <div className="relative w-full max-w-4xl flex flex-col items-center py-8 sm:py-12">
+      <div className="relative w-full max-w-4xl flex flex-col items-center py-6 sm:py-10">
         {/* Hero */}
-        <div className="text-center mb-10 sm:mb-12">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/10 text-accent text-xs font-semibold tracking-wide uppercase mb-6">
+        <div className="text-center mb-6 sm:mb-10">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/10 text-accent text-xs font-semibold tracking-wide uppercase mb-4">
             <Cloud className="w-3 h-3" />
             Cloud Synced Counter & OBS Overlay
           </div>
@@ -106,12 +106,12 @@ export function RoomSelector() {
         </div>
 
         {/* Main actions — glass panel */}
-        <div className="w-full max-w-2xl bg-card/70 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl p-6 sm:p-10 mb-8 sm:mb-10">
-          <div className="flex flex-col sm:flex-row gap-4 items-stretch">
+        <div className="w-full max-w-2xl bg-card/70 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl p-4 sm:p-8 mb-6 sm:mb-10">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch">
             <button
               onClick={() => setShowLayoutPicker(true)}
               disabled={isCreating}
-              className="flex-[1.5] py-3 sm:py-4 px-5 bg-accent text-accent-foreground rounded-2xl font-display text-lg sm:text-xl font-bold shadow-lg shadow-accent/20 hover:bg-accent/90 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-[1.5] py-2.5 sm:py-4 px-4 sm:px-5 bg-accent text-accent-foreground rounded-2xl font-display text-base sm:text-lg lg:text-xl font-bold shadow-lg shadow-accent/20 hover:bg-accent/90 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isCreating ? (
                 <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" />
@@ -138,19 +138,19 @@ export function RoomSelector() {
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.target.value.replace(/\s+/g, ''))}
                 aria-label="Room join code"
-                className="w-full h-full py-3 px-5 pr-[5rem] bg-secondary/50 border-2 border-transparent focus:border-accent focus:bg-secondary rounded-2xl outline-none transition-all text-foreground font-display text-base sm:text-lg tracking-wider text-center placeholder:text-muted-foreground placeholder:tracking-normal placeholder:font-body"
+                className="w-full h-full py-2.5 sm:py-3 px-4 sm:px-5 pr-[4.5rem] bg-secondary/50 border-2 border-transparent focus:border-accent focus:bg-secondary rounded-2xl outline-none transition-all text-foreground font-display text-sm sm:text-base lg:text-lg tracking-wider text-center placeholder:text-muted-foreground placeholder:tracking-normal placeholder:font-body"
               />
               <button
                 type="submit"
                 disabled={isJoining || joinCode.trim().length < 4}
-                className="absolute right-2 top-2 bottom-2 px-4 bg-card text-accent font-bold rounded-xl shadow-sm hover:shadow-md hover:bg-secondary active:scale-95 transition-all disabled:opacity-50 text-sm"
+                className="absolute right-2 top-2 bottom-2 px-3 sm:px-4 bg-card text-accent font-bold rounded-xl shadow-sm hover:shadow-md hover:bg-secondary active:scale-95 transition-all disabled:opacity-50 text-sm"
               >
                 {isJoining ? <Loader2 className="w-4 h-4 animate-spin" /> : 'JOIN'}
               </button>
             </form>
           </div>
 
-          <p className="text-center text-xs text-muted-foreground mt-4">
+          <p className="text-center text-xs text-muted-foreground mt-3 sm:mt-4">
             2-6 players · Partner commanders · Multiple layouts
           </p>
         </div>
@@ -195,8 +195,8 @@ export function RoomSelector() {
         )}
 
         {/* Feature highlights */}
-        <section aria-label="Features" className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 w-full mb-4">
-          <div className="group p-5 sm:p-6 rounded-2xl transition-all hover:bg-card/50">
+        <section aria-label="Features" className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6 w-full mb-4">
+          <div className="group p-4 sm:p-6 rounded-2xl transition-all hover:bg-card/50">
             <div className="w-12 h-12 bg-card shadow-sm rounded-xl flex items-center justify-center text-accent mb-4 group-hover:scale-110 transition-transform">
               <RefreshCw className="w-6 h-6" aria-hidden="true" />
             </div>
@@ -206,7 +206,7 @@ export function RoomSelector() {
             </p>
           </div>
 
-          <div className="group p-5 sm:p-6 rounded-2xl transition-all hover:bg-card/50">
+          <div className="group p-4 sm:p-6 rounded-2xl transition-all hover:bg-card/50">
             <div className="w-12 h-12 bg-card shadow-sm rounded-xl flex items-center justify-center text-accent mb-4 group-hover:scale-110 transition-transform">
               <Monitor className="w-6 h-6" aria-hidden="true" />
             </div>
@@ -216,7 +216,7 @@ export function RoomSelector() {
             </p>
           </div>
 
-          <div className="group p-5 sm:p-6 rounded-2xl transition-all hover:bg-card/50">
+          <div className="group p-4 sm:p-6 rounded-2xl transition-all hover:bg-card/50">
             <div className="w-12 h-12 bg-card shadow-sm rounded-xl flex items-center justify-center text-accent mb-4 group-hover:scale-110 transition-transform">
               <Smartphone className="w-6 h-6" aria-hidden="true" />
             </div>
@@ -227,7 +227,7 @@ export function RoomSelector() {
           </div>
         </section>
 
-        <footer className="mt-10 sm:mt-14 pt-6 border-t border-border w-full text-center">
+        <footer className="mt-8 sm:mt-14 pt-6 border-t border-border w-full text-center">
           <p className="text-muted-foreground text-xs sm:text-sm">
             Supports 2–6 players, Commander damage, poison, energy, and more.
           </p>
