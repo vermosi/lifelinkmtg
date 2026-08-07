@@ -115,7 +115,7 @@ export function EmbedWidget() {
           return (
             <li
               key={player.id}
-              className={`flex min-h-0 flex-1 items-center justify-between gap-3 rounded-lg border px-3 ${styles.card}`}
+              className={`flex min-h-0 max-h-24 flex-1 items-center justify-between gap-3 rounded-lg border px-3 py-2 ${styles.card}`}
             >
               <div className="min-w-0">
                 <p className={`truncate font-semibold leading-tight ${styles.value} ${compact ? 'text-sm' : 'text-base'}`}>
