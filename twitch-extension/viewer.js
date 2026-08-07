@@ -62,6 +62,7 @@
     document.body.dataset.compact = config.compact ? '1' : '0';
     document.body.dataset.safe = config.safeArea;
 
+    invalidateResponsive();
     applyResponsive();
   }
 
@@ -86,53 +87,115 @@
     return Math.min(max, Math.max(min, value));
   }
 
+  // Cache of the last inputs/outputs so repeated resize ticks do no DOM work.
+  var lastMetrics = null;
+  var lastApplied = { fit: '', density: '', narrow: '', safeX: -1, safeY: -1 };
+
   /**
    * Scales the widget to the live Twitch player / panel box: width drives the
    * type scale, available height divided by the player count keeps every row
    * visible, and very small boxes switch to denser layouts.
+   *
+   * Cheap to call repeatedly — it reads layout once, bails when nothing that
+   * affects the result changed, and only writes the properties that differ.
    */
   function applyResponsive() {
     var body = document.body;
     var width = window.innerWidth || BASE_WIDTH;
     var height = window.innerHeight || 400;
     var isOverlay = body.classList.contains('overlay');
+    var playerCount = lastRow ? Math.max(LifeLink.toPlayers(lastRow).length, 1) : 4;
+
+    var signature = width + 'x' + height + '|' + playerCount + '|' + config.safeArea + '|' + (config.compact ? 1 : 0);
+    if (signature === lastMetrics) return;
+    lastMetrics = signature;
 
     // Safe-area inset: a percentage of the live frame, so the widget keeps clear
     // of Twitch chrome and letterboxing on any aspect ratio.
     var pct = SAFE_AREAS[config.safeArea] || 0;
     var safeX = Math.round(width * pct);
     var safeY = Math.round(height * pct);
-    body.style.setProperty('--ll-safe-x', safeX + 'px');
-    body.style.setProperty('--ll-safe-y', safeY + 'px');
 
     var innerWidth = Math.max(width - safeX * 2, 120);
     var innerHeight = Math.max(height - safeY * 2, 120);
     var boxWidth = isOverlay ? clamp(innerWidth * 0.28, 180, 420) : innerWidth;
     var boxHeight = isOverlay ? innerHeight * 0.7 : innerHeight;
-    var playerCount = lastRow ? Math.max(LifeLink.toPlayers(lastRow).length, 1) : 4;
 
     var widthFit = boxWidth / BASE_WIDTH;
     var heightFit = (boxHeight - 28) / (playerCount * BASE_ROW_HEIGHT);
-    var fit = clamp(Math.min(widthFit, heightFit), MIN_FIT, MAX_FIT);
-
-    body.style.setProperty('--ll-fit', fit.toFixed(3));
+    var fit = clamp(Math.min(widthFit, heightFit), MIN_FIT, MAX_FIT).toFixed(3);
 
     var perRow = boxHeight / playerCount;
-    var density = perRow < 30 || fit <= 0.72 ? 'minimal' : perRow < 44 ? 'tight' : 'comfortable';
+    var density = perRow < 30 || Number(fit) <= 0.72 ? 'minimal' : perRow < 44 ? 'tight' : 'comfortable';
     if (config.compact && density === 'comfortable') density = 'tight';
-    body.dataset.density = density;
-    body.dataset.narrow = boxWidth < 240 ? '1' : '0';
+    var narrow = boxWidth < 240 ? '1' : '0';
+
+    // Batched writes — skip anything that is already correct to avoid style thrash.
+    if (safeX !== lastApplied.safeX) {
+      body.style.setProperty('--ll-safe-x', safeX + 'px');
+      lastApplied.safeX = safeX;
+    }
+    if (safeY !== lastApplied.safeY) {
+      body.style.setProperty('--ll-safe-y', safeY + 'px');
+      lastApplied.safeY = safeY;
+    }
+    if (fit !== lastApplied.fit) {
+      body.style.setProperty('--ll-fit', fit);
+      lastApplied.fit = fit;
+    }
+    if (density !== lastApplied.density) {
+      body.dataset.density = density;
+      lastApplied.density = density;
+    }
+    if (narrow !== lastApplied.narrow) {
+      body.dataset.narrow = narrow;
+      lastApplied.narrow = narrow;
+    }
   }
 
+  /** Forces the next scheduled pass to recompute (config or player count changed). */
+  function invalidateResponsive() {
+    lastMetrics = null;
+  }
 
-  var resizeTimer = null;
-  window.addEventListener('resize', function () {
-    if (resizeTimer) clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(applyResponsive, 80);
-  });
+  /**
+   * Rapid Twitch layout changes (theatre mode, panel drags, player resizes) fire
+   * dozens of events per second. Coalesce them into one measurement per frame,
+   * plus a trailing pass once the box settles.
+   */
+  var rafId = null;
+  var settleTimer = null;
+
+  function runResponsive() {
+    rafId = null;
+    applyResponsive();
+  }
+
+  function scheduleResponsive() {
+    if (rafId === null) {
+      rafId = typeof requestAnimationFrame === 'function'
+        ? requestAnimationFrame(runResponsive)
+        : setTimeout(runResponsive, 16);
+    }
+    document.body.dataset.resizing = '1';
+    if (settleTimer) clearTimeout(settleTimer);
+    settleTimer = setTimeout(function () {
+      settleTimer = null;
+      document.body.dataset.resizing = '0';
+      applyResponsive();
+    }, 120);
+  }
+
+  window.addEventListener('resize', scheduleResponsive, { passive: true });
+  window.addEventListener('orientationchange', scheduleResponsive, { passive: true });
   if (typeof ResizeObserver !== 'undefined') {
-    new ResizeObserver(function () { applyResponsive(); }).observe(document.documentElement);
+    new ResizeObserver(scheduleResponsive).observe(document.documentElement);
   }
+  // Twitch tells the viewer about player size / theatre-mode changes directly.
+  if (window.Twitch && window.Twitch.ext && window.Twitch.ext.onContext) {
+    window.Twitch.ext.onContext(function () { scheduleResponsive(); });
+  }
+
   var stop = null;
   var lastRow = null;
   var failures = 0;
@@ -213,6 +276,7 @@
     }
     lastRow = row;
     root.innerHTML = rowsHtml(row);
+    invalidateResponsive();
     applyResponsive();
   }
 
