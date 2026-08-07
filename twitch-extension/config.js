@@ -14,6 +14,76 @@
   function pick(list, value, fallback) {
     return list.indexOf(value) === -1 ? fallback : value;
   }
+  var colorGrid = document.getElementById('color-grid');
+  var colorsReset = document.getElementById('colors-reset');
+
+  var MAX_SEATS = 8;
+  var HEX = /^#[0-9a-fA-F]{6}$/;
+
+  // null = keep the color configured inside LifeLink for that seat.
+  var playerColors = new Array(MAX_SEATS).fill(null);
+  var roomColors = new Array(MAX_SEATS).fill('#7dd3fc');
+  var roomNames = new Array(MAX_SEATS).fill('');
+
+  function normalizeColors(list) {
+    var out = new Array(MAX_SEATS).fill(null);
+    if (!Array.isArray(list)) return out;
+    for (var i = 0; i < MAX_SEATS; i += 1) {
+      if (HEX.test(list[i])) out[i] = String(list[i]).toLowerCase();
+    }
+    return out;
+  }
+
+  function renderColorGrid() {
+    colorGrid.innerHTML = '';
+    for (var i = 0; i < MAX_SEATS; i += 1) {
+      (function (index) {
+        var seat = document.createElement('div');
+        seat.className = 'color-seat';
+        seat.dataset.custom = playerColors[index] ? '1' : '0';
+
+        var picker = document.createElement('input');
+        picker.type = 'color';
+        picker.value = playerColors[index] || roomColors[index];
+        picker.setAttribute('aria-label', 'Color for seat ' + (index + 1));
+        picker.addEventListener('input', function () {
+          playerColors[index] = picker.value.toLowerCase();
+          seat.dataset.custom = '1';
+        });
+
+        var label = document.createElement('span');
+        label.textContent = roomNames[index] || 'Seat ' + (index + 1);
+
+        var clear = document.createElement('button');
+        clear.type = 'button';
+        clear.className = 'clear';
+        clear.title = 'Use the room color for this seat';
+        clear.setAttribute('aria-label', 'Reset seat ' + (index + 1) + ' to the room color');
+        clear.textContent = '\u00d7';
+        clear.addEventListener('click', function () {
+          playerColors[index] = null;
+          picker.value = roomColors[index];
+          seat.dataset.custom = '0';
+        });
+
+        seat.appendChild(picker);
+        seat.appendChild(label);
+        seat.appendChild(clear);
+        colorGrid.appendChild(seat);
+      })(i);
+    }
+  }
+
+  /** Seeds seat labels and default swatches from the live room, when reachable. */
+  function syncRoomSeats(row) {
+    var players = LifeLink.toPlayers(row);
+    for (var i = 0; i < MAX_SEATS; i += 1) {
+      roomNames[i] = players[i] ? players[i].name : '';
+      roomColors[i] = players[i] && HEX.test(players[i].color) ? players[i].color.toLowerCase() : '#7dd3fc';
+    }
+    renderColorGrid();
+  }
+
   var save = document.getElementById('save');
   var test = document.getElementById('test');
   var status = document.getElementById('status');
@@ -30,6 +100,7 @@
       showCounters: counters.checked,
       theme: pick(THEMES, theme.value, 'dark'),
       fontSize: pick(SIZES, size.value, 'medium'),
+      playerColors: playerColors.slice(0, MAX_SEATS),
     };
   }
 
@@ -44,6 +115,8 @@
       counters.checked = parsed.showCounters !== false;
       theme.value = pick(THEMES, parsed.theme, 'dark');
       size.value = pick(SIZES, parsed.fontSize, 'medium');
+      playerColors = normalizeColors(parsed.playerColors);
+      renderColorGrid();
       applyPreview();
     } catch (e) {
       /* ignore malformed config */
@@ -56,6 +129,14 @@
     document.body.dataset.size = pick(SIZES, size.value, 'medium');
   }
 
+  colorsReset.addEventListener('click', function () {
+    playerColors = new Array(MAX_SEATS).fill(null);
+    renderColorGrid();
+    setStatus('Player colors reset to the room defaults. Save to apply.');
+  });
+
+  renderColorGrid();
+
   theme.addEventListener('change', applyPreview);
   size.addEventListener('change', applyPreview);
   applyPreview();
@@ -67,7 +148,8 @@
       return;
     }
     setStatus('Checking the room…');
-    LifeLink.fetchRoom(config.roomId).then(function () {
+    LifeLink.fetchRoom(config.roomId).then(function (row) {
+      syncRoomSeats(row);
       if (!window.Twitch || !window.Twitch.ext) {
         setStatus('Room found, but this page must run inside Twitch to save.', 'err');
         return;
@@ -89,6 +171,7 @@
     }
     setStatus('Testing…');
     LifeLink.fetchRoom(config.roomId).then(function (row) {
+      syncRoomSeats(row);
       setStatus('Room found with ' + LifeLink.toPlayers(row).length + ' players.', 'ok');
     }).catch(function (err) {
       var info = LifeLink.describeError(err);
