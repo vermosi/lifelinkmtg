@@ -1,16 +1,26 @@
 User-agent: Googlebot
 Allow: /
+Disallow: /room/
+Disallow: /overlay
 
 User-agent: Bingbot
 Allow: /
+Disallow: /room/
+Disallow: /overlay
 
 User-agent: Twitterbot
 Allow: /
+Disallow: /room/
+Disallow: /overlay
 
 User-agent: facebookexternalhit
 Allow: /
+Disallow: /room/
+Disallow: /overlay
 
 User-agent: *
 Allow: /
+Disallow: /room/
+Disallow: /overlay
 
 Sitemap: https://lifelinkmtg.app/sitemap.xml
