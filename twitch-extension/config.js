@@ -54,7 +54,6 @@
   var THEMES = ['dark', 'light', 'transparent'];
   var SIZES = ['small', 'medium', 'large', 'xlarge'];
   var SAFE_KEYS = ['none', 'small', 'medium', 'large'];
-  var SAFE_AREAS = { none: 0, small: 0.025, medium: 0.05, large: 0.08 };
 
   var NAME_MODES = ['full', 'initials', 'hidden'];
 
@@ -217,7 +216,8 @@
 
   compact.addEventListener('change', applyPreview);
   theme.addEventListener('change', applyPreview);
-  size.addEventListener('change', applyPreview);
+  size.addEventListener("change", applyPreview);
+  safe.addEventListener("change", applyPreview);
   applyPreview();
 
   save.addEventListener('click', function () {
