@@ -168,6 +168,7 @@
       input.value = parsed.roomId || '';
       nameMode.value = pick(NAME_MODES, parsed.nameMode, parsed.showNames === false ? 'hidden' : 'full');
       compact.checked = parsed.compact === true;
+      diagnostics.checked = parsed.diagnostics === true;
       counterState = normalizeCounters(
         parsed.counters,
         parsed.showCounters === false ? {} : DEFAULT_COUNTERS
