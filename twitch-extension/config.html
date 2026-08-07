@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LifeLink — Configuration</title>
+    <link rel="stylesheet" href="lifelink.css" />
+  </head>
+  <body class="config">
+    <main class="config-card">
+      <h1>LifeLink setup</h1>
+      <p class="help">
+        Open your game in LifeLink, copy the room code from the Share tab, and paste it below.
+        Your panel and video overlay will follow that room live. Nothing here can edit the game —
+        the extension is read-only.
+      </p>
+
+      <div>
+        <label for="room">Room code</label>
+        <input id="room" type="text" autocomplete="off" spellcheck="false" placeholder="e.g. k2FCPgCqcT" />
+      </div>
+
+      <div class="row-inline">
+        <input id="names" type="checkbox" checked />
+        <label for="names">Show player names and commanders</label>
+      </div>
+      <div class="row-inline">
+        <input id="counters" type="checkbox" checked />
+        <label for="counters">Show poison, Monarch and Initiative badges</label>
+      </div>
+
+      <div class="row-inline">
+        <button id="save" type="button">Save</button>
+        <button id="test" class="secondary" type="button">Test connection</button>
+      </div>
+
+      <p id="status" class="status" role="status"></p>
+    </main>
+
+    <script src="https://extension-files.twitch.tv/helper/v1/twitch-ext.min.js"></script>
+    <script src="lifelink-api.js"></script>
+    <script src="config.js"></script>
+  </body>
+</html>

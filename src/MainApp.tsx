@@ -7,6 +7,7 @@ import Index from './pages/Index';
 import RoomPage from './pages/RoomPage';
 import OverlayPage from './pages/OverlayPage';
 import EmbedPage from './pages/EmbedPage';
+import TwitchExtensionPage from './pages/TwitchExtensionPage';
 import FaviconCheck from './pages/FaviconCheck';
 import NotFound from './pages/NotFound';
 
@@ -23,6 +24,7 @@ const MainApp = () => (
           <Route path="/room/:roomId" element={<RoomPage />} />
           <Route path="/room/:roomId/overlay" element={<OverlayPage />} />
           <Route path="/embed/:roomId" element={<EmbedPage />} />
+          <Route path="/twitch-extension" element={<TwitchExtensionPage />} />
           <Route path="/favicon-check" element={<FaviconCheck />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

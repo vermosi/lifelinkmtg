@@ -1286,6 +1286,25 @@ Overlay URL: ${overlayUrl}`;
                   </p>
                 </div>
 
+                {/* Native Twitch Extension */}
+                <div className="bg-secondary/50 rounded-xl p-3 space-y-2">
+                  <div className="text-xs font-semibold text-foreground flex items-center gap-2">
+                    <ExternalLink className="w-3.5 h-3.5" /> Twitch Extension (native, no iframe)
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Render totals inside Twitch itself as a panel or video overlay. One-time setup, then
+                    paste this room code: <span className="font-mono text-foreground">{roomId}</span>
+                  </p>
+                  <a
+                    href="/twitch-extension"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block text-center py-2 rounded-lg bg-accent text-accent-foreground text-xs font-semibold"
+                  >
+                    Get the Twitch Extension
+                  </a>
+                </div>
+
                 {/* Embeddable widget — Twitch panels / websites, no OBS needed */}
                 <div className="bg-secondary/50 rounded-xl p-3 space-y-2">
                   <div className="text-xs font-semibold text-foreground flex items-center gap-2">
