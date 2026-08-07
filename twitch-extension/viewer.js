@@ -3,7 +3,7 @@
   'use strict';
 
   var root = document.getElementById('root');
-  var config = { roomId: '', nameMode: 'full', compact: false, showNames: true, showCounters: true, counters: { poison: true, monarch: true, initiative: true }, theme: 'dark', fontSize: 'medium', safeArea: 'small', layoutPreset: 'auto', playerColors: [], diagnostics: false };
+  var config = { roomId: '', nameMode: 'full', compact: false, showNames: true, showCounters: true, counters: { poison: true, monarch: true, initiative: true }, theme: 'dark', fontSize: 'medium', safeArea: 'small', layoutPreset: 'auto', scaleMode: 'auto', scale: 100, playerColors: [], diagnostics: false };
   var THEMES = ['dark', 'light', 'transparent'];
   var SIZES = ['small', 'medium', 'large', 'xlarge'];
   // Safe-area inset as a fraction of the live frame width/height.
@@ -82,6 +82,9 @@
   var BASE_ROW_HEIGHT = 46;
   var MIN_FIT = 0.6;
   var MAX_FIT = 1.6;
+  // Hard safety bounds for a manual scale override (percentages / 100).
+  var SCALE_MIN = 0.4;
+  var SCALE_MAX = 2.5;
 
   function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
@@ -322,6 +325,7 @@
       diagRow('Players / rows', d.players + ' (' + d.perRow + ')') +
       diagRow('Width fit', d.widthFit) +
       diagRow('Height fit', d.heightFit) +
+      diagRow('Scale mode', d.scaleMode) +
       diagRow('Scale used', d.fit + ' — ' + d.limiter + '-limited, ' + d.clamped) +
       diagRow('Breakpoint', d.density + ' — ' + d.densityReason) +
       diagRow('Narrow mode', d.narrow) +
@@ -505,6 +509,11 @@
     config.fontSize = pick(SIZES, parsed.fontSize, 'medium');
     config.safeArea = pick(SAFE_KEYS, parsed.safeArea, 'small');
     config.layoutPreset = pick(PRESET_KEYS, parsed.layoutPreset, 'auto');
+    config.scaleMode = parsed.scaleMode === 'manual' ? 'manual' : 'auto';
+    var parsedScale = Number(parsed.scale);
+    config.scale = isFinite(parsedScale) && parsedScale > 0
+      ? Math.round(clamp(parsedScale, SCALE_MIN * 100, SCALE_MAX * 100))
+      : 100;
 
     config.playerColors = normalizeColors(parsed.playerColors);
     applyAppearance();
@@ -531,6 +540,8 @@
       fontSize: params.get('size'),
       safeArea: params.get('safe'),
       layoutPreset: params.get('preset'),
+      scaleMode: params.get('scale') ? 'manual' : 'auto',
+      scale: params.get('scale'),
 
       playerColors: (params.get('colors') || '').split(',').map(function (c) {
         return c ? '#' + c.replace(/^#/, '') : null;
