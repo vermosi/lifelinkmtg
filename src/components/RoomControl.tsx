@@ -122,7 +122,9 @@ export function RoomControl() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuTab, setMenuTab] = useState<'settings' | 'history' | 'dice' | 'presets' | 'share'>('settings');
-  const [copiedUrl, setCopiedUrl] = useState<'control' | 'overlay' | null>(null);
+  const [copiedUrl, setCopiedUrl] = useState<'control' | 'overlay' | 'embed-url' | 'embed-code' | null>(null);
+  const [embedTheme, setEmbedTheme] = useState<EmbedTheme>('dark');
+  const [embedCompact, setEmbedCompact] = useState(false);
   const [copiedChecklist, setCopiedChecklist] = useState(false);
   const [highlightedPlayer, setHighlightedPlayer] = useState<number | null>(null);
   const [presets, setPresets] = useState<GamePreset[]>(() => loadPresets());
