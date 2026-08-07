@@ -3,7 +3,7 @@
   'use strict';
 
   var root = document.getElementById('root');
-  var config = { roomId: '', nameMode: 'full', compact: false, showNames: true, showCounters: true, counters: { poison: true, monarch: true, initiative: true }, theme: 'dark', fontSize: 'medium', safeArea: 'small', layoutPreset: 'auto', playerColors: [], diagnostics: false };
+  var config = { roomId: '', nameMode: 'full', compact: false, showNames: true, showCounters: true, counters: { poison: true, monarch: true, initiative: true }, theme: 'dark', fontSize: 'medium', safeArea: 'small', layoutPreset: 'auto', scaleMode: 'auto', scale: 100, playerColors: [], diagnostics: false };
   var THEMES = ['dark', 'light', 'transparent'];
   var SIZES = ['small', 'medium', 'large', 'xlarge'];
   // Safe-area inset as a fraction of the live frame width/height.
@@ -82,6 +82,9 @@
   var BASE_ROW_HEIGHT = 46;
   var MIN_FIT = 0.6;
   var MAX_FIT = 1.6;
+  // Hard safety bounds for a manual scale override (percentages / 100).
+  var SCALE_MIN = 0.4;
+  var SCALE_MAX = 2.5;
 
   function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
@@ -175,7 +178,7 @@
     var playerCount = lastRow ? Math.max(LifeLink.toPlayers(lastRow).length, 1) : 4;
 
     var signature = width + 'x' + height + '|' + playerCount + '|' + config.safeArea + '|' +
-      (config.compact ? 1 : 0) + '|' + config.layoutPreset;
+      (config.compact ? 1 : 0) + '|' + config.layoutPreset + '|' + config.scaleMode + '|' + config.scale;
     if (signature === lastMetrics) return;
     lastMetrics = signature;
     recomputes += 1;
@@ -197,7 +200,14 @@
     var widthFit = boxWidth / BASE_WIDTH;
     var heightFit = (boxHeight - 28) / (playerCount * BASE_ROW_HEIGHT);
     var rawFit = Math.min(widthFit, heightFit);
-    var fit = clamp(rawFit, MIN_FIT, Math.min(MAX_FIT, preset.maxFit)).toFixed(3);
+
+    // Manual override wins over auto-fit: the broadcaster picked an exact scale,
+    // so only the hard safety bounds apply.
+    var manual = config.scaleMode === 'manual';
+    var autoFit = clamp(rawFit, MIN_FIT, Math.min(MAX_FIT, preset.maxFit));
+    var fitValue = manual ? clamp(config.scale / 100, SCALE_MIN, SCALE_MAX) : autoFit;
+    var fit = fitValue.toFixed(3);
+
 
     var perRow = boxHeight / playerCount;
     var density = perRow < 30 || Number(fit) <= 0.72 ? 'minimal' : perRow < 44 ? 'tight' : 'comfortable';
@@ -229,8 +239,13 @@
       perRow: Math.round(perRow) + 'px / row',
       widthFit: widthFit.toFixed(3),
       heightFit: heightFit.toFixed(3),
-      limiter: widthFit <= heightFit ? 'width' : 'height',
-      clamped: rawFit < MIN_FIT ? 'clamped up to min ' + MIN_FIT : rawFit > MAX_FIT ? 'clamped down to max ' + MAX_FIT : 'within ' + MIN_FIT + '–' + MAX_FIT,
+      limiter: manual ? 'manual override' : widthFit <= heightFit ? 'width' : 'height',
+      clamped: manual
+        ? (config.scale / 100 < SCALE_MIN ? 'clamped up to min ' + SCALE_MIN
+          : config.scale / 100 > SCALE_MAX ? 'clamped down to max ' + SCALE_MAX
+            : 'within ' + SCALE_MIN + '–' + SCALE_MAX)
+        : rawFit < MIN_FIT ? 'clamped up to min ' + MIN_FIT : rawFit > MAX_FIT ? 'clamped down to max ' + MAX_FIT : 'within ' + MIN_FIT + '–' + MAX_FIT,
+      scaleMode: manual ? 'manual ' + config.scale + '% (auto would be ' + autoFit.toFixed(3) + ')' : 'auto-fit',
       fit: fit,
       density: density,
       densityReason: densityReason,
@@ -310,6 +325,7 @@
       diagRow('Players / rows', d.players + ' (' + d.perRow + ')') +
       diagRow('Width fit', d.widthFit) +
       diagRow('Height fit', d.heightFit) +
+      diagRow('Scale mode', d.scaleMode) +
       diagRow('Scale used', d.fit + ' — ' + d.limiter + '-limited, ' + d.clamped) +
       diagRow('Breakpoint', d.density + ' — ' + d.densityReason) +
       diagRow('Narrow mode', d.narrow) +
@@ -493,6 +509,11 @@
     config.fontSize = pick(SIZES, parsed.fontSize, 'medium');
     config.safeArea = pick(SAFE_KEYS, parsed.safeArea, 'small');
     config.layoutPreset = pick(PRESET_KEYS, parsed.layoutPreset, 'auto');
+    config.scaleMode = parsed.scaleMode === 'manual' ? 'manual' : 'auto';
+    var parsedScale = Number(parsed.scale);
+    config.scale = isFinite(parsedScale) && parsedScale > 0
+      ? Math.round(clamp(parsedScale, SCALE_MIN * 100, SCALE_MAX * 100))
+      : 100;
 
     config.playerColors = normalizeColors(parsed.playerColors);
     applyAppearance();
@@ -519,6 +540,8 @@
       fontSize: params.get('size'),
       safeArea: params.get('safe'),
       layoutPreset: params.get('preset'),
+      scaleMode: params.get('scale') ? 'manual' : 'auto',
+      scale: params.get('scale'),
 
       playerColors: (params.get('colors') || '').split(',').map(function (c) {
         return c ? '#' + c.replace(/^#/, '') : null;

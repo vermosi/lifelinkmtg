@@ -51,11 +51,25 @@
   var size = document.getElementById('size');
   var safe = document.getElementById('safe');
   var layoutPreset = document.getElementById('preset');
+  var scaleMode = document.getElementById('scale-mode');
+  var scale = document.getElementById('scale');
+  var scaleRow = document.getElementById('scale-row');
+  var scaleValue = document.getElementById('scale-value');
+  var scaleReset = document.getElementById('scale-reset');
 
 
   var THEMES = ['dark', 'light', 'transparent'];
   var SIZES = ['small', 'medium', 'large', 'xlarge'];
   var SAFE_KEYS = ['none', 'small', 'medium', 'large'];
+  var SCALE_MIN = 40;
+  var SCALE_MAX = 250;
+
+  function readScale() {
+    var value = Number(scale.value);
+    if (!isFinite(value) || value <= 0) return 100;
+    return Math.round(Math.min(SCALE_MAX, Math.max(SCALE_MIN, value)));
+  }
+
   var PRESET_KEYS = ['auto', 'panel', 'overlayCorner', 'overlaySidebar', 'overlayStrip', 'ultrawide', 'mobile'];
 
   var NAME_MODES = ['full', 'initials', 'hidden'];
@@ -158,6 +172,8 @@
       fontSize: pick(SIZES, size.value, 'medium'),
       safeArea: pick(SAFE_KEYS, safe.value, 'small'),
       layoutPreset: pick(PRESET_KEYS, layoutPreset.value, 'auto'),
+      scaleMode: scaleMode.value === 'manual' ? 'manual' : 'auto',
+      scale: readScale(),
 
       playerColors: playerColors.slice(0, MAX_SEATS),
     };
@@ -182,6 +198,8 @@
       size.value = pick(SIZES, parsed.fontSize, 'medium');
       safe.value = pick(SAFE_KEYS, parsed.safeArea, 'small');
       layoutPreset.value = pick(PRESET_KEYS, parsed.layoutPreset, 'auto');
+      scaleMode.value = parsed.scaleMode === 'manual' ? 'manual' : 'auto';
+      scale.value = String(Number(parsed.scale) > 0 ? Math.min(SCALE_MAX, Math.max(SCALE_MIN, Number(parsed.scale))) : 100);
 
       playerColors = normalizeColors(parsed.playerColors);
       renderColorGrid();
@@ -202,6 +220,11 @@
     // inset from the live Twitch frame, so only record the choice here.
     document.body.dataset.safe = pick(SAFE_KEYS, safe.value, 'small');
     document.body.dataset.preset = pick(PRESET_KEYS, layoutPreset.value, 'auto');
+    var manual = scaleMode.value === 'manual';
+    scaleRow.hidden = !manual;
+    scaleValue.textContent = readScale() + '%';
+    // Preview the forced scale on the config page's own sample rows.
+    document.body.style.setProperty('--ll-fit', manual ? (readScale() / 100).toFixed(3) : '1');
   }
 
 
@@ -227,6 +250,12 @@
   size.addEventListener("change", applyPreview);
   safe.addEventListener("change", applyPreview);
   layoutPreset.addEventListener("change", applyPreview);
+  scaleMode.addEventListener("change", applyPreview);
+  scale.addEventListener("input", applyPreview);
+  scaleReset.addEventListener("click", function () {
+    scale.value = '100';
+    applyPreview();
+  });
   applyPreview();
 
   save.addEventListener('click', function () {
