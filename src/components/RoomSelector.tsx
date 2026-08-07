@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Cloud, Loader2, Infinity, Grid3X3, LogIn } from 'lucide-react';
+import { Cloud, Loader2, Infinity, Grid3X3, LogIn, Monitor, Users, RefreshCw, Smartphone } from 'lucide-react';
 import { Room, PlayerCount } from '@/lib/roomUtils';
 import { createCloudRoom, getCloudRoom, getRecentCloudRooms, getStoredAdminKey, deleteCloudRoom, removeFromRecentRooms } from '@/lib/cloudRoomUtils';
 import { LayoutPicker } from './LayoutPicker';
