@@ -153,6 +153,8 @@
       showCounters: COUNTER_OPTIONS.some(function (o) { return counterState[o.key]; }),
       theme: pick(THEMES, theme.value, 'dark'),
       fontSize: pick(SIZES, size.value, 'medium'),
+      safeArea: pick(SAFE_KEYS, safe.value, 'small'),
+
       playerColors: playerColors.slice(0, MAX_SEATS),
     };
   }
