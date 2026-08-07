@@ -291,11 +291,6 @@ export function RoomSelector() {
               description="Supports any pod size from casual duels to full Commander tables."
             />
             <FeatureCard
-              icon={<Sparkles className="w-5 h-5" aria-hidden="true" />}
-              title="Partner commanders"
-              description="Track both your commander and partner life totals separately."
-            />
-            <FeatureCard
               icon={<Target className="w-5 h-5" aria-hidden="true" />}
               title="Commander damage"
               description="Log commander damage per player so 21-damage knockouts are clear."
@@ -306,44 +301,19 @@ export function RoomSelector() {
               description="Toggle poison, energy, experience, Monarch, and Initiative counters."
             />
             <FeatureCard
-              icon={<Crown className="w-5 h-5" aria-hidden="true" />}
-              title="Monarch & Initiative"
-              description="Track who holds the Monarch and Initiative tokens during the game."
+              icon={<Monitor className="w-5 h-5" aria-hidden="true" />}
+              title="OBS overlay"
+              description="Read-only overlay URL with preset layouts, colors, and safe-area settings."
             />
             <FeatureCard
-              icon={<Sun className="w-5 h-5" aria-hidden="true" />}
-              title="Day / night tracker"
-              description="Flip between day and night for Innistrad-style mechanics."
+              icon={<Twitch className="w-5 h-5" aria-hidden="true" />}
+              title="Twitch extension"
+              description="Native Twitch extension with panel, video overlay, and broadcaster config."
             />
             <FeatureCard
-              icon={<Zap className="w-5 h-5" aria-hidden="true" />}
-              title="Haptic feedback"
-              description="Feel taps on supported phones so adjustments happen without looking."
-            />
-            <FeatureCard
-              icon={<Keyboard className="w-5 h-5" aria-hidden="true" />}
-              title="Keyboard shortcuts"
-              description="Speed up life changes on PC with hotkeys for every seat."
-            />
-            <FeatureCard
-              icon={<History className="w-5 h-5" aria-hidden="true" />}
-              title="History log"
-              description="Review the last 50 events with timestamps to settle any dispute."
-            />
-            <FeatureCard
-              icon={<Palette className="w-5 h-5" aria-hidden="true" />}
-              title="Color customization"
-              description="Pick panel colors for each player so the table matches your deck."
-            />
-            <FeatureCard
-              icon={<Save className="w-5 h-5" aria-hidden="true" />}
-              title="Game presets"
-              description="Save recurring room setups and jump back into your next game faster."
-            />
-            <FeatureCard
-              icon={<ShieldCheck className="w-5 h-5" aria-hidden="true" />}
-              title="24-hour rooms"
-              description="Rooms auto-delete after a day of inactivity to keep the database lean."
+              icon={<Smartphone className="w-5 h-5" aria-hidden="true" />}
+              title="Mobile-first"
+              description="Big tap targets, no install required, and optimized for phones at the table."
             />
           </div>
         </section>
