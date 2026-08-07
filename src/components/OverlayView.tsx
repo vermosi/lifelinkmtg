@@ -183,7 +183,8 @@ export function OverlayView() {
       updateOverlayLayout(createDefaultOverlayLayout(room.playerCount));
     }
   };
-  const [isEditMode, setIsEditMode] = useState(false);
+  // ?edit=1 (admin-only link) opens the overlay with Edit Layout already unlocked.
+  const [isEditMode, setIsEditMode] = useState(() => searchParams.get('edit') === '1');
   const editingEnabled = canEdit && isEditMode;
   // Force fill mode while dragging so drag coordinates match the visible stage
   // (fixed mode uses a CSS transform that would confuse pointer math).
