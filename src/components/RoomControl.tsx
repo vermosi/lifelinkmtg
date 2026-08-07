@@ -242,6 +242,20 @@ export function RoomControl() {
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
   };
 
+  const copyText = async (type: NonNullable<typeof copiedUrl>, value: string) => {
+    if (!navigator.clipboard) {
+      toast({ title: 'Copy failed', description: 'Clipboard access is unavailable in this browser.' });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedUrl(type);
+      setTimeout(() => setCopiedUrl(null), 2000);
+    } catch {
+      toast({ title: 'Copy failed', description: 'Could not write to the clipboard.' });
+    }
+  };
+
   const copyUrl = async (type: 'control' | 'overlay') => {
     const url = type === 'control' ? controlUrl : overlayUrl;
     if (!navigator.clipboard) {
