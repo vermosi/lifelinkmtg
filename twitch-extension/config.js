@@ -124,14 +124,8 @@
       roomColors[i] = players[i] && HEX.test(players[i].color) ? players[i].color.toLowerCase() : '#7dd3fc';
     }
     renderColorGrid();
-  renderCounterGrid();
-
-  countersNone.addEventListener('click', function () {
-    counterState = {};
-    renderCounterGrid();
-    setStatus('All counter badges hidden. Save to apply.');
-  });
   }
+
 
   var save = document.getElementById('save');
   var test = document.getElementById('test');
