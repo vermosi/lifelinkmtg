@@ -6,7 +6,10 @@ const SITE_URL = 'https://lifelinkmtg.app';
 
 const EmbedPage = () => {
   const { roomId } = useParams();
-  const url = `${SITE_URL}/embed/${roomId ?? ''}`;
+const description =
+  roomId && /^[A-Za-z0-9]+$/.test(roomId)
+    ? `Read-only LifeLink widget for room ${roomId}. Embed Magic: The Gathering life totals in a Twitch panel, website, or stream layout.`
+    : 'Read-only embeddable MTG life total widget for Twitch panels, websites and stream layouts.';
 
   return (
     <>
