@@ -153,8 +153,8 @@ export function useCloudRoomState(roomId: string | undefined) {
       pendingRoomRef.current = null;
       lastUpdateRef.current = JSON.stringify(toSync);
       // Fire-and-forget — the tab may unload before this resolves.
-      updateCloudRoom(toSync, adminKey).catch((error) => {
-        console.error('Failed to flush pending room sync.', error);
+      updateCloudRoom(toSync, adminKey).catch(() => {
+        // Tab may unload before flush completes; error is surfaced by next poll.
       });
     };
 
