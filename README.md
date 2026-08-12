@@ -13,7 +13,7 @@
 - Preset playgroups for quick setup.
 - Dice roller for fast starts and random decisions.
 - Customizable overlay layout for OBS and streaming tools.
-- Realtime sync across all players and devices.
+- Polling-based cloud sync across all players and devices (no realtime subscriptions).
 
 ## Quickstart
 **Requires:** Node.js 18+
@@ -31,7 +31,7 @@ npm run dev
 ## How it works
 - You create a room and pick the player count.
 - LifeLink generates shareable links for player control and OBS overlay.
-- The UI syncs life totals and counters through Supabase Realtime.
+- The UI syncs life totals and counters through Supabase RPC calls polled every 2 seconds.
 - The overlay updates instantly across all connected devices.
 
 ```mermaid
@@ -39,8 +39,8 @@ flowchart LR
   Host["Host device"] --> Room["Room setup"]
   Room --> Links["Shareable control + overlay links"]
   Links --> Players["Player devices"]
-  Players --> Realtime["Supabase Realtime sync"]
-  Realtime --> Overlay["OBS overlay"]
+  Players --> Poll["Poll every 2s via Supabase RPC"]
+  Poll --> Overlay["OBS overlay"]
   Overlay --> Stream["Stream output"]
 ```
 
@@ -63,7 +63,7 @@ Use a local `.env` file to configure your own instance.
 ## Troubleshooting
 - **Missing environment variables**: Ensure `.env` is populated with the required Supabase settings.
 - **Overlay not updating**: Confirm all devices are connected to the same room link.
-- **Realtime sync issues**: Verify Supabase keys and project URL.
+- **Sync issues**: Verify Supabase keys and project URL. The app polls the room every 2 seconds; check network connectivity.
 
 ## Contributing
 Contributions are welcome! Open an issue or submit a pull request with your proposed changes.
