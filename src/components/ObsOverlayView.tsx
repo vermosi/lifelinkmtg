@@ -43,7 +43,9 @@ export function ObsOverlayView() {
       <div className="w-screen h-screen flex items-center justify-center bg-transparent text-white/70">
         <div className="text-center space-y-2">
           <div className="font-display text-3xl">Overlay Ready</div>
-          <div className="text-sm text-white/50">Add ?roomId=XXXX to the URL.</div>
+          <div className="text-sm text-white/50">
+            Add a room to the URL: <code className="bg-white/10 px-1.5 py-0.5 rounded">?roomId=XXXX</code>
+          </div>
         </div>
       </div>
     );
