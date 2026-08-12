@@ -36,6 +36,7 @@ const MainApp = () => (
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
+      <CookieConsentBanner />
     </TooltipProvider>
   </QueryClientProvider>
 );
