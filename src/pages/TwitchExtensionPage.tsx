@@ -65,6 +65,13 @@ const TwitchExtensionPage = () => {
           content="Render live Magic: The Gathering life totals natively inside Twitch with the LifeLink extension — no OBS Browser Source or iframe required."
         />
         <link rel="canonical" href={`${SITE_URL}/twitch-extension`} />
+        <meta property="og:title" content="Twitch Extension for MTG Life Totals — LifeLink" />
+        <meta
+          property="og:description"
+          content="Render live Magic: The Gathering life totals natively inside Twitch with the LifeLink extension."
+        />
+        <meta property="og:url" content={`${SITE_URL}/twitch-extension`} />
+        <meta property="og:type" content="website" />
       </Helmet>
 
       <div className="mx-auto w-full max-w-2xl px-5 py-10">
