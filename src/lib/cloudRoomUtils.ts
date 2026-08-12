@@ -162,7 +162,6 @@ export async function getCloudRoom(roomId: string): Promise<Room | null> {
     .rpc('get_room_public', { room_id_param: roomId });
 
   if (error) {
-    console.error('Error fetching cloud room:', error);
     return null;
   }
 
@@ -190,7 +189,6 @@ export async function verifyRoomAdmin(roomId: string, adminKey: string): Promise
     .rpc('verify_room_admin', { room_id: roomId, provided_admin_key: adminKey });
 
   if (error) {
-    console.error('Error verifying admin:', error);
     return { isAdmin: false, room: null };
   }
 
@@ -332,8 +330,8 @@ export function subscribeToRoom(roomId: string, onUpdate: (room: Room) => void) 
         lastUpdated = room.lastUpdated;
         onUpdate(room);
       }
-    } catch (error) {
-      console.error('Error polling room:', error);
+    } catch {
+      // Polling errors are silent; the next poll will retry.
     }
 
     if (isActive) {

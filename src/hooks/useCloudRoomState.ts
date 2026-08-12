@@ -58,8 +58,7 @@ export function useCloudRoomState(roomId: string | undefined) {
         } else {
           setRoom(cachedRoom ? normalizeRoom(cachedRoom) : null);
         }
-      } catch (error) {
-        console.error('Failed to load room.', error);
+      } catch {
         setRoom(cachedRoom ? normalizeRoom(cachedRoom) : null);
       } finally {
         setLoading(false);
@@ -130,8 +129,7 @@ export function useCloudRoomState(roomId: string | undefined) {
         await updateCloudRoom(toSync, adminKey);
         pendingRoomRef.current = null;
         setSyncError(false);
-      } catch (error) {
-        console.error('Failed to sync room to cloud.', error);
+      } catch {
         setSyncError(true);
       } finally {
         setSyncing(false);
@@ -153,8 +151,8 @@ export function useCloudRoomState(roomId: string | undefined) {
       pendingRoomRef.current = null;
       lastUpdateRef.current = JSON.stringify(toSync);
       // Fire-and-forget — the tab may unload before this resolves.
-      updateCloudRoom(toSync, adminKey).catch((error) => {
-        console.error('Failed to flush pending room sync.', error);
+      updateCloudRoom(toSync, adminKey).catch(() => {
+        // Tab may unload before flush completes; error is surfaced by next poll.
       });
     };
 

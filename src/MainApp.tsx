@@ -13,6 +13,7 @@ import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import CookiesPage from './pages/CookiesPage';
 import NotFound from './pages/NotFound';
+import { CookieConsentBanner } from './components/CookieConsent';
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const MainApp = () => (
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
+      <CookieConsentBanner />
     </TooltipProvider>
   </QueryClientProvider>
 );
