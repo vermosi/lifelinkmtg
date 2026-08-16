@@ -416,6 +416,15 @@ export function RoomSelector() {
             <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
             <span aria-hidden="true">·</span>
             <Link to="/cookies" className="hover:text-foreground transition-colors">Cookie Policy</Link>
+            <span aria-hidden="true">·</span>
+            <a
+              href="https://offmeta.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground transition-colors"
+            >
+              Made by Offmeta
+            </a>
           </nav>
           <p className="text-muted-foreground text-xs mt-3">
             Free MTG life counter for 2–6 players.
