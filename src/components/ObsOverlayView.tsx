@@ -20,7 +20,8 @@ export function ObsOverlayView() {
   const { room, loading } = useCloudRoomState(roomId);
 
   const config = useMemo(() => {
-    const parsedPlayers = Number(searchParams.get('players'));
+    const playersParam = searchParams.get('players');
+    const parsedPlayers = playersParam ? Number(playersParam) : NaN;
     const players = Number.isFinite(parsedPlayers) ? clamp(parsedPlayers, 2, 6) : undefined;
     const layout = searchParams.get('layout') || 'free';
     const theme = searchParams.get('theme') || undefined;
