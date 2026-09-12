@@ -76,7 +76,7 @@ export function EmbedWidget() {
       if (!active) return;
       setRoom(updated);
       setFailed(false);
-    });
+    }, { alwaysActive: true });
 
     return () => {
       active = false;

@@ -5,7 +5,7 @@ import { trackEvent } from '@/lib/analytics';
 
 const ObsOverlayPage = () => {
   useEffect(() => {
-    trackEvent('overlay_loaded');
+    trackEvent('obs_overlay_opened');
   }, []);
 
   return (

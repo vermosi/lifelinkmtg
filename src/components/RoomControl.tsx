@@ -12,6 +12,8 @@ import { DiceRoller } from './DiceRoller';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { trackEvent } from '@/lib/analytics';
+import { stripAdminKeyFromLocation } from '@/lib/adminKey';
+import { HelpDialog } from '@/components/HelpDialog';
 
 type SyncStatus = 'online' | 'syncing' | 'offline' | 'error';
 
@@ -83,6 +85,7 @@ export function RoomControl() {
     loading,
     syncing,
     syncStatus,
+    retrySync,
     updatePlayerLife,
     setPlayerLife,
     setPlayerName,
@@ -136,21 +139,26 @@ export function RoomControl() {
   const [toolsDrawerOpen, setToolsDrawerOpen] = useState(false);
   const isAdmin = room ? adminKey === room.adminKey : false;
 
-  // If we recognize this user as the room admin (via localStorage) but the URL
-  // is missing the adminKey, backfill it so refresh/share/QR reflect admin state.
-  // Also persist any URL-provided key so future visits stay admin without the query param.
+  // A control link carries ?adminKey=... . Once the key is verified against the
+  // room and stored locally, remove it from the visible URL so it can't leak via
+  // screenshots, screen shares, or OBS. Other params and the hash are preserved.
+  // The key is never stripped before storage succeeds.
   useEffect(() => {
-    if (!room || !roomId) return;
-    if (urlAdminKey && urlAdminKey === room.adminKey) {
-      storeAdminKey(roomId, urlAdminKey);
-      return;
-    }
-    if (!urlAdminKey && storedAdminKeyForRoom && storedAdminKeyForRoom === room.adminKey) {
-      const next = new URLSearchParams(searchParams);
-      next.set('adminKey', storedAdminKeyForRoom);
-      navigate(`/room/${roomId}?${next.toString()}`, { replace: true });
-    }
-  }, [room?.id, room?.adminKey, urlAdminKey, storedAdminKeyForRoom, roomId, navigate]);
+    if (!room || !roomId || !urlAdminKey) return;
+    if (urlAdminKey !== room.adminKey) return;
+
+    storeAdminKey(roomId, urlAdminKey);
+    if (getStoredAdminKey(roomId) !== urlAdminKey) return; // storage blocked — keep URL usable
+
+    const { search, hash } = stripAdminKeyFromLocation(window.location.search, window.location.hash);
+    navigate(`/room/${roomId}${search}${hash}`, { replace: true });
+  }, [room?.id, room?.adminKey, urlAdminKey, roomId, navigate]);
+
+  // Coarse, non-identifying: a control surface was opened.
+  useEffect(() => {
+    if (room) trackEvent('room_control_opened', { player_count: room.players.length });
+  }, [room?.id]);
+
 
   // Recompute share URLs whenever the room id or adminKey changes so QR codes
   // and copy buttons always reflect the current room state.
@@ -401,7 +409,7 @@ Overlay URL: ${overlayUrl}`;
 
   useEffect(() => {
     if (!room || hasTrackedStart) return;
-    trackEvent('game_started', { roomId: room.id });
+    trackEvent('game_started', { player_count: room.players.length });
     setHasTrackedStart(true);
   }, [room, hasTrackedStart]);
 
@@ -517,6 +525,27 @@ Overlay URL: ${overlayUrl}`;
         })}
       </div>
 
+      {/* Non-blocking unsynced-changes banner. No toast spam per life tap. */}
+      {(syncStatus === 'error' || (syncStatus === 'offline' && isAdmin)) && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="pointer-events-auto fixed left-1/2 top-3 z-[70] flex -translate-x-1/2 items-center gap-2 rounded-full border border-destructive/40 bg-background/95 px-3 py-1.5 text-xs shadow-lg backdrop-blur"
+        >
+          <AlertCircle className="h-3.5 w-3.5 text-destructive" aria-hidden />
+          <span className="text-foreground">
+            {syncStatus === 'offline' ? 'Offline — changes saved on this device' : 'Changes not synced'}
+          </span>
+          <button
+            type="button"
+            onClick={retrySync}
+            className="rounded-full bg-secondary px-2 py-1 font-medium text-foreground hover:bg-secondary/80"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Center menu button - clean, minimal */}
       {!menuOpen && (
         <button
@@ -564,6 +593,7 @@ Overlay URL: ${overlayUrl}`;
               <h2 className="font-display text-2xl text-foreground">Room {room.id}</h2>
               <div className="flex items-center gap-2">
                 <SyncStatusPill status={syncStatus} />
+                <HelpDialog overlayUrl={overlayUrl} />
                 <span className="text-xs text-muted-foreground px-2 py-1 bg-secondary rounded-full flex items-center gap-1">
                   <Cloud className="w-3 h-3" />
                   {isAdmin ? 'Admin' : 'View Only'}

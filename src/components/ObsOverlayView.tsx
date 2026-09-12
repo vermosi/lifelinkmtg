@@ -17,7 +17,7 @@ const FONT_FAMILIES: Record<string, string> = {
 export function ObsOverlayView() {
   const [searchParams] = useSearchParams();
   const roomId = searchParams.get('roomId') || undefined;
-  const { room, loading } = useCloudRoomState(roomId);
+  const { room, loading } = useCloudRoomState(roomId, { alwaysActive: true });
 
   const config = useMemo(() => {
     const playersParam = searchParams.get('players');
@@ -133,8 +133,10 @@ export function ObsOverlayView() {
             >
               {player.life}
             </div>
-            {showPoison && player.poison > 0 && (
-              <div className="mt-1 text-xs font-medium text-emerald-400">Poison: {player.poison}</div>
+            {showPoison && (player.counters?.poison ?? 0) > 0 && (
+              <div className="mt-1 text-xs font-medium text-emerald-400">
+                Poison: {player.counters.poison}
+              </div>
             )}
             {showCommanderDamage && (() => {
               const commanderDamageEntries = room.players

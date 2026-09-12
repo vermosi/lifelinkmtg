@@ -316,32 +316,135 @@ export function removeFromRecentRooms(roomId: string): void {
   }
 }
 
-// Poll for room updates
-export function subscribeToRoom(roomId: string, onUpdate: (room: Room) => void) {
+// Cheap change-check: returns the room's last_updated timestamp (ms) or null.
+export async function getRoomVersion(roomId: string): Promise<number | null> {
+  const { data, error } = await supabase.rpc('get_room_version', { room_id_param: roomId });
+  if (error || !data || data.length === 0) return null;
+  return new Date(data[0].last_updated).getTime();
+}
+
+export interface SubscribeOptions {
+  /** OBS Browser Sources and overlays keep polling at full rate even when hidden. */
+  alwaysActive?: boolean;
+  /** Poll interval while the tab is visible (ms). */
+  activeIntervalMs?: number;
+  /** Poll interval while a normal browser tab is hidden (ms). */
+  hiddenIntervalMs?: number;
+  onError?: (error: unknown) => void;
+}
+
+const MAX_BACKOFF_MS = 30_000;
+
+/**
+ * Adaptive room polling.
+ *
+ * Instead of pulling the full room JSON every tick, each tick asks only for the
+ * room's `last_updated` timestamp and fetches the full room when it changed.
+ * Requests never overlap, hidden tabs slow down, and repeated network failures
+ * back off exponentially with jitter.
+ */
+export function subscribeToRoom(
+  roomId: string,
+  onUpdate: (room: Room) => void,
+  options: SubscribeOptions = {}
+) {
+  const {
+    alwaysActive = false,
+    activeIntervalMs = 2000,
+    hiddenIntervalMs = 15000,
+    onError,
+  } = options;
+
   let lastUpdated: number | null = null;
   let isActive = true;
+  let inFlight = false;
+  let failures = 0;
+  let timer: ReturnType<typeof setTimeout> | null = null;
 
-  const pollRoom = async () => {
-    if (!isActive) return;
+  const isHidden = () =>
+    !alwaysActive && typeof document !== 'undefined' && document.visibilityState === 'hidden';
 
-    try {
-      const room = await getCloudRoom(roomId);
-      if (room && room.lastUpdated !== lastUpdated) {
-        lastUpdated = room.lastUpdated;
-        onUpdate(room);
-      }
-    } catch {
-      // Polling errors are silent; the next poll will retry.
+  const nextDelay = () => {
+    if (failures > 0) {
+      const backoff = Math.min(activeIntervalMs * 2 ** failures, MAX_BACKOFF_MS);
+      return backoff * (0.8 + Math.random() * 0.4);
     }
-
-    if (isActive) {
-      setTimeout(pollRoom, 2000);
-    }
+    return isHidden() ? hiddenIntervalMs : activeIntervalMs;
   };
 
-  pollRoom();
+  const schedule = (delay = nextDelay()) => {
+    if (!isActive) return;
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(poll, delay);
+  };
+
+  async function poll() {
+    if (!isActive || inFlight) return;
+    inFlight = true;
+
+    try {
+      const version = await getRoomVersion(roomId);
+      if (!isActive) return;
+
+      if (version === null) {
+        // Room missing or RPC unavailable — fall back to a full read.
+        const room = await getCloudRoom(roomId);
+        if (!isActive) return;
+        if (room) {
+          lastUpdated = room.lastUpdated;
+          onUpdate(room);
+          failures = 0;
+        } else {
+          failures += 1;
+        }
+      } else if (version !== lastUpdated) {
+        const room = await getCloudRoom(roomId);
+        if (!isActive) return;
+        if (room) {
+          lastUpdated = room.lastUpdated;
+          onUpdate(room);
+        }
+        failures = 0;
+      } else {
+        failures = 0;
+      }
+    } catch (error) {
+      failures += 1;
+      onError?.(error);
+    } finally {
+      inFlight = false;
+      schedule();
+    }
+  }
+
+  const pollNow = () => {
+    failures = 0;
+    schedule(0);
+  };
+
+  const handleVisibility = () => {
+    if (document.visibilityState === 'visible') pollNow();
+  };
+
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', handleVisibility);
+  }
+  if (typeof window !== 'undefined') {
+    window.addEventListener('online', pollNow);
+  }
+
+  poll();
 
   return () => {
     isActive = false;
+    if (timer) clearTimeout(timer);
+    timer = null;
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', handleVisibility);
+    }
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('online', pollNow);
+    }
   };
 }
+

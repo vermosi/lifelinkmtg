@@ -1,12 +1,18 @@
+import { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
 import { OverlayView } from '@/components/OverlayView';
+import { trackEvent } from '@/lib/analytics';
 
 const SITE_URL = 'https://lifelinkmtg.app';
 
 const OverlayPage = () => {
   const { roomId } = useParams();
   const url = `${SITE_URL}/room/${roomId ?? ''}/overlay`;
+
+  useEffect(() => {
+    trackEvent('overlay_opened');
+  }, []);
 
   return (
     <>

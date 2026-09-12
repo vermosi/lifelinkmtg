@@ -34,6 +34,8 @@ import {
   removeFromRecentRooms,
 } from '@/lib/cloudRoomUtils';
 import { LayoutPicker } from './LayoutPicker';
+import { HelpDialog } from './HelpDialog';
+import { trackEvent } from '@/lib/analytics';
 import { toast } from '@/hooks/use-toast';
 
 interface FeatureCardProps {
@@ -138,6 +140,7 @@ export function RoomSelector() {
     setShowLayoutPicker(false);
     const room = await createCloudRoom(playerCount, layoutId);
     if (room) {
+      trackEvent('room_created', { player_count: playerCount });
       navigate(`/room/${room.id}?adminKey=${room.adminKey}`);
     }
     setIsCreating(false);
@@ -230,9 +233,15 @@ export function RoomSelector() {
             </form>
           </div>
 
-          <p className="text-center text-xs text-muted-foreground mt-3 sm:mt-4">
-            2-6 players · Partner commanders · Multiple layouts
-          </p>
+          <div className="mt-3 sm:mt-4 flex flex-col items-center gap-1">
+            <p className="text-center text-xs text-muted-foreground">
+              2-6 players · Partner commanders · Multiple layouts
+            </p>
+            <p className="text-center text-xs text-muted-foreground">
+              New here? Start a game, then share the code or QR with your table.
+            </p>
+            <HelpDialog variant="link" className="text-xs text-accent underline-offset-4 hover:underline min-h-[44px] px-2" />
+          </div>
         </div>
 
         {/* Recent rooms */}
@@ -411,6 +420,8 @@ export function RoomSelector() {
 
         <footer className="mt-8 sm:mt-14 pt-6 border-t border-border w-full text-center">
           <nav className="flex flex-wrap items-center justify-center gap-3 text-xs sm:text-sm text-muted-foreground">
+            <HelpDialog variant="link" />
+            <span aria-hidden="true">·</span>
             <Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
             <span aria-hidden="true">·</span>
             <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
