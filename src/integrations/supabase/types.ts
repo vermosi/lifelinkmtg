@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      analytics_events: {
+        Row: {
+          event: string
+          id: number
+          occurred_at: string
+          props: Json
+        }
+        Insert: {
+          event: string
+          id?: number
+          occurred_at?: string
+          props?: Json
+        }
+        Update: {
+          event?: string
+          id?: number
+          occurred_at?: string
+          props?: Json
+        }
+        Relationships: []
+      }
       rooms: {
         Row: {
           admin_key: string
@@ -107,6 +128,10 @@ export type Database = {
           id: string
           last_updated: string
         }[]
+      }
+      track_analytics_event: {
+        Args: { event_name: string; event_props?: Json }
+        Returns: boolean
       }
       update_room_as_admin: {
         Args: { provided_admin_key: string; room_data: Json; room_id: string }
