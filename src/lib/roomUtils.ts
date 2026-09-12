@@ -513,6 +513,15 @@ export function getControlUrl(room: Room, options: ShareUrlOptions = {}): string
   return `${window.location.origin}/room/${room.id}?${params.toString()}`;
 }
 
+/**
+ * Shareable player link. Same room page as the control link but with no admin
+ * key, so anyone holding it can join and follow the game without gaining
+ * control of the room's settings.
+ */
+export function getJoinUrl(room: Room): string {
+  return `${window.location.origin}/room/${room.id}`;
+}
+
 export function getOverlayUrl(room: Room, options: ShareUrlOptions = {}): string {
   // Clean, read-only URL for OBS Browser Sources. No adminKey — keeps stream safe if scene is shared.
   const params = buildShareParams(options);
