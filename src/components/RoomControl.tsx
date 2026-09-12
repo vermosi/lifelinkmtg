@@ -188,6 +188,7 @@ export function RoomControl() {
     () => (room ? getControlUrl(room, shareStyle) : ''),
     [room?.id, room?.adminKey, shareStyle]
   );
+  const joinUrl = useMemo(() => (room ? getJoinUrl(room) : ''), [room?.id]);
   const overlayEditUrl = useMemo(
     () => (room ? getOverlayEditUrl(room, shareStyle) : ''),
     [room?.id, room?.adminKey, shareStyle]
