@@ -5,7 +5,16 @@ import { getCloudRoom, updateCloudRoom, subscribeToRoom, addToRecentRooms, getSt
 import { loadPersistedRoom, savePersistedRoom } from '@/lib/roomPersistence';
 import { trackEvent } from '@/lib/analytics';
 
-export function useCloudRoomState(roomId: string | undefined) {
+export interface CloudRoomStateOptions {
+  /**
+   * Overlay surfaces (OBS Browser Source, embeds) must keep updating at full
+   * rate even when the browser reports the document as hidden.
+   */
+  alwaysActive?: boolean;
+}
+
+export function useCloudRoomState(roomId: string | undefined, options: CloudRoomStateOptions = {}) {
+  const { alwaysActive = false } = options;
   const [searchParams] = useSearchParams();
   const urlAdminKey = searchParams.get('adminKey') || '';
   const storedAdminKey = roomId ? getStoredAdminKey(roomId) : null;
@@ -19,7 +28,13 @@ export function useCloudRoomState(roomId: string | undefined) {
     typeof navigator === 'undefined' ? true : navigator.onLine
   );
   const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastUpdateRef = useRef<string>('');
+  const pendingRoomRef = useRef<Room | null>(null);
+  const syncAttemptRef = useRef(0);
+  const lastLocalWriteAtRef = useRef(0);
+  const adminKeyRef = useRef(adminKey);
+  adminKeyRef.current = adminKey;
 
   // Track online/offline so the UI can surface a status indicator.
   useEffect(() => {
@@ -68,24 +83,30 @@ export function useCloudRoomState(roomId: string | undefined) {
     loadRoom();
   }, [roomId]);
 
-  // Subscribe to real-time updates. Skip incoming updates whenever there is
-  // a pending local write — otherwise a poll that ran before our debounced
-  // sync completes could clobber the just-tapped life total.
+  // Poll for remote updates. Incoming state is ignored whenever a local write
+  // is pending or just happened — otherwise a response that left the server
+  // before our write landed could clobber the just-tapped life total.
   useEffect(() => {
     if (!roomId) return;
 
-    const unsubscribe = subscribeToRoom(roomId, (updatedRoom) => {
-      if (pendingRoomRef.current) return;
-      const updateStr = JSON.stringify(updatedRoom);
-      if (updateStr !== lastUpdateRef.current) {
-        lastUpdateRef.current = updateStr;
-        setRoom(updatedRoom);
-        savePersistedRoom(updatedRoom);
-      }
-    });
+    const unsubscribe = subscribeToRoom(
+      roomId,
+      (updatedRoom) => {
+        if (pendingRoomRef.current) return;
+        if (Date.now() - lastLocalWriteAtRef.current < 1500) return;
+        const updateStr = JSON.stringify(updatedRoom);
+        if (updateStr !== lastUpdateRef.current) {
+          lastUpdateRef.current = updateStr;
+          setRoom(updatedRoom);
+          savePersistedRoom(updatedRoom);
+        }
+      },
+      { alwaysActive }
+    );
 
     return unsubscribe;
-  }, [roomId]);
+  }, [roomId, alwaysActive]);
+
 
   const addHistoryEntry = useCallback((
     prev: Room,
@@ -112,48 +133,101 @@ export function useCloudRoomState(roomId: string | undefined) {
     return [...prev.history.slice(-49), entry];
   }, []);
 
-  const pendingRoomRef = useRef<Room | null>(null);
+  const SYNC_DEBOUNCE_MS = 150;
+  const MAX_SYNC_BACKOFF_MS = 15000;
 
-  const syncToCloud = useCallback((updatedRoom: Room) => {
-    pendingRoomRef.current = updatedRoom;
-    if (updateTimeoutRef.current) {
-      clearTimeout(updateTimeoutRef.current);
+  const performSync = useCallback(async () => {
+    const toSync = pendingRoomRef.current;
+    if (!toSync) return;
+    const key = adminKeyRef.current;
+    if (!key) {
+      // Read-only viewer: nothing to persist, never claim a failed sync.
+      pendingRoomRef.current = null;
+      setSyncing(false);
+      return;
     }
 
     setSyncing(true);
-    updateTimeoutRef.current = setTimeout(async () => {
-      const toSync = pendingRoomRef.current;
-      if (!toSync) return;
-      try {
-        lastUpdateRef.current = JSON.stringify(toSync);
-        await updateCloudRoom(toSync, adminKey);
+    let succeeded = false;
+    try {
+      succeeded = await updateCloudRoom(toSync, key);
+    } catch {
+      succeeded = false;
+    }
+
+    if (succeeded) {
+      // Only drop the pending snapshot if nothing newer arrived meanwhile.
+      if (pendingRoomRef.current === toSync) {
         pendingRoomRef.current = null;
-        setSyncError(false);
-      } catch {
-        setSyncError(true);
-      } finally {
-        setSyncing(false);
       }
-    }, 100);
-  }, [adminKey]);
+      lastUpdateRef.current = JSON.stringify(toSync);
+      syncAttemptRef.current = 0;
+      setSyncing(false);
+      setSyncError(prev => {
+        if (prev) trackEvent('sync_recovered');
+        return false;
+      });
+      return;
+    }
+
+    // Failure: keep the pending snapshot and retry with bounded backoff.
+    setSyncing(false);
+    setSyncError(prev => {
+      if (!prev) trackEvent('sync_failure');
+      return true;
+    });
+    syncAttemptRef.current = Math.min(syncAttemptRef.current + 1, 6);
+    const delay = Math.min(1000 * 2 ** (syncAttemptRef.current - 1), MAX_SYNC_BACKOFF_MS);
+    if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current);
+    retryTimeoutRef.current = setTimeout(() => {
+      retryTimeoutRef.current = null;
+      if (pendingRoomRef.current) void performSync();
+    }, delay * (0.8 + Math.random() * 0.4));
+  }, []);
+
+  const syncToCloud = useCallback((updatedRoom: Room) => {
+    pendingRoomRef.current = updatedRoom;
+    lastLocalWriteAtRef.current = Date.now();
+    if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
+
+    if (adminKeyRef.current) setSyncing(true);
+    updateTimeoutRef.current = setTimeout(() => {
+      updateTimeoutRef.current = null;
+      void performSync();
+    }, SYNC_DEBOUNCE_MS);
+  }, [performSync]);
+
+  /** Manual "try again" for the unsynced-changes indicator. */
+  const retrySync = useCallback(() => {
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
+      retryTimeoutRef.current = null;
+    }
+    syncAttemptRef.current = 0;
+    void performSync();
+  }, [performSync]);
+
+  // Retry as soon as connectivity returns.
+  useEffect(() => {
+    const onReconnect = () => {
+      if (pendingRoomRef.current) retrySync();
+    };
+    window.addEventListener('online', onReconnect);
+    return () => window.removeEventListener('online', onReconnect);
+  }, [retrySync]);
 
   // Flush any pending debounced sync before the tab is hidden or closed so
   // last-second setting changes (colors, preset, name visibility, layout drags)
-  // aren't lost on refresh.
+  // aren't lost on refresh. The pending snapshot is NOT cleared here — only a
+  // confirmed successful write clears it.
   useEffect(() => {
     const flush = () => {
-      if (!pendingRoomRef.current || !adminKey) return;
+      if (!pendingRoomRef.current || !adminKeyRef.current) return;
       if (updateTimeoutRef.current) {
         clearTimeout(updateTimeoutRef.current);
         updateTimeoutRef.current = null;
       }
-      const toSync = pendingRoomRef.current;
-      pendingRoomRef.current = null;
-      lastUpdateRef.current = JSON.stringify(toSync);
-      // Fire-and-forget — the tab may unload before this resolves.
-      updateCloudRoom(toSync, adminKey).catch(() => {
-        // Tab may unload before flush completes; error is surfaced by next poll.
-      });
+      void performSync();
     };
 
     const handleVisibility = () => {
@@ -168,17 +242,30 @@ export function useCloudRoomState(roomId: string | undefined) {
       window.removeEventListener('pagehide', flush);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [adminKey]);
+  }, [performSync]);
 
   const updateRoom = useCallback((updater: (prev: Room) => Room) => {
     setRoom(prev => {
       if (!prev) return prev;
-      const updated = updater(prev);
+      const next = updater(prev);
+      // Keep the legacy top-level counter mirrors in step with `counters` so
+      // panels/overlays reading either shape stay consistent between syncs.
+      const updated: Room = {
+        ...next,
+        players: next.players.map(p => ({
+          ...p,
+          poison: p.counters.poison,
+          energy: p.counters.energy,
+          experience: p.counters.experience,
+        })),
+      };
       syncToCloud(updated);
       savePersistedRoom(updated);
       return updated;
     });
   }, [syncToCloud]);
+
+
 
   // ============= LIFE MANAGEMENT =============
 
@@ -187,7 +274,6 @@ export function useCloudRoomState(roomId: string | undefined) {
       const player = prev.players.find(p => p.id === playerId);
       const oldValue = player?.life || 0;
       const newValue = oldValue + delta;
-      trackEvent('life_changed', { roomId: prev.id, playerId, delta, newValue });
       return {
         ...prev,
         players: prev.players.map(p =>
@@ -202,7 +288,6 @@ export function useCloudRoomState(roomId: string | undefined) {
     updateRoom(prev => {
       const player = prev.players.find(p => p.id === playerId);
       const oldValue = player?.life || 0;
-      trackEvent('life_changed', { roomId: prev.id, playerId, delta: life - oldValue, newValue: life });
       return {
         ...prev,
         players: prev.players.map(p =>
@@ -225,7 +310,6 @@ export function useCloudRoomState(roomId: string | undefined) {
       );
       const updatedHistory = prev.history.filter((_, index) => index !== reverseIndex);
 
-      trackEvent('undo_used', { roomId: prev.id, playerId: entry.playerId });
       return {
         ...prev,
         players: updatedPlayers,
@@ -449,6 +533,7 @@ export function useCloudRoomState(roomId: string | undefined) {
   }, [updateRoom]);
 
   const resetGame = useCallback(() => {
+    trackEvent('game_reset');
     updateRoom(prev => ({
       ...prev,
       players: prev.players.map(p => ({
@@ -633,12 +718,11 @@ export function useCloudRoomState(roomId: string | undefined) {
     });
   }, [updateRoom]);
 
-  // Cleanup timeout on unmount
+  // Cleanup timers on unmount
   useEffect(() => {
     return () => {
-      if (updateTimeoutRef.current) {
-        clearTimeout(updateTimeoutRef.current);
-      }
+      if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
+      if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current);
     };
   }, []);
 
@@ -655,6 +739,8 @@ export function useCloudRoomState(roomId: string | undefined) {
     loading,
     syncing,
     syncStatus,
+    retrySync,
+    hasUnsyncedChanges: syncError,
     updateRoom,
     // Life
     updatePlayerLife,

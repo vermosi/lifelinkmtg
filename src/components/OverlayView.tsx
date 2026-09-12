@@ -157,7 +157,7 @@ function FitContainer({ fit, children }: { fit: 'fill' | 'fixed'; children: Reac
 export function OverlayView() {
   const { roomId } = useParams<{ roomId: string }>();
   const [searchParams] = useSearchParams();
-  const { room, loading, updateOverlayLayout } = useCloudRoomState(roomId);
+  const { room, loading, updateOverlayLayout } = useCloudRoomState(roomId, { alwaysActive: true });
 
   const providedAdminKey = searchParams.get('adminKey');
   const canEdit = !!(room && providedAdminKey && providedAdminKey === room.adminKey);
@@ -450,7 +450,7 @@ export function OverlayView() {
 
               {/* Counters row */}
               <div className="flex gap-1.5 mt-1.5">
-                {player.poison > 0 && (
+                {(player.counters?.poison ?? 0) > 0 && (
                   <div className={cn(
                     'flex items-center gap-0.5 px-1.5 py-0.5 rounded',
                     !useSimpleText && 'bg-black/40'
@@ -464,10 +464,10 @@ export function OverlayView() {
                         color: '#4ade80',
                         textShadow: '1px 1px 0 black, -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black',
                       } : { color: '#4ade80' }}
-                    >{player.poison}</span>
+                    >{player.counters.poison}</span>
                   </div>
                 )}
-                {player.experience > 0 && (
+                {(player.counters?.experience ?? 0) > 0 && (
                   <div className={cn(
                     'flex items-center gap-0.5 px-1.5 py-0.5 rounded',
                     !useSimpleText && 'bg-black/40'
@@ -481,10 +481,10 @@ export function OverlayView() {
                         color: '#facc15',
                         textShadow: '1px 1px 0 black, -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black',
                       } : { color: '#facc15' }}
-                    >{player.experience}</span>
+                    >{player.counters.experience}</span>
                   </div>
                 )}
-                {player.energy > 0 && (
+                {(player.counters?.energy ?? 0) > 0 && (
                   <div className={cn(
                     'flex items-center gap-0.5 px-1.5 py-0.5 rounded',
                     !useSimpleText && 'bg-black/40'
@@ -498,7 +498,7 @@ export function OverlayView() {
                         color: '#60a5fa',
                         textShadow: '1px 1px 0 black, -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black',
                       } : { color: '#60a5fa' }}
-                    >{player.energy}</span>
+                    >{player.counters.energy}</span>
                   </div>
                 )}
               </div>

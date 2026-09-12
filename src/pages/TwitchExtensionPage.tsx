@@ -72,6 +72,14 @@ const TwitchExtensionPage = () => {
         />
         <meta property="og:url" content={`${SITE_URL}/twitch-extension`} />
         <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="LifeLink" />
+        <meta property="og:image" content="https://lifelinkmtg.app/lifelink-social-banner.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content="LifeLink Twitch extension showing live Magic: The Gathering life totals" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="https://lifelinkmtg.app/lifelink-social-banner.png" />
+        <meta name="twitter:image:alt" content="LifeLink Twitch extension showing live Magic: The Gathering life totals" />
       </Helmet>
 
       <div className="mx-auto w-full max-w-2xl px-5 py-10">
