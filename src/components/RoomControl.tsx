@@ -6,7 +6,7 @@ import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuf
 import { ToolsDrawer } from './ToolsDrawer';
 import { useCloudRoomState } from '@/hooks/useCloudRoomState';
 import { useWakeLock } from '@/hooks/useWakeLock';
-import { getControlUrl, getOverlayUrl, getOverlayEditUrl, getEmbedUrl, getEmbedSnippet, EmbedTheme, PLAYER_COLORS, formatTimestamp, HistoryEntry, DUNGEON_ROOMS, loadPresets, savePreset, deletePreset, createPresetFromRoom, GamePreset, LAYOUTS, OVERLAY_PRESETS } from '@/lib/roomUtils';
+import { getControlUrl, getOverlayUrl, getOverlayEditUrl, getJoinUrl, getEmbedUrl, getEmbedSnippet, EmbedTheme, PLAYER_COLORS, formatTimestamp, HistoryEntry, DUNGEON_ROOMS, loadPresets, savePreset, deletePreset, createPresetFromRoom, GamePreset, LAYOUTS, OVERLAY_PRESETS } from '@/lib/roomUtils';
 import { FullScreenPlayerPanel } from './FullScreenPlayerPanel';
 import { DiceRoller } from './DiceRoller';
 import { cn } from '@/lib/utils';
@@ -125,7 +125,7 @@ export function RoomControl() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuTab, setMenuTab] = useState<'settings' | 'history' | 'dice' | 'presets' | 'share'>('settings');
-  const [copiedUrl, setCopiedUrl] = useState<'control' | 'overlay' | 'embed-url' | 'embed-code' | null>(null);
+  const [copiedUrl, setCopiedUrl] = useState<'control' | 'overlay' | 'join' | 'embed-url' | 'embed-code' | null>(null);
   const [embedTheme, setEmbedTheme] = useState<EmbedTheme>('dark');
   const [embedCompact, setEmbedCompact] = useState(false);
   const [copiedChecklist, setCopiedChecklist] = useState(false);
@@ -1218,6 +1218,36 @@ Overlay URL: ${overlayUrl}`;
                   <span className="text-[11px] text-muted-foreground text-center">
                     Players enter this at <span className="text-foreground font-medium">lifelinkmtg.app</span> to join.
                   </span>
+                </div>
+
+                {/* Invite link — same room, no admin key, safe to share with players */}
+                <div className="bg-secondary/50 rounded-xl p-3 space-y-2">
+                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Invite link</div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Safe to share — it opens the room for players but does not include your admin key.
+                  </p>
+                  <div className="text-[10px] text-muted-foreground break-all">{joinUrl}</div>
+                  <button
+                    type="button"
+                    onClick={() => copyText('join', joinUrl)}
+                    className="w-full flex items-center justify-center gap-2 py-2 bg-accent text-accent-foreground rounded-xl text-sm hover:bg-accent/90"
+                  >
+                    {copiedUrl === 'join' ? <Check className="w-4 h-4" /> : <Link className="w-4 h-4" />}
+                    {copiedUrl === 'join' ? 'Copied!' : 'Copy invite link'}
+                  </button>
+                  <div className="flex flex-col items-center gap-1 pt-1">
+                    <div className="bg-white p-2 rounded-lg">
+                      <QRCode
+                        key={joinUrl}
+                        value={joinUrl}
+                        size={128}
+                        bgColor="#ffffff"
+                        fgColor="#000000"
+                        aria-label="QR code for the player invite link"
+                      />
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">Scan to join this room</span>
+                  </div>
                 </div>
 
                 {/* OBS scaling / fit — encoded into the overlay URL below */}
