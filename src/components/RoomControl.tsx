@@ -14,6 +14,7 @@ import { toast } from '@/hooks/use-toast';
 import { trackEvent } from '@/lib/analytics';
 import { stripAdminKeyFromLocation } from '@/lib/adminKey';
 import { HelpDialog } from '@/components/HelpDialog';
+import { FeedbackDialog } from '@/components/FeedbackDialog';
 
 type SyncStatus = 'online' | 'syncing' | 'offline' | 'error';
 
@@ -126,6 +127,7 @@ export function RoomControl() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuTab, setMenuTab] = useState<'settings' | 'history' | 'dice' | 'presets' | 'share'>('settings');
   const [copiedUrl, setCopiedUrl] = useState<'control' | 'overlay' | 'join' | 'embed-url' | 'embed-code' | null>(null);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [embedTheme, setEmbedTheme] = useState<EmbedTheme>('dark');
   const [embedCompact, setEmbedCompact] = useState(false);
   const [copiedChecklist, setCopiedChecklist] = useState(false);
@@ -595,6 +597,19 @@ Overlay URL: ${overlayUrl}`;
               <div className="flex items-center gap-2">
                 <SyncStatusPill status={syncStatus} />
                 <HelpDialog overlayUrl={overlayUrl} />
+                <FeedbackDialog
+                  surface="room"
+                  open={feedbackOpen}
+                  onOpenChange={setFeedbackOpen}
+                  trigger={
+                    <button
+                      type="button"
+                      className="text-xs text-muted-foreground hover:text-foreground underline-offset-4 hover:underline px-2 py-1"
+                    >
+                      Feedback
+                    </button>
+                  }
+                />
                 <span className="text-xs text-muted-foreground px-2 py-1 bg-secondary rounded-full flex items-center gap-1">
                   <Cloud className="w-3 h-3" />
                   {isAdmin ? 'Admin' : 'View Only'}
