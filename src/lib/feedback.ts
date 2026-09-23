@@ -19,7 +19,7 @@ export const feedbackSchema = z.object({
 
 export type FeedbackInput = z.input<typeof feedbackSchema>;
 
-export type FeedbackResult = { ok: true } | { ok: false; error: string };
+export type FeedbackResult = { ok: boolean; error?: string };
 
 /** Store one piece of feedback through the validating database function. */
 export async function submitFeedback(input: FeedbackInput): Promise<FeedbackResult> {
