@@ -37,8 +37,17 @@ export function FeedbackDialog({
   const [message, setMessage] = useState('');
   const [email, setEmail] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
 
-  const close = () => onOpenChange?.(false);
+  const isControlled = open !== undefined;
+  const isOpen = isControlled ? open : internalOpen;
+
+  const setOpen = (next: boolean) => {
+    if (!isControlled) setInternalOpen(next);
+    onOpenChange?.(next);
+  };
+
+  const close = () => setOpen(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
