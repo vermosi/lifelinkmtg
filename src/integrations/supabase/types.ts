@@ -35,6 +35,33 @@ export type Database = {
         }
         Relationships: []
       }
+      feedback: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          message: string
+          rating: string
+          surface: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string
+          rating: string
+          surface?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string
+          rating?: string
+          surface?: string
+        }
+        Relationships: []
+      }
       rooms: {
         Row: {
           admin_key: string
@@ -128,6 +155,15 @@ export type Database = {
           id: string
           last_updated: string
         }[]
+      }
+      submit_feedback: {
+        Args: {
+          p_email?: string
+          p_message?: string
+          p_rating: string
+          p_surface?: string
+        }
+        Returns: undefined
       }
       track_analytics_event: {
         Args: { event_name: string; event_props?: Json }
