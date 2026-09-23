@@ -14,6 +14,7 @@ import PrivacyPage from './pages/PrivacyPage';
 import CookiesPage from './pages/CookiesPage';
 import NotFound from './pages/NotFound';
 import { CookieConsentBanner } from './components/CookieConsent';
+import { FeedbackPrompt } from './components/FeedbackPrompt';
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const MainApp = () => (
         </Routes>
       </main>
       <CookieConsentBanner />
+      <FeedbackPrompt />
     </TooltipProvider>
   </QueryClientProvider>
 );

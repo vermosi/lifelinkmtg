@@ -35,6 +35,7 @@ import {
 } from '@/lib/cloudRoomUtils';
 import { LayoutPicker } from './LayoutPicker';
 import { HelpDialog } from './HelpDialog';
+import { FeedbackDialog } from './FeedbackDialog';
 import { trackEvent } from '@/lib/analytics';
 import { toast } from '@/hooks/use-toast';
 
@@ -421,6 +422,15 @@ export function RoomSelector() {
         <footer className="mt-8 sm:mt-14 pt-6 border-t border-border w-full text-center">
           <nav className="flex flex-wrap items-center justify-center gap-3 text-xs sm:text-sm text-muted-foreground">
             <HelpDialog variant="link" />
+            <span aria-hidden="true">·</span>
+            <FeedbackDialog
+              surface="home"
+              trigger={
+                <button type="button" className="hover:text-foreground transition-colors">
+                  Send feedback
+                </button>
+              }
+            />
             <span aria-hidden="true">·</span>
             <Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
             <span aria-hidden="true">·</span>

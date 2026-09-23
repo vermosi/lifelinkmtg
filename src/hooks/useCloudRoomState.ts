@@ -4,6 +4,7 @@ import { Room, HistoryEntry, OverlayLayout, generateId, createDefaultOverlayLayo
 import { getCloudRoom, updateCloudRoom, subscribeToRoom, addToRecentRooms, getStoredAdminKey } from '@/lib/cloudRoomUtils';
 import { loadPersistedRoom, savePersistedRoom } from '@/lib/roomPersistence';
 import { trackEvent } from '@/lib/analytics';
+import { notifyGameEnded } from '@/lib/feedbackPrompt';
 
 export interface CloudRoomStateOptions {
   /**
@@ -534,6 +535,7 @@ export function useCloudRoomState(roomId: string | undefined, options: CloudRoom
 
   const resetGame = useCallback(() => {
     trackEvent('game_reset');
+    notifyGameEnded();
     updateRoom(prev => ({
       ...prev,
       players: prev.players.map(p => ({
