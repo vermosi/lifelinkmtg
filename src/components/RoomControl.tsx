@@ -127,6 +127,7 @@ export function RoomControl() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuTab, setMenuTab] = useState<'settings' | 'history' | 'dice' | 'presets' | 'share'>('settings');
   const [copiedUrl, setCopiedUrl] = useState<'control' | 'overlay' | 'join' | 'embed-url' | 'embed-code' | null>(null);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [embedTheme, setEmbedTheme] = useState<EmbedTheme>('dark');
   const [embedCompact, setEmbedCompact] = useState(false);
   const [copiedChecklist, setCopiedChecklist] = useState(false);
