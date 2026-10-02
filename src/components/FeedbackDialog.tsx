@@ -73,7 +73,7 @@ export function FeedbackDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={setOpen}>
       {trigger ? (
         <DialogTrigger asChild className={className}>
           {trigger}
