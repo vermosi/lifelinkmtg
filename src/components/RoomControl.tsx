@@ -1,5 +1,5 @@
 import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
-import { getStoredAdminKey, storeAdminKey } from '@/lib/cloudRoomUtils';
+import { getStoredAdminKey, storeAdminKey, verifyRoomAdmin } from '@/lib/cloudRoomUtils';
 import QRCode from 'react-qr-code';
 import { useEffect, useMemo, useState } from 'react';
 import { Menu, X, RotateCcw, Users, Heart, Copy, Check, Monitor, ArrowLeft, Shuffle, Palette, History, Trash2, Skull, Sparkles, Zap, Swords, Crown, Shield, Sun, Moon, Dices, Save, FolderOpen, Plus, Cloud, Loader2, Wrench, Share2, Move, AlertCircle, RefreshCw, Maximize, Link, ExternalLink, WifiOff } from 'lucide-react';
@@ -139,7 +139,21 @@ export function RoomControl() {
   const [isPortrait, setIsPortrait] = useState(() => window.innerHeight >= window.innerWidth);
   const [hasTrackedStart, setHasTrackedStart] = useState(false);
   const [toolsDrawerOpen, setToolsDrawerOpen] = useState(false);
-  const isAdmin = room ? adminKey === room.adminKey : false;
+  // On a second device the room loads without its admin key (it's never sent
+  // publicly), so a control-link key must be verified server-side.
+  const [verifiedAdminKey, setVerifiedAdminKey] = useState<string | null>(null);
+  useEffect(() => {
+    if (!roomId || !adminKey || adminKey === verifiedAdminKey) return;
+    if (room && room.adminKey && adminKey === room.adminKey) return;
+    let cancelled = false;
+    verifyRoomAdmin(roomId, adminKey).then(({ isAdmin: ok }) => {
+      if (!cancelled && ok) setVerifiedAdminKey(adminKey);
+    });
+    return () => { cancelled = true; };
+  }, [roomId, adminKey, room?.adminKey, verifiedAdminKey]);
+  const isAdmin = room && adminKey
+    ? adminKey === room.adminKey || adminKey === verifiedAdminKey
+    : false;
 
   // A control link carries ?adminKey=... . Once the key is verified against the
   // room and stored locally, remove it from the visible URL so it can't leak via
@@ -147,14 +161,14 @@ export function RoomControl() {
   // The key is never stripped before storage succeeds.
   useEffect(() => {
     if (!room || !roomId || !urlAdminKey) return;
-    if (urlAdminKey !== room.adminKey) return;
+    if (urlAdminKey !== room.adminKey && urlAdminKey !== verifiedAdminKey) return;
 
     storeAdminKey(roomId, urlAdminKey);
     if (getStoredAdminKey(roomId) !== urlAdminKey) return; // storage blocked — keep URL usable
 
     const { search, hash } = stripAdminKeyFromLocation(window.location.search, window.location.hash);
     navigate(`/room/${roomId}${search}${hash}`, { replace: true });
-  }, [room?.id, room?.adminKey, urlAdminKey, roomId, navigate]);
+  }, [room?.id, room?.adminKey, urlAdminKey, verifiedAdminKey, roomId, navigate]);
 
   // Coarse, non-identifying: a control surface was opened.
   useEffect(() => {
