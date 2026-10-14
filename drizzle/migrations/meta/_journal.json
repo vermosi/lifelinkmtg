@@ -15,6 +15,13 @@
       "when": 1791946381866,
       "tag": "0001_tighten_rooms_insert_policy",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791946398168,
+      "tag": "0002_align_rooms_insert_policy_key_length",
+      "breakpoints": true
     }
   ]
 }
