@@ -565,14 +565,18 @@ export function getEmbedUrl(room: Room, options: EmbedUrlOptions = {}): string {
 export function getEmbedSnippet(room: Room, options: EmbedUrlOptions = {}): string {
   const url = getEmbedUrl(room, options);
   const id = `lifelink-${room.id}`;
+  const origin = window.location.origin;
   return [
     `<iframe id="${id}" src="${url}" title="LifeLink life totals" width="320" height="400" style="border:0;border-radius:12px;width:100%;display:block" loading="lazy" scrolling="no"></iframe>`,
     `<script>`,
     `window.addEventListener("message", function (e) {`,
+    `  if (e.origin !== "${origin}") return;`,
     `  var d = e.data;`,
     `  if (!d || d.type !== "lifelink:embed-size" || d.roomId !== "${room.id}") return;`,
+    `  var h = Number(d.height);`,
+    `  if (!isFinite(h) || h < 100 || h > 4000) return;`,
     `  var f = document.getElementById("${id}");`,
-    `  if (f) { f.style.height = d.height + "px"; }`,
+    `  if (f) { f.style.height = Math.round(h) + "px"; }`,
     `});`,
     `</script>`,
   ].join('\n');
