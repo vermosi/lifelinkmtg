@@ -8,6 +8,13 @@
       "when": 1790173950295,
       "tag": "0000_create_feedback",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791946381866,
+      "tag": "0001_tighten_rooms_insert_policy",
+      "breakpoints": true
     }
   ]
 }
