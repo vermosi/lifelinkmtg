@@ -187,6 +187,9 @@ export function RoomSelector() {
           <p className="text-xl sm:text-2xl font-medium text-transparent bg-clip-text bg-gradient-to-r from-accent to-primary">
             Track. Play. Win.
           </p>
+          <p className="mt-3 text-sm sm:text-base text-muted-foreground max-w-md mx-auto">
+            Free online MTG life counter for Commander, EDH, and every other format.
+          </p>
         </div>
 
         {/* Main actions — glass panel */}
@@ -386,6 +389,25 @@ export function RoomSelector() {
           </ol>
         </section>
 
+        {/* Commander / EDH */}
+        <section aria-labelledby="commander-heading" className="w-full max-w-2xl mb-10 sm:mb-14">
+          <h2 id="commander-heading" className="text-center font-display text-2xl sm:text-3xl text-foreground mb-4">
+            A Commander life counter for your whole pod
+          </h2>
+          <div className="space-y-3 text-sm sm:text-base text-muted-foreground leading-relaxed">
+            <p>
+              Commander (EDH) games start at 40 life, run long, and have a lot to track. LifeLink is an online EDH life counter that every player in the pod can use from their own phone — one shared room, no app to install.
+            </p>
+            <ul className="list-disc pl-5 space-y-1.5">
+              <li><strong className="text-foreground">Starts at 40 life</strong> for Commander, or 20 for Standard, Modern, and other formats.</li>
+              <li><strong className="text-foreground">Commander damage per opponent</strong>, including partner commanders, so you know when 21 damage knocks someone out.</li>
+              <li><strong className="text-foreground">Poison, energy, and experience counters</strong>, plus Monarch, Initiative, and day/night.</li>
+              <li><strong className="text-foreground">Table layouts for 3–6 players</strong>, with names turned to face each seat.</li>
+              <li><strong className="text-foreground">Synced across devices</strong> — everyone sees the same totals, and streamers can show them in OBS or Twitch.</li>
+            </ul>
+          </div>
+        </section>
+
         {/* FAQ */}
         <section aria-labelledby="faq-heading" className="w-full max-w-2xl mb-10 sm:mb-14">
           <h2 id="faq-heading" className="text-center font-display text-2xl sm:text-3xl text-foreground mb-6 sm:mb-8">
@@ -394,11 +416,15 @@ export function RoomSelector() {
           <div className="space-y-3">
             <FaqItem
               question="What is LifeLink?"
-              answer="LifeLink is a free, cloud-synced life counter for Magic: The Gathering. It lets 2–6 players share a room from any device and stream life totals through OBS or Twitch."
+              answer="LifeLink is a free online MTG life counter. It lets 2–6 players share a cloud-synced room from any device and stream life totals through OBS or Twitch."
             />
             <FaqItem
-              question="Does it support Commander / EDH?"
-              answer="Yes. LifeLink supports commander damage, partner commanders, poison, energy, experience, Monarch, Initiative, and a day/night tracker for Commander games."
+              question="Does it work as an EDH / Commander life counter?"
+              answer="Yes. Commander games start at 40 life, and LifeLink tracks commander damage from each opponent (including partners), poison, energy, experience, Monarch, Initiative, and day/night."
+            />
+            <FaqItem
+              question="Can I use it online without downloading an app?"
+              answer="Yes. LifeLink runs in your browser. Open lifelinkmtg.app, tap NEW GAME, and share the room code — nothing to install."
             />
             <FaqItem
               question="How do players join the same room?"
